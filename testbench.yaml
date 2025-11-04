@@ -1,0 +1,4 @@
+env:
+  - PHPSTAN_PATHS=./src
+  - RECTOR_PATHS=./src
+  - PINT_PATHS=./src

@@ -1,0 +1,18 @@
+includes:
+    - %rootDir%/../../../vendor/ergebnis/phpstan-rules/rules.neon
+parameters:
+    ergebnis:
+        final:
+            enabled: false
+        noExtends:
+            enabled: false
+        noNamedArgument:
+            enabled: false
+        noParameterWithNullableTypeDeclaration:
+            enabled: false
+        noConstructorParameterWithDefaultValue:
+            enabled: false
+        noParameterWithNullDefaultValue:
+            enabled: false
+        noNullableReturnTypeDeclaration:
+            enabled: false

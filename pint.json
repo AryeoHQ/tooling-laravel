@@ -1,0 +1,16 @@
+{
+    "preset": "laravel",
+    "rules": {
+        "attribute_empty_parentheses": {
+            "use_parentheses": false
+        },
+        "no_unused_imports": true,
+        "nullable_type_declaration": {
+            "syntax": "union"
+        },
+        "ordered_attributes": {
+            "sort_algorithm": "alpha"
+        },
+        "single_trait_insert_per_statement": true
+    }
+}

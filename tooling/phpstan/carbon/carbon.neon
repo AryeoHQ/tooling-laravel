@@ -1,0 +1,7 @@
+includes:
+    - %rootDir%/../../../vendor/nesbot/carbon/extension.neon
+services:
+-
+        class: Tooling\PHPStan\Rules\Carbon\DisallowDirectUsage
+        tags:
+            - phpstan.rules.rule

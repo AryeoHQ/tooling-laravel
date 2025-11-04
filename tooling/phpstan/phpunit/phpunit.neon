@@ -1,0 +1,51 @@
+includes:
+    - %rootDir%/../../../vendor/phpstan/phpstan-phpunit/rules.neon
+    - %rootDir%/../../../vendor/phpstan/phpstan-phpunit/extension.neon
+parameters:
+    aryeo:
+        tests:
+            testCaseClass: Tests\TestCase
+    ignoreErrors:
+        -
+            message: '#Dynamic call to static method PHPUnit\\Framework\\Assert::assert.*\(\)#'
+            paths:
+                - %rootDir%/../../../tests/*
+        -
+            message: '#Call to method PHPUnit\\Framework\\Assert::assert.*\(\) .* will always evaluate to true#'
+            paths:
+                - %rootDir%/../../../tests/*
+        -
+            message: "#^Called 'Model::make\\(\\)' which performs unnecessary work, use 'new Model\\(\\)'\\.$#"
+            paths:
+                - %rootDir%/../../../tests/*
+parametersSchema:
+    aryeo: structure([
+        tests: structure([
+            testCaseClass: string()
+        ])
+    ])
+services:
+    -
+        class: Tooling\PHPStan\Rules\PHPUnit\TestClassMustExtendTestCase
+        tags:
+            - phpstan.rules.rule
+        arguments:
+            testCaseClass: %aryeo.tests.testCaseClass%
+    -
+        class: Tooling\PHPStan\Rules\PHPUnit\TestMethodMustNotHaveTestPrefix
+        tags:
+            - phpstan.rules.rule
+        arguments:
+            testCaseClass: %aryeo.tests.testCaseClass%
+    -
+        class: Tooling\PHPStan\Rules\PHPUnit\TestMethodNameMustBeSnakeCase
+        tags:
+            - phpstan.rules.rule
+        arguments:
+            testCaseClass: %aryeo.tests.testCaseClass%
+    -
+        class: Tooling\PHPStan\Rules\PHPUnit\TestMethodMustHaveTestAttribute
+        tags:
+            - phpstan.rules.rule
+        arguments:
+            testCaseClass: %aryeo.tests.testCaseClass%

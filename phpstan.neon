@@ -1,0 +1,51 @@
+includes:
+    - tooling/phpstan/downstream/downstream.neon
+    - tooling/phpstan/larastan/larastan.neon
+    - tooling/phpstan/phpunit/phpunit.neon
+    - tooling/phpstan/ergebnis/ergebnis.neon
+    - tooling/phpstan/carbon/carbon.neon
+    - tooling/phpstan/phpstan/phpstan.neon
+services:
+    -
+        class: Tooling\PHPStan\Rules\Enums\CaseMustBePascal
+        tags:
+            - phpstan.rules.rule
+parameters:
+    reportUnmatchedIgnoredErrors: false
+    ergebnis:
+        finalInAbstractClass:
+            enabled: false
+        final:
+            enabled: false
+        noExtends:
+            enabled: false
+        noNamedArgument:
+            enabled: false
+        noParameterWithNullableTypeDeclaration:
+            enabled: false
+        noConstructorParameterWithDefaultValue:
+            enabled: false
+        noParameterWithNullDefaultValue:
+            enabled: false
+    level: 6
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        - '#Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder#'
+        - '#Dynamic call to static method App\\Models\\Builders\\*#'
+        - '#Dynamic call to static method App\\Http\\Requests\\.*::(hasService|service)\(\)#'
+        - identifier: property.dynamicName
+        - identifier: property.uninitializedReadonly
+        - identifier: method.dynamicName
+        - identifier: propertyGetHook.noRead
+        - identifier: property.readOnlyAssignNotInConstructor
+        - identifier: missingType.iterableValue
+          message: '#^Method .+::__call\(\) has parameter \$arguments with no value type specified in iterable type array\.$#'
+        - identifier: missingType.return
+          message: '#^Method .+::__get\(\) has no return type specified\.$#'
+        - identifier: missingType.generics
+          message: '#^Class .+ implements generic interface .+CastsAttributes but does not specify its types: .+$#'
+        - identifier: if.condNotBoolean
+        - identifier: booleanNot.exprNotBoolean
+        - identifier: ternary.condNotBoolean
+        - identifier: argument.type
+          message: '#^Parameter \#1 \$type of method Illuminate\\Support\\Collection<.+>::ensure\(\) expects .+, string given\.$#'

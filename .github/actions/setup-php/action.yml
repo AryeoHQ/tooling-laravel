@@ -1,0 +1,60 @@
+name: Setup PHP
+description: "Setup PHP with extensions."
+
+inputs:
+  composer_version:
+    description: 'The Composer version to setup'
+    default: '2.2.x'
+    required: false
+  coverage:
+    description: 'The PHP coverage driver to setup'
+    default: 'xdebug'
+    required: false
+  extensions:
+    description: 'The PHP extensions to setup'
+    default: 'none'
+    required: false
+  install_dependencies:
+    description: 'Install the Composer dependencies?'
+    default: 'true'
+    required: false
+  php_version:
+    description: 'The PHP version to setup'
+    default: '8.4'
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Configure PHP extensions cache
+      id: php_extensions_cache
+      uses: shivammathur/cache-extensions@v1
+      with:
+        extensions: ${{ inputs.extensions }}
+        key: 'php_extensions'
+        php-version: ${{ inputs.php_version }}
+
+    - name: Cache PHP extensions
+      uses: actions/cache@v4
+      with:
+        key: ${{ steps.php_extensions_cache.outputs.key }}
+        path: ${{ steps.php_extensions_cache.outputs.dir }}
+        restore-keys: ${{ steps.php_extensions_cache.outputs.key }}
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        coverage: ${{ inputs.coverage }}
+        extensions: ${{ inputs.extensions }}
+        php-version: ${{ inputs.php_version }}
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v4
+      with:
+        key: ${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+        path: /tmp/composer-cache
+
+    - name: Install Composer dependencies
+      if: ${{ inputs.install_dependencies == 'true' }}
+      shell: bash
+      run: composer install --no-interaction --no-progress

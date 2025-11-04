@@ -1,0 +1,121 @@
+name: Code Quality
+
+on:
+  push:
+
+concurrency:
+  cancel-in-progress: true
+  group: code-quality-${{ github.ref }}
+
+jobs:
+  code-style:
+    runs-on: ubuntu-latest-4-cores
+
+    steps:
+      - name: Checkout ref
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: ./.github/actions/setup-php
+        with:
+          extensions: mbstring tokenizer xml
+
+      - name: Check code style
+        shell: sh
+        run: ./vendor/bin/testbench tooling:pint --test
+
+  static-analysis:
+    runs-on: ubuntu-latest-4-cores
+
+    steps:
+      - name: Checkout ref
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: ./.github/actions/setup-php
+        with:
+          extensions: tokenizer, opcache, pcntl, sockets, zip
+
+      - name: Prepare Testbench cache dir
+        run: |
+          sudo mkdir -p ./vendor/orchestra/testbench-core/laravel/bootstrap/cache
+          sudo chmod -R 0777 ./vendor/orchestra/testbench-core/laravel/bootstrap/cache
+
+      - name: Run static analysis on application
+        shell: sh
+        run: ./vendor/bin/testbench tooling:phpstan --memory-limit=4G --error-format=github
+
+  dependency-analysis:
+    runs-on: ubuntu-latest-4-cores
+
+    steps:
+      - name: Checkout ref
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: ./.github/actions/setup-php
+        with:
+          extensions: tokenizer
+
+      - name: Check code style
+        shell: sh
+        run: ./vendor/bin/composer-dependency-analyser
+
+  tests:
+    runs-on: ubuntu-latest-4-cores
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest]
+        php: [8.4]
+        laravel: [12.*]
+        include:
+          - laravel: 12.*
+            testbench: 10.*
+
+    name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.os }}
+
+    steps:
+      - name: Checkout ref
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: ./.github/actions/setup-php
+        with:
+          extensions: iconv, mbstring
+          install_dependencies: 'false'
+          php_version: ${{ matrix.php }}
+
+      - name: Install Composer dependencies
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+          composer update --no-interaction
+
+      - name: List installed Composer dependencies
+        run: composer show -D
+
+      - name: Run tests
+        env:
+          DB_HOST: localhost
+        shell: sh
+        run: ./vendor/bin/paratest --coverage-cobertura coverage.xml
+
+      - name: Code Coverage Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage.xml
+          badge: true
+          fail_below_min: true
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: false
+          indicators: true
+          output: both
+          thresholds: '0 100'
+
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: code-coverage-results.md
