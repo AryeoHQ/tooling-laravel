@@ -5,7 +5,7 @@ return [
         'cli' => [
             'arguments' => [
                 'paths' => when(
-                    env('PHPSTAN_PATHS', null),
+                    env('PHPSTAN_PATHS'),
                     fn (string $paths) => explode(',', $paths),
                     []
                 ),
@@ -19,7 +19,7 @@ return [
         'cli' => [
             'arguments' => [
                 'source' => when(
-                    env('RECTOR_PATHS', null),
+                    env('RECTOR_PATHS'),
                     fn (string $paths) => explode(',', $paths),
                     []
                 ),
@@ -33,7 +33,7 @@ return [
         'cli' => [
             'arguments' => [
                 'path' => when(
-                    env('PINT_PATHS', null),
+                    env('PINT_PATHS'),
                     fn (string $paths) => explode(',', $paths),
                     []
                 ),
