@@ -54,14 +54,20 @@ class CloneBaseCommand extends Command
     public function localizeCommandContent(): Stringable
     {
         return $this->baseCommandContent->replace(
+            '<?php',
+            '<?php'.PHP_EOL.PHP_EOL.'declare(strict_types=1);'
+        )->replace(
             'namespace App\Commands;',
             'namespace '.$this->wrapperCommandReflection->getNamespaceName().'\Fixtures;'
         )->replace(
             'use LaravelZero\Framework\Commands\Command;',
             'use '.Command::class.';'
         )->replace(
-            '<?php',
-            '<?php'.PHP_EOL.PHP_EOL.'declare(strict_types=1);'
+            '* @param  \App\Actions\FixCode  $fixCode',
+            '* @param  object  $fixCode'
+        )->replace(
+            '* @param  \App\Actions\ElaborateSummary  $elaborateSummary',
+            '* @param  object  $elaborateSummary'
         );
     }
 }

@@ -12,6 +12,10 @@ services:
             - phpstan.rules.rule
 parameters:
     reportUnmatchedIgnoredErrors: false
+    paths:
+        - src
+    excludePaths:
+        - src/Tooling/Pint/Console/Commands/Fixtures/DefaultCommand.php
     ergebnis:
         finalInAbstractClass:
             enabled: false

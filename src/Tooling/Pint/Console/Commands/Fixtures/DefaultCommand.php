@@ -58,8 +58,8 @@ class DefaultCommand extends Command
     /**
      * Execute the console command.
      *
-     * @param  \App\Actions\FixCode  $fixCode
-     * @param  \App\Actions\ElaborateSummary  $elaborateSummary
+     * @param  object  $fixCode
+     * @param  object  $elaborateSummary
      * @return int
      */
     public function handle($fixCode, $elaborateSummary)
