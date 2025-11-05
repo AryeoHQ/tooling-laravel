@@ -84,7 +84,7 @@ final class TestMethodMustNotHaveTestPrefix implements Rule
             return false;
         }
 
-        return str_starts_with($name = $node->name->toString(), 'test');
+        return str_starts_with($node->name->toString(), 'test');
     }
 
     /**
