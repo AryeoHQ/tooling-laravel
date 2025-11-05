@@ -66,7 +66,7 @@ Sometimes it is necessary for fixtures to purposefully violate domain specific P
 
 However, this will either incorrectly cause PHPStan (and by extension CI) to fail or override the developers intent of creating an "incorrect" setup for the purposes of testing.
 
-To provide affordance for these testing scenarios we have adopted the standard that classes within a `Fixtures` namespace any where in `Tests` should be ignored for PHPStan & Rector rules. It is your responsibility to write your rules to account for this affordance if appropriate.
+To provide affordance for these testing scenarios, we have adopted the standard that classes within a `Fixtures` namespace anywhere in `Tests` should be ignored for PHPStan & Rector rules. It is your responsibility to write your rules to account for this affordance if appropriate.
 
 #### Example
 ```php
