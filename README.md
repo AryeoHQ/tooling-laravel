@@ -53,9 +53,7 @@ Additional configurations can be registered via `composer.json`:
             "rector": {
                 "rules": "tooling/rector/rules.php"
             },
-            "phpstan": {
-                "includes": ["tooling/phpstan/rules.neon"]
-            }
+            "phpstan": "tooling/phpstan/rules.neon"
         }
     }
 }
