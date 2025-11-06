@@ -53,6 +53,11 @@ final class DisallowDirectUsage implements Rule
             return false;
         }
 
+        // Allow ::class usage as it's just getting the class name string, not using Carbon
+        if ($node instanceof ClassConstFetch && $node->name instanceof Node\Identifier && $node->name->name === 'class') {
+            return false;
+        }
+
         $class = $this->findClassName($node, $scope);
         if ($class === null) {
             return false;
