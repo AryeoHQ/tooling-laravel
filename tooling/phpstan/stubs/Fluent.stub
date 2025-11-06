@@ -1,0 +1,12 @@
+<?php
+
+namespace Illuminate\Support;
+
+/**
+ * @template TKey of array-key
+ * @template TValue
+ */
+#[\AllowDynamicProperties]
+class Fluent
+{
+}

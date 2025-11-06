@@ -11,6 +11,10 @@ services:
         tags:
             - phpstan.rules.rule
 parameters:
+    stubFiles:
+        - tooling/phpstan/stubs/Fluent.stub
+    universalObjectCratesClasses:
+        - Illuminate\Support\Fluent
     reportUnmatchedIgnoredErrors: false
     paths:
         - src
