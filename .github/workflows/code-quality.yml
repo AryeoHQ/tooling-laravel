@@ -98,7 +98,7 @@ jobs:
         env:
           DB_HOST: localhost
         shell: sh
-        run: ./vendor/bin/paratest --coverage-cobertura coverage.xml
+        run: ./vendor/bin/testbench package:test --parallel --coverage-cobertura coverage.xml
 
       - name: Code Coverage Report
         uses: irongut/CodeCoverageSummary@v1.3.0
