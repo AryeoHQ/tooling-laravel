@@ -4,6 +4,16 @@
         "attribute_empty_parentheses": {
             "use_parentheses": false
         },
+        "no_extra_blank_lines": {
+            "tokens": [
+                "curly_brace_block",
+                "extra",
+                "parenthesis_brace_block",
+                "square_brace_block",
+                "throw",
+                "use"
+            ]
+        },
         "no_unused_imports": true,
         "nullable_type_declaration": {
             "syntax": "union"
