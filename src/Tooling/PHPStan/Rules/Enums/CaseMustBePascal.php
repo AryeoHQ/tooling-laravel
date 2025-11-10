@@ -29,7 +29,6 @@ final class CaseMustBePascal implements Rule
      */
     public function processNode(Node $node, Scope $scope): array
     {
-
         return $this->passes($node, $scope) ? [] : $this->buildError($node);
     }
 
