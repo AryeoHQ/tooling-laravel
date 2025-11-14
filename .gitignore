@@ -4,6 +4,7 @@
 .env.testing
 .envrc
 .phpunit.cache
+.idea/
 devbox.json
 devbox.lock
 devbox.d/
