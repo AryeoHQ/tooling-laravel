@@ -8,7 +8,7 @@
         "canvural/larastan-strict-rules": "^3.0",
         "composer/composer": "^2.0",
         "ergebnis/phpstan-rules": "^2.12",
-        "illuminate/contracts": "^12.36",
+        "illuminate/support": "^12.36",
         "larastan/larastan": "^3.8",
         "laravel/pint": "^1.25",
         "nikic/php-parser": "^5.6",
