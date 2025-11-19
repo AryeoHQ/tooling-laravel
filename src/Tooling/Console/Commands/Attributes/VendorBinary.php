@@ -46,10 +46,13 @@ class VendorBinary
             )
         )->concat($options);
 
-        return Process::path($this->composer->baseDirectory->toString())->tty($tty)->run(
-            $command->toArray(),
-            $this->ttyFallback()
-        );
+        return Process::path($this->composer->baseDirectory->toString())
+            ->tty($tty)
+            ->forever()
+            ->run(
+                $command->toArray(),
+                $this->ttyFallback()
+            );
     }
 
     public function ttyFallback(): Closure
