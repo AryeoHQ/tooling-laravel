@@ -1,4 +1,5 @@
 includes:
+    - tooling/phpstan/paths.neon.php
     - tooling/phpstan/downstream/downstream.neon
     - tooling/phpstan/larastan/larastan.neon
     - tooling/phpstan/phpunit/phpunit.neon
@@ -16,8 +17,6 @@ parameters:
     universalObjectCratesClasses:
         - Illuminate\Support\Fluent
     reportUnmatchedIgnoredErrors: false
-    paths:
-        - src
     excludePaths:
         - src/Tooling/Pint/Console/Commands/Fixtures/DefaultCommand.php
     ergebnis:

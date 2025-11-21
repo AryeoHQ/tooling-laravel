@@ -7,22 +7,33 @@ composer require aryeo/tooling-laravel
 ```
 
 ## Configuration
-You can instruct each tool which paths to inspect using:
 
-### In a Laravel Application `.env`:
+### Smart Path Detection
+
+PHPStan will automatically detect the appropriate paths to analyze:
+- **Laravel Applications**: Defaults to `app/` directory
+- **Packages**: Defaults to `src/` directory
+
+### Custom Path Configuration
+
+You can override the defaults and instruct each tool which paths to inspect using:
+
+#### In a Laravel Application `.env`:
 ```env
 PHPSTAN_PATHS=app,tests
 RECTOR_PATHS=app,tests
 PINT_PATHS=app,tests
 ```
 
-### In a Package `testbench.yaml`:
+#### In a Package `testbench.yaml`:
 ```yaml
 env:
   - PHPSTAN_PATHS=src,tests
   - RECTOR_PATHS=src,tests
   - PINT_PATHS=src,tests
 ```
+
+> **Note**: For PHPStan specifically, setting `PHPSTAN_PATHS` ensures Larastan can properly discover your Eloquent models and relationships.
 
 ## Usage
 The commands you use depend on your context:
