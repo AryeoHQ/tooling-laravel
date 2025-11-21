@@ -22,18 +22,25 @@ spl_autoload_register(function (string $class): void {
     }
 
     // Determine what type of class to create based on naming patterns
-    if (str_ends_with($class, 'Builder')) {
+    $className = substr($class, strrpos($class, '\\') + 1);
+    $namespace = substr($class, 0, strrpos($class, '\\'));
+    $parentDir = basename($namespace);
+
+    if (str_ends_with($className, 'Builder')) {
         // Create an alias for custom Eloquent builders
         class_alias(\Illuminate\Database\Eloquent\Builder::class, $class);
-    } elseif (str_ends_with($class, 'Collection') || str_contains($class, '\\' . basename(dirname($class)) . 's')) {
-        // Create an alias for custom collections (e.g., App\Models\MuxAssets\MuxAssets)
+    } elseif (str_ends_with($className, 'Collection') || $className === $parentDir) {
+        // Create an alias for custom collections
+        // Matches patterns like:
+        // - App\Models\Posts\PostCollection
+        // - App\Models\MuxAssets\MuxAssets (where class name matches parent directory)
         class_alias(\Illuminate\Database\Eloquent\Collection::class, $class);
-    } elseif (str_contains($class, '\\Enums\\')) {
+    } elseif (str_contains($namespace, '\\Enums')) {
         // Create a dummy enum for missing enums
         eval(sprintf(
             'namespace %s; enum %s: string {}',
-            substr($class, 0, strrpos($class, '\\')),
-            substr($class, strrpos($class, '\\') + 1)
+            $namespace,
+            $className
         ));
     }
 }, true, true);
