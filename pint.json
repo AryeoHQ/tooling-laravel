@@ -16,7 +16,7 @@
         },
         "no_unused_imports": true,
         "nullable_type_declaration": {
-            "syntax": "union"
+            "syntax": "question_mark"
         },
         "ordered_attributes": {
             "sort_algorithm": "alpha"
