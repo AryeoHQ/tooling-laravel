@@ -1,2 +1,5 @@
 includes:
     - %rootDir%/../../../vendor/larastan/larastan/extension.neon
+parameters:
+    bootstrapFiles:
+        - %rootDir%/../../../vendor/larastan/larastan/bootstrap.php
