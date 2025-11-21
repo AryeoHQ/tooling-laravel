@@ -16,6 +16,7 @@ parameters:
     universalObjectCratesClasses:
         - Illuminate\Support\Fluent
     reportUnmatchedIgnoredErrors: false
+    checkMissingCallableSignature: false
     paths:
         - src
     excludePaths:
@@ -37,8 +38,6 @@ parameters:
             enabled: false
     level: 6
     treatPhpDocTypesAsCertain: false
-    checkMissingCallableSignature: false
-    reportUnmatchedIgnoredErrors: false
     ignoreErrors:
         - '#Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder#'
         - '#Dynamic call to static method App\\Models\\Builders\\*#'
