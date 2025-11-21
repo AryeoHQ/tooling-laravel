@@ -13,6 +13,7 @@ services:
 parameters:
     stubFiles:
         - tooling/phpstan/stubs/Fluent.stub
+        - tooling/phpstan/stubs/EloquentBuilder.stub
     universalObjectCratesClasses:
         - Illuminate\Support\Fluent
     reportUnmatchedIgnoredErrors: false
