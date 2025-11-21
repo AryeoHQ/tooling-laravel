@@ -43,9 +43,20 @@ if ($envPaths) {
     }
 }
 
+// Determine scan directories for Larastan model discovery
+// Larastan needs to scan model directories to build its reflection database
+$scanDirectories = [];
+foreach ($paths as $path) {
+    $modelsPath = join_paths($baseDir, $path, 'Models');
+    if (is_dir($modelsPath)) {
+        $scanDirectories[] = $path . '/Models';
+    }
+}
+
 return [
     'parameters' => [
         'paths' => $paths,
+        'scanDirectories' => $scanDirectories,
     ],
 ];
 
