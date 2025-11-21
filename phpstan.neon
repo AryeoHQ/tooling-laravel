@@ -11,7 +11,8 @@ services:
         tags:
             - phpstan.rules.rule
 parameters:
-    bootstrap: tooling/phpstan/bootstrap.php
+    bootstrapFiles:
+        - tooling/phpstan/bootstrap.php
     stubFiles:
         - tooling/phpstan/stubs/Fluent.stub
         - tooling/phpstan/stubs/EloquentBuilder.stub
