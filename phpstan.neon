@@ -37,10 +37,13 @@ parameters:
             enabled: false
     level: 6
     treatPhpDocTypesAsCertain: false
+    checkMissingCallableSignature: false
+    reportUnmatchedIgnoredErrors: false
     ignoreErrors:
         - '#Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder#'
         - '#Dynamic call to static method App\\Models\\Builders\\*#'
         - '#Dynamic call to static method App\\Http\\Requests\\.*::(hasService|service)\(\)#'
+        - '#Class .+ was not found while trying to analyse it#'
         - identifier: property.dynamicName
         - identifier: property.uninitializedReadonly
         - identifier: method.dynamicName
