@@ -11,15 +11,11 @@ services:
         tags:
             - phpstan.rules.rule
 parameters:
-    bootstrapFiles:
-        - tooling/phpstan/bootstrap.php
     stubFiles:
         - tooling/phpstan/stubs/Fluent.stub
-        - tooling/phpstan/stubs/EloquentBuilder.stub
     universalObjectCratesClasses:
         - Illuminate\Support\Fluent
     reportUnmatchedIgnoredErrors: false
-    checkMissingCallableSignature: false
     paths:
         - src
     excludePaths:
@@ -45,7 +41,6 @@ parameters:
         - '#Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder#'
         - '#Dynamic call to static method App\\Models\\Builders\\*#'
         - '#Dynamic call to static method App\\Http\\Requests\\.*::(hasService|service)\(\)#'
-        - '#Class .+ was not found while trying to analyse it#'
         - identifier: property.dynamicName
         - identifier: property.uninitializedReadonly
         - identifier: method.dynamicName
