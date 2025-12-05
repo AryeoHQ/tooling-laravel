@@ -38,9 +38,8 @@ parameters:
     level: 6
     treatPhpDocTypesAsCertain: false
     ignoreErrors:
-        - '#Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder#'
-        - '#Dynamic call to static method App\\Models\\Builders\\*#'
-        - '#Dynamic call to static method App\\Http\\Requests\\.*::(hasService|service)\(\)#'
+        - '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder.*::#'
+        - '#^Dynamic call to static method Illuminate\\Database\\Query\\Builder.*::#'
         - identifier: property.dynamicName
         - identifier: property.uninitializedReadonly
         - identifier: method.dynamicName
