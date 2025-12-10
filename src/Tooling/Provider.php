@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tooling;
 
 use Illuminate\Support\ServiceProvider;
+use Mcp\Servers\Development;
 use PHPStan\Command\AnalyseCommand;
 use Rector\Console\Command\ProcessCommand;
 use Rector\Console\ConsoleApplication;
@@ -20,15 +21,16 @@ class Provider extends ServiceProvider
         get => $this->configPath ??= realpath(__DIR__.'/../../config/tooling.php');
     }
 
-    public function boot(): void
-    {
-        $this->bootCommands();
-    }
-
     public function register(): void
     {
         $this->mergeConfig();
         $this->registerBindings();
+    }
+
+    public function boot(): void
+    {
+        $this->bootCommands();
+        $this->bootMcp();
     }
 
     private function mergeConfig(): void
@@ -97,5 +99,16 @@ class Provider extends ServiceProvider
             Rector\Console\Commands\Rector::class,
             Pint\Console\Commands\Pint::class
         );
+    }
+
+    private function bootMcp(): void
+    {
+        Development::add(Mcp\Resources\Readme::class);
+
+        Development::add(PHPStan\Mcp\Tools\PhpStan::class);
+        Development::add(PHPStan\Mcp\Prompts\Analyze::class);
+
+        Development::add(Pint\Mcp\Tools\Pint::class);
+        Development::add(Rector\Mcp\Tools\Rector::class);
     }
 }
