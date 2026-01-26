@@ -10,5 +10,4 @@ return (new Configuration())
     ->ignoreErrorsOnPackage('ergebnis/phpstan-rules', [ErrorType::UNUSED_DEPENDENCY])
     ->ignoreErrorsOnPackage('phpstan/phpstan-deprecation-rules', [ErrorType::UNUSED_DEPENDENCY])
     ->ignoreErrorsOnPackage('phpstan/phpstan-phpunit', [ErrorType::UNUSED_DEPENDENCY])
-    ->ignoreErrorsOnPackage('phpstan/phpstan-strict-rules', [ErrorType::UNUSED_DEPENDENCY])
-    ->ignoreErrorsOnPackage('laravel/pint', [ErrorType::UNUSED_DEPENDENCY]);
+    ->ignoreErrorsOnPackage('phpstan/phpstan-strict-rules', [ErrorType::UNUSED_DEPENDENCY]);
