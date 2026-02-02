@@ -5,12 +5,8 @@ includes:
     - tooling/phpstan/ergebnis/ergebnis.neon
     - tooling/phpstan/carbon/carbon.neon
     - tooling/phpstan/phpstan/phpstan.neon
-services:
-    -
-        class: Tooling\PHPStan\Rules\Enums\CaseMustBePascal
-        tags:
-            - phpstan.rules.rule
-parameters:
+    - tooling/phpstan/services.neon
+    parameters:
     stubFiles:
         - tooling/phpstan/stubs/Fluent.stub
     universalObjectCratesClasses:
