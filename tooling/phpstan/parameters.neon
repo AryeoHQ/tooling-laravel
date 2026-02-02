@@ -30,6 +30,7 @@ parameters:
     ignoreErrors:
         - '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder.*::#'
         - '#^Dynamic call to static method Illuminate\\Database\\Query\\Builder.*::#'
+        - '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage::andReturnUsing#'
         - identifier: property.dynamicName
         - identifier: property.uninitializedReadonly
         - identifier: method.dynamicName
