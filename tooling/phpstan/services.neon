@@ -1,0 +1,5 @@
+services:
+    -
+        class: Tooling\PHPStan\Rules\Enums\CaseMustBePascal
+        tags:
+            - phpstan.rules.rule
