@@ -4,7 +4,9 @@ includes:
 parameters:
     aryeo:
         tests:
-            testCaseClass: Tests\TestCase
+            testCaseClass:
+                - Tests\TestCase
+                - PHPStan\Testing\RuleTestCase
     ignoreErrors:
         -
             message: '#Dynamic call to static method PHPUnit\\Framework\\Assert::assert.*\(\)#'
@@ -21,7 +23,7 @@ parameters:
 parametersSchema:
     aryeo: structure([
         tests: structure([
-            testCaseClass: string()
+            testCaseClass: anyOf(string(), listOf(string()))
         ])
     ])
 services:

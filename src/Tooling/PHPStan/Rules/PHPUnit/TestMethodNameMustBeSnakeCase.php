@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Tooling\PHPStan\Rules\PHPUnit;
 
 use PhpParser\Node;
-use PhpParser\Node\Stmt\ClassMethod;
-use PHPStan\Analyser\Scope;
-use PHPStan\Reflection\ReflectionProvider;
-use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\Rule;
+use Illuminate\Support\Arr;
+use PHPStan\Analyser\Scope;
+use Illuminate\Support\Collection;
 use PHPStan\Rules\RuleErrorBuilder;
+use PhpParser\Node\Stmt\ClassMethod;
 use PHPStan\ShouldNotHappenException;
+use PHPStan\Rules\IdentifierRuleError;
+use PHPStan\Reflection\ReflectionProvider;
 
 /**
  * @implements Rule<ClassMethod>
@@ -20,10 +22,11 @@ final class TestMethodNameMustBeSnakeCase implements Rule
 {
     private readonly ReflectionProvider $reflectionProvider;
 
-    private string $testCaseClass;
+    private Collection $testCaseClasses;
 
-    public function __construct(ReflectionProvider $reflectionProvider, string $testCaseClass = 'Tests\\TestCase')
+    public function __construct(ReflectionProvider $reflectionProvider, string|array $testCaseClass = 'Tests\\TestCase')
     {
+        $this->testCaseClasses = collect(Arr::wrap($testCaseClass));
         $this->reflectionProvider = $reflectionProvider;
         $this->testCaseClass = $testCaseClass;
     }
@@ -67,10 +70,14 @@ final class TestMethodNameMustBeSnakeCase implements Rule
             return false;
         }
 
-        // Ensure that the method's class extends the `TestCase` class.
-        if (! $scopeReflection->isSubclassOfClass(
-            class: $this->reflectionProvider->getClass($this->testCaseClass)
-        )) {
+        // Ensure that the method's class extends the allowed base TestCase class.
+        $subClassOf = $this->testCaseClasses->filter(
+            fn (string $testCaseClass) => $scopeReflection->isSubclassOfClass(
+                class: $this->reflectionProvider->getClass($testCaseClass)
+            )
+        );
+
+        if ($subClassOf->isEmpty()) {
             return false;
         }
 
