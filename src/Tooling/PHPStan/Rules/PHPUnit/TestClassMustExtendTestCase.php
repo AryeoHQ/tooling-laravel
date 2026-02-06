@@ -82,7 +82,10 @@ final class TestClassMustExtendTestCase implements Rule
 
     private function extendsTestCase(Class_ $node, string $testCaseClass): bool
     {
-        $className = $node->namespacedName->toString();
+        $className = $node->namespacedName?->toString() ?? $node->name?->toString();
+        if ($className === null) {
+            return false;
+        }
 
         if (! $this->reflectionProvider->hasClass($className)) {
             return false;
