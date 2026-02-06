@@ -80,7 +80,7 @@ final class TestClassMustExtendTestCase implements Rule
         return $this->doesNotExtendTestCase($node, $scope);
     }
 
-    private function extendsTestCase(Class_ $node, Scope $scope, string $testCaseClass): bool
+    private function extendsTestCase(Class_ $node, string $testCaseClass): bool
     {
         $className = $node->namespacedName->toString();
 
@@ -100,7 +100,7 @@ final class TestClassMustExtendTestCase implements Rule
     private function doesNotExtendTestCase(Class_ $node, Scope $scope): bool
     {
         return $this->testCaseClasses->filter(
-            fn (string $testCaseClass) => $this->extendsTestCase($node, $scope, $testCaseClass)
+            fn (string $testCaseClass) => $this->extendsTestCase($node, $testCaseClass)
         )->isEmpty();
     }
 
