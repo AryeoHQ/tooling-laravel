@@ -73,6 +73,16 @@ final class TestMethodMustHaveTestAttribute implements Rule
             return false;
         }
 
+        // Ensure that the method's class extends the allowed base TestCase class.
+        $subClassOf = $this->testCaseClasses->filter(
+            fn (string $testCaseClass) => $this->reflectionProvider->hasClass($testCaseClass)
+                && $scopeReflection->isSubclassOfClass($this->reflectionProvider->getClass($testCaseClass))
+        );
+
+        if ($subClassOf->isEmpty()) {
+            return false;
+        }
+
         // Ensure that the method is public.
         if (! $node->isPublic()) {
             return false;
@@ -83,16 +93,6 @@ final class TestMethodMustHaveTestAttribute implements Rule
         if (str_starts_with($methodName, '__') ||
             in_array($methodName, ['setUp', 'tearDown', 'setUpBeforeClass', 'tearDownAfterClass'], true)
         ) {
-            return false;
-        }
-
-        // Ensure that the method's class extends the allowed base TestCase class.
-        $subClassOf = $this->testCaseClasses->filter(
-            fn (string $testCaseClass) => $this->reflectionProvider->hasClass($testCaseClass)
-                && $scopeReflection->isSubclassOfClass($this->reflectionProvider->getClass($testCaseClass))
-        );
-
-        if ($subClassOf->isEmpty()) {
             return false;
         }
 
