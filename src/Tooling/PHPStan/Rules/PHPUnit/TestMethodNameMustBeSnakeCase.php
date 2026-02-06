@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Tooling\PHPStan\Rules\PHPUnit;
 
-use PhpParser\Node;
-use PHPStan\Rules\Rule;
 use Illuminate\Support\Arr;
-use PHPStan\Analyser\Scope;
 use Illuminate\Support\Collection;
-use PHPStan\Rules\RuleErrorBuilder;
+use PhpParser\Node;
 use PhpParser\Node\Stmt\ClassMethod;
-use PHPStan\ShouldNotHappenException;
-use PHPStan\Rules\IdentifierRuleError;
+use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ReflectionProvider;
+use PHPStan\Rules\IdentifierRuleError;
+use PHPStan\Rules\Rule;
+use PHPStan\Rules\RuleErrorBuilder;
+use PHPStan\ShouldNotHappenException;
 
 /**
  * @implements Rule<ClassMethod>
@@ -22,13 +22,16 @@ final class TestMethodNameMustBeSnakeCase implements Rule
 {
     private readonly ReflectionProvider $reflectionProvider;
 
+    /** @var Collection<int, class-string> */
     private Collection $testCaseClasses;
 
+    /**
+     * @param  class-string|array<array-key, class-string>  $testCaseClass
+     */
     public function __construct(ReflectionProvider $reflectionProvider, string|array $testCaseClass = 'Tests\\TestCase')
     {
         $this->testCaseClasses = collect(Arr::wrap($testCaseClass));
         $this->reflectionProvider = $reflectionProvider;
-        $this->testCaseClass = $testCaseClass;
     }
 
     /**

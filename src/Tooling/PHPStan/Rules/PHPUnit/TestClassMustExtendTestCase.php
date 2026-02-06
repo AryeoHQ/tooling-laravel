@@ -20,8 +20,14 @@ use PHPStan\ShouldNotHappenException;
  */
 final class TestClassMustExtendTestCase implements Rule
 {
+    private readonly ReflectionProvider $reflectionProvider;
+
+    /** @var Collection<int, class-string> */
     private Collection $testCaseClasses;
 
+    /**
+     * @param  class-string|array<array-key, class-string>  $testCaseClass
+     */
     public function __construct(ReflectionProvider $reflectionProvider, string|array $testCaseClass = 'Tests\\TestCase')
     {
         $this->reflectionProvider = $reflectionProvider;
@@ -88,7 +94,7 @@ final class TestClassMustExtendTestCase implements Rule
             return false;
         }
 
-        return $classReflection->isSubclassOf($testCaseClass);
+        return $classReflection->isSubclassOfClass($this->reflectionProvider->getClass($testCaseClass));
     }
 
     private function doesNotExtendTestCase(Class_ $node, Scope $scope): bool

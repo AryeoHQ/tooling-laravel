@@ -22,13 +22,16 @@ final class TestMethodMustNotHaveTestPrefix implements Rule
 {
     private readonly ReflectionProvider $reflectionProvider;
 
+    /** @var Collection<int, class-string> */
     private Collection $testCaseClasses;
 
+    /**
+     * @param  class-string|array<array-key, class-string>  $testCaseClass
+     */
     public function __construct(ReflectionProvider $reflectionProvider, string|array $testCaseClass = 'Tests\\TestCase')
     {
-        $this->testCaseClasses = collect(Arr::wrap($testCaseClass));
         $this->reflectionProvider = $reflectionProvider;
-        $this->testCaseClass = $testCaseClass;
+        $this->testCaseClasses = collect(Arr::wrap($testCaseClass));
     }
 
     /**
