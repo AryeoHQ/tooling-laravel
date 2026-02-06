@@ -88,9 +88,8 @@ final class TestMethodMustHaveTestAttribute implements Rule
 
         // Ensure that the method's class extends the allowed base TestCase class.
         $subClassOf = $this->testCaseClasses->filter(
-            fn (string $testCaseClass) => $scopeReflection->isSubclassOfClass(
-                class: $this->reflectionProvider->getClass($testCaseClass)
-            )
+            fn (string $testCaseClass) => $this->reflectionProvider->hasClass($testCaseClass)
+                && $scopeReflection->isSubclassOfClass($this->reflectionProvider->getClass($testCaseClass))
         );
 
         if ($subClassOf->isEmpty()) {
