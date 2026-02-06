@@ -51,15 +51,15 @@ final class TestClassMustExtendTestCase implements Rule
      */
     public function processNode(Node $node, Scope $scope): array
     {
-        return $this->passes($node, $scope) ? [] : $this->buildError($node);
+        return $this->passes($node) ? [] : $this->buildError($node);
     }
 
-    private function passes(Class_ $node, Scope $scope): bool
+    private function passes(Class_ $node): bool
     {
-        return ! $this->violated($node, $scope);
+        return ! $this->violated($node);
     }
 
-    private function violated(Class_ $node, Scope $scope): bool
+    private function violated(Class_ $node): bool
     {
         if ($node->isAbstract()) {
             return false;
@@ -77,7 +77,7 @@ final class TestClassMustExtendTestCase implements Rule
             return false;
         }
 
-        return $this->doesNotExtendTestCase($node, $scope);
+        return $this->doesNotExtendTestCase($node);
     }
 
     private function extendsTestCase(Class_ $node, string $testCaseClass): bool
@@ -100,7 +100,7 @@ final class TestClassMustExtendTestCase implements Rule
         return $classReflection->isSubclassOfClass($this->reflectionProvider->getClass($testCaseClass));
     }
 
-    private function doesNotExtendTestCase(Class_ $node, Scope $scope): bool
+    private function doesNotExtendTestCase(Class_ $node): bool
     {
         return $this->testCaseClasses->filter(
             fn (string $testCaseClass) => $this->extendsTestCase($node, $testCaseClass)
