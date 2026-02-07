@@ -5,7 +5,7 @@ parameters:
     
     # Test that the CaseMustBePascal rule is working
     # ValidPascalCaseEnum.php should have 0 errors
-    # InvalidPascalCaseEnum.php should have 8 errors (one per invalid case)
+    # InvalidPascalCaseEnum.php should have 7 errors (one per invalid case)
 
 includes:
     - ../../../../../phpstan.neon
