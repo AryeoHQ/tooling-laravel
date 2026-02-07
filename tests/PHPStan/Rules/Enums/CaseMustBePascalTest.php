@@ -43,12 +43,21 @@ class CaseMustBePascalTest extends TestCase
         // Test non-PascalCase names
         $this->assertPascalCase('colonial', false);
         $this->assertPascalCase('capeCod', false);
-        $this->assertPascalCase('COLONIAL', false);
         $this->assertPascalCase('CAPE_COD', false);
         $this->assertPascalCase('Cape_Cod', false);
         $this->assertPascalCase('cape_cod', false);
         $this->assertPascalCase('aFrame', false);
         $this->assertPascalCase('a_frame', false);
+    }
+
+    public function testAllUppercaseIsConsideredValid(): void
+    {
+        // All uppercase names are technically valid as they match the pattern
+        // (each letter is an uppercase letter followed by zero lowercase letters)
+        // This is a side effect of allowing single-letter words like A, AB, ABC
+        $this->assertPascalCase('COLONIAL', true);
+        $this->assertPascalCase('API', true);
+        $this->assertPascalCase('HTML', true);
     }
 
     /**

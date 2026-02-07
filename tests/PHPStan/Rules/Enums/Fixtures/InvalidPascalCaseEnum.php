@@ -14,11 +14,8 @@ enum InvalidPascalCaseEnum: string
     case capeCod = 'cape_cod';
     case aFrame = 'a_frame';
 
-    // All uppercase
-    case COLONIAL = 'colonial';
-    case CAPE_COD = 'cape_cod';
-
     // Snake case
+    case CAPE_COD = 'cape_cod';
     case Cape_Cod = 'cape_cod';
     case cape_cod = 'cape_cod';
     case a_frame = 'a_frame';

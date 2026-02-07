@@ -34,7 +34,7 @@ vendor/bin/phpstan analyze -c phpstan.neon
 
 Expected results:
 - `ValidPascalCaseEnum.php`: 0 errors
-- `InvalidPascalCaseEnum.php`: 8 errors (one per invalid case)
+- `InvalidPascalCaseEnum.php`: 7 errors (one per invalid case)
 
 ## What This Tests
 

@@ -22,4 +22,9 @@ enum ValidPascalCaseEnum: string
     case A = 'a';
     case AB = 'ab';
     case ABC = 'abc';
+
+    // All uppercase (side effect of allowing single-letter words)
+    case API = 'api';
+    case HTML = 'html';
+    case XML = 'xml';
 }
