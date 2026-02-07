@@ -55,7 +55,7 @@ final class CaseMustBePascal implements Rule
 
     private function isPascalCase(EnumCase $node): bool
     {
-        return preg_match('/^([A-Z][a-z0-9]+)+$/', $node->name->toString()) === 1;
+        return preg_match('/^([A-Z][a-z0-9]*)+$/', $node->name->toString()) === 1;
     }
 
     private function isNotPascalCase(EnumCase $node): bool
