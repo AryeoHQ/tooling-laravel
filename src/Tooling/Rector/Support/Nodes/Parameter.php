@@ -16,9 +16,12 @@ use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\NullableTypeNode;
 use ReflectionNamedType;
 use ReflectionParameter;
+use Tooling\Rector\Support\Nodes\Concerns\FormatsTypesForDocBlock;
 
 final class Parameter
 {
+    use FormatsTypesForDocBlock;
+
     public readonly Method $of;
 
     public readonly string $name;
@@ -67,8 +70,8 @@ final class Parameter
     {
         $type = match ((bool) $this->type) {
             true => match ($this->allowsNull) {
-                true => new NullableTypeNode(new IdentifierTypeNode("\\{$this->type}")),
-                false => new IdentifierTypeNode("\\{$this->type}"),
+                true => new NullableTypeNode(new IdentifierTypeNode($this->formatTypeForDocBlock($this->type))),
+                false => new IdentifierTypeNode($this->formatTypeForDocBlock($this->type)),
             },
             false => null
         };
