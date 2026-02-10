@@ -12,9 +12,12 @@ use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionParameter;
+use Tooling\Rector\Support\Nodes\Concerns\FormatsTypesForDocBlock;
 
 final class Method
 {
+    use FormatsTypesForDocBlock;
+
     public string $of;
 
     public string $name;
@@ -91,7 +94,7 @@ final class Method
 
         return new MethodTagValueNode(
             $this->isStatic,
-            $type ? new IdentifierTypeNode("\\$type") : null,
+            $type ? new IdentifierTypeNode($this->formatTypeForDocBlock($type)) : null,
             data_get($this->aliases, 'name', $this->name),
             $this->parameters->map->toDocBlockTag()->all(), /** @phpstan-ignore-line Rector vendored dependencies seem to be confusing PHPstan*/
             $this->description ?? '',
