@@ -6,51 +6,28 @@ namespace Tooling\Rector\Rules;
 
 use Illuminate\Support\Collection;
 use PhpParser\Node;
-use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Enum_;
 use Rector\Contract\Rector\ConfigurableRectorInterface;
-use Rector\Rector\AbstractRector;
-use Symplify\RuleDocGenerator\ValueObject\CodeSample\ConfiguredCodeSample;
-use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
+use Tooling\Rector\Rules\Definitions\Attributes\Definition;
+use Tooling\Rector\Rules\Samples\Attributes\Sample;
+use Tooling\Rules\Attributes\NodeType;
 
 /**
  * @api
  *
  * @see \Rector\Tests\Transform\Rector\Class_\AddTraitByInterfaceRector\AddTraitByInterfaceRectorTest
  */
-final class AddTraitByInterface extends AbstractRector implements ConfigurableRectorInterface
+#[Definition('Add trait by implemented interface')]
+#[NodeType(Class_::class)]
+#[NodeType(Enum_::class)]
+#[Sample('tooling.rector.rules.samples')]
+final class AddTraitByInterface extends Rule implements ConfigurableRectorInterface
 {
-    /**
-     * @var array<string, string>
-     */
+    /** @var array<class-string, class-string> */
     private array $traitByInterface = [];
 
-    public function getRuleDefinition(): RuleDefinition
-    {
-        return new RuleDefinition('Add trait by implemented interface', [new ConfiguredCodeSample(<<<'CODE_SAMPLE'
-class SomeClass implements SomeInterface
-{
-}
-CODE_SAMPLE
-            , <<<'CODE_SAMPLE'
-class SomeClass implements SomeInterface
-{
-    use SomeTrait;
-}
-CODE_SAMPLE
-            , ['SomeInterface' => 'SomeTrait'])]);
-    }
-
-    /**
-     * @return array<class-string<Node>>
-     */
-    public function getNodeTypes(): array
-    {
-        return [Class_::class, Enum_::class];
-    }
-
-    public function refactor(Node $node): null|Node
+    public function handle(Node $node): null|Node
     {
         if (! $node instanceof Class_ && ! $node instanceof Enum_) {
             return null;
@@ -59,60 +36,19 @@ CODE_SAMPLE
         $hasChanged = false;
 
         foreach ($this->traitByInterface as $interfaceName => $traitName) {
-            if (! $this->implementsInterface($node, $interfaceName)) {
+            if (! $this->inherits($node, $interfaceName)) {
                 continue;
             }
 
-            if ($this->usesTrait($node, $traitName)) {
+            if ($this->inherits($node, $traitName)) {
                 continue;
             }
 
-            $traitUse = new Node\Stmt\TraitUse([new FullyQualified($traitName)]);
-            $node->stmts = array_merge([$traitUse], $node->stmts ?? []);
+            $this->ensureTraitIsUsed($node, $traitName);
             $hasChanged = true;
         }
 
-        if (! $hasChanged) {
-            return null;
-        }
-
-        return $node;
-    }
-
-    /**
-     * @param  Class_|Enum_  $node
-     */
-    private function implementsInterface(Node $node, string $interfaceName): bool
-    {
-        if (! $node instanceof Class_ && ! $node instanceof Enum_) {
-            return false;
-        }
-
-        foreach ($node->implements as $implement) {
-            $implementName = $this->getName($implement);
-            if ($implementName === $interfaceName) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * @param  Class_|Enum_  $node
-     */
-    private function usesTrait(Node $node, string $traitName): bool
-    {
-        foreach ($node->getTraitUses() as $traitUse) {
-            foreach ($traitUse->traits as $trait) {
-                $traitUseName = $this->getName($trait);
-                if ($traitUseName === $traitName) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return $hasChanged ? $node : null;
     }
 
     /**

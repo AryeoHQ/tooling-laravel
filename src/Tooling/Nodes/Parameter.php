@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tooling\Rector\Support\Nodes;
+namespace Tooling\Nodes;
 
 use LogicException;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprFalseNode;
@@ -16,7 +16,7 @@ use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\NullableTypeNode;
 use ReflectionNamedType;
 use ReflectionParameter;
-use Tooling\Rector\Support\Nodes\Concerns\FormatsTypesForDocBlock;
+use Tooling\Nodes\Concerns\FormatsTypesForDocBlock;
 
 final class Parameter
 {

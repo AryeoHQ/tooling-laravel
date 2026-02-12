@@ -23,6 +23,7 @@ class Provider extends ServiceProvider
     public function boot(): void
     {
         $this->bootCommands();
+        $this->bootViews();
     }
 
     public function register(): void
@@ -33,7 +34,7 @@ class Provider extends ServiceProvider
 
     private function mergeConfig(): void
     {
-        when($this->configPath, fn ($path) => $this->mergeConfigFrom($path, 'tooling'));
+        when($this->configPath, fn (string $path): null => $this->mergeConfigFrom($path, 'tooling'));
     }
 
     private function registerBindings(): void
@@ -97,5 +98,10 @@ class Provider extends ServiceProvider
             Rector\Console\Commands\Rector::class,
             Pint\Console\Commands\Pint::class
         );
+    }
+
+    private function bootViews(): void
+    {
+        $this->loadViewsFrom(__DIR__.'/../../resources/views/rector/rules', 'tooling.rector.rules.samples');
     }
 }

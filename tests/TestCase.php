@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Tests;
 
-use Orchestra\Testbench\Concerns\CreatesApplication;
+use Tooling\Provider;
 
 class TestCase extends \Orchestra\Testbench\TestCase
 {
-    use CreatesApplication;
+    protected function getPackageProviders($app): array
+    {
+        return [
+            Provider::class,
+        ];
+    }
 }

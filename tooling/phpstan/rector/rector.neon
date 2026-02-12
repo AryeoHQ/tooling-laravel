@@ -1,0 +1,5 @@
+services:
+    -
+        class: Tooling\PHPStan\Rules\Rector\RuleMustExtendRule
+        tags:
+            - phpstan.rules.rule

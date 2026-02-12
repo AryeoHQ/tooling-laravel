@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tooling\Rector\Support\Nodes;
+namespace Tooling\Nodes;
 
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
@@ -12,7 +12,7 @@ use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionParameter;
-use Tooling\Rector\Support\Nodes\Concerns\FormatsTypesForDocBlock;
+use Tooling\Nodes\Concerns\FormatsTypesForDocBlock;
 
 final class Method
 {

@@ -10,15 +10,14 @@ use PhpParser\Node;
 use PhpParser\Node\Stmt\ClassMethod;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ReflectionProvider;
-use PHPStan\Rules\IdentifierRuleError;
-use PHPStan\Rules\Rule;
-use PHPStan\Rules\RuleErrorBuilder;
-use PHPStan\ShouldNotHappenException;
+use Tooling\PHPStan\Rules\Rule;
+use Tooling\Rules\Attributes\NodeType;
 
 /**
- * @implements Rule<ClassMethod>
+ * @extends Rule<ClassMethod>
  */
-final class TestMethodMustNotHaveTestPrefix implements Rule
+#[NodeType(ClassMethod::class)]
+final class TestMethodMustNotHaveTestPrefix extends Rule
 {
     private readonly ReflectionProvider $reflectionProvider;
 
@@ -35,55 +34,24 @@ final class TestMethodMustNotHaveTestPrefix implements Rule
     }
 
     /**
-     * {@inheritDoc}
-     */
-    public function getNodeType(): string
-    {
-        return ClassMethod::class;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
      * @param  ClassMethod  $node
-     *
-     * @throws ShouldNotHappenException
      */
-    public function processNode(Node $node, Scope $scope): array
+    public function shouldHandle(Node $node, Scope $scope): bool
     {
-        return $this->passes($node, $scope) ? [] : $this->buildError($node);
-    }
-
-    private function passes(ClassMethod $node, Scope $scope): bool
-    {
-        return ! $this->violated($node, $scope);
-    }
-
-    private function violated(ClassMethod $node, Scope $scope): bool
-    {
-        // Ensure that the scope is a class.
         if (! $scope->isInClass()) {
             return false;
         }
 
         $scopeReflection = $scope->getClassReflection();
 
-        // Ensure that the class is concrete.
         if ($scopeReflection->isAbstract()) {
             return false;
         }
 
-        // Ensure that the method's class extends the allowed base TestCase class.
-        $subClassOf = $this->testCaseClasses->filter(
-            fn (string $testCaseClass) => $this->reflectionProvider->hasClass($testCaseClass)
-                && $scopeReflection->isSubclassOfClass($this->reflectionProvider->getClass($testCaseClass))
-        );
-
-        if ($subClassOf->isEmpty()) {
+        if (! $this->inherits($scopeReflection, $this->testCaseClasses->all(), $this->reflectionProvider)) {
             return false;
         }
 
-        // Ensure that the method is public.
         if (! $node->isPublic()) {
             return false;
         }
@@ -92,15 +60,14 @@ final class TestMethodMustNotHaveTestPrefix implements Rule
     }
 
     /**
-     * @return array<array-key, IdentifierRuleError>
+     * @param  ClassMethod  $node
      */
-    private function buildError(ClassMethod $node): array
+    public function handle(Node $node, Scope $scope): void
     {
-        return [
-            RuleErrorBuilder::message('Test method must not use `test` prefix.')
-                ->identifier('phpunit.testMethodMustNotHaveTestPrefix')
-                ->line($node->name->getStartLine())
-                ->build(),
-        ];
+        $this->error(
+            message: 'Test method must not use `test` prefix.',
+            line: $node->name->getStartLine(),
+            identifier: 'phpunit.testMethodMustNotHaveTestPrefix'
+        );
     }
 }

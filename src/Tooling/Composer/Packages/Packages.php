@@ -6,28 +6,32 @@ namespace Tooling\Composer\Packages;
 
 use BadMethodCallException;
 use Illuminate\Support\Collection;
+use IteratorAggregate;
 use Symfony\Component\Finder\SplFileInfo;
+use Traversable;
 
 use function Illuminate\Filesystem\join_paths;
 
 /**
  * @mixin Collection<array-key, Package>
+ *
+ * @implements IteratorAggregate<array-key, Package>
  */
-class Packages
+class Packages implements IteratorAggregate
 {
     public readonly false|string $vendorDirectory;
 
     public null|string $composerDirectory {
         get => $this->composerDirectory ??= when(
             $this->vendorDirectory,
-            fn ($directory) => join_paths($directory, 'composer')
+            fn (string $directory): string => join_paths($directory, 'composer')
         );
     }
 
     public null|SplFileInfo $installedManifestFile {
         get => $this->installedManifestFile ??= when(
             $this->composerDirectory,
-            fn ($directory) => new SplFileInfo($path = join_paths($directory, 'installed.json'), '', basename($path)),
+            fn (string $directory): SplFileInfo => new SplFileInfo($path = join_paths($directory, 'installed.json'), '', basename($path)),
         );
     }
 
@@ -74,5 +78,10 @@ class Packages
             },
             false => $result,
         };
+    }
+
+    public function getIterator(): Traversable
+    {
+        return $this->proxy->getIterator();
     }
 }

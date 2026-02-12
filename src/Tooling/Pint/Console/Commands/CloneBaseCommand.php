@@ -33,11 +33,17 @@ class CloneBaseCommand extends Command
     }
 
     protected null|SplFileInfo $baseCommandFile {
-        get => when($this->baseCommandPath, fn ($path) => new SplFileInfo($path, '', basename($path)));
+        get => when(
+            $this->baseCommandPath,
+            fn (string $path): SplFileInfo => new SplFileInfo($path, '', basename($path))
+        );
     }
 
     protected null|Stringable $baseCommandContent {
-        get => when($this->baseCommandFile, fn ($file) => str($file->getContents()));
+        get => when(
+            $this->baseCommandFile,
+            fn (SplFileInfo $file): Stringable => str($file->getContents())
+        );
     }
 
     public function handle(): void

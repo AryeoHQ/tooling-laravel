@@ -58,7 +58,7 @@ class Composer
     public Package $selfAsPackage {
         get => $this->selfAsPackage ??= when(
             realpath(__DIR__.'/../../../composer.json'),
-            fn (string $path) => new Package(
+            fn (string $path): Package => new Package(
                 json_decode(new SplFileInfo($path, '', basename($path))->getContents())
             )
         );

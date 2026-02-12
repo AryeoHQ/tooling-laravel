@@ -2,6 +2,7 @@ parameters:
     reportUnmatchedIgnoredErrors: false
     stubFiles:
         - stubs/Fluent.stub
+        - stubs/helpers.stub
     universalObjectCratesClasses:
         - Illuminate\Support\Fluent
     paths:

@@ -9,17 +9,17 @@ use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\StaticCall;
 use PHPStan\Analyser\Scope;
-use PHPStan\Rules\IdentifierRuleError;
-use PHPStan\Rules\Rule;
-use PHPStan\Rules\RuleErrorBuilder;
+use Tooling\PHPStan\Rules\Rule;
+use Tooling\Rules\Attributes\NodeType;
 
 /**
- * @implements Rule<Node\Expr>
+ * @extends Rule<Node\Expr>
  */
-final class DisallowDirectUsage implements Rule
+#[NodeType(Node\Expr::class)]
+final class DisallowDirectUsage extends Rule
 {
     /** @var string[] */
-    private const DISALLOWED = [
+    public const DISALLOWED = [
         'Carbon',
         'CarbonImmutable',
         'Carbon\\Carbon',
@@ -28,27 +28,8 @@ final class DisallowDirectUsage implements Rule
         'Illuminate\\Support\\CarbonImmutable',
     ];
 
-    public function getNodeType(): string
+    public function shouldHandle(Node $node, Scope $scope): bool
     {
-        return Node\Expr::class;
-    }
-
-    /**
-     * @param  Node\Expr  $node
-     */
-    public function processNode(Node $node, Scope $scope): array
-    {
-        return $this->passes($node, $scope) ? [] : $this->buildError($node);
-    }
-
-    private function passes(Node\Expr $node, Scope $scope): bool
-    {
-        return ! $this->violated($node, $scope);
-    }
-
-    private function violated(Node\Expr $node, Scope $scope): bool
-    {
-        // Only process the specific node types we care about
         if (! ($node instanceof New_ || $node instanceof StaticCall || $node instanceof ClassConstFetch)) {
             return false;
         }
@@ -59,6 +40,7 @@ final class DisallowDirectUsage implements Rule
         }
 
         $class = $this->findClassName($node, $scope);
+
         if ($class === null) {
             return false;
         }
@@ -68,30 +50,25 @@ final class DisallowDirectUsage implements Rule
         );
     }
 
+    /**
+     * @param  Node\Expr  $node
+     */
+    public function handle(Node $node, Scope $scope): void
+    {
+        $this->error(
+            message: 'Direct use of Carbon is disallowed; use the `Date` facade instead, e.g. `Date::now()`.',
+            line: $node->getStartLine(),
+            identifier: 'carbon.disallowDirectUsage'
+        );
+    }
+
     private function findClassName(Node\Expr $node, Scope $scope): null|string
     {
-        if ($node instanceof New_ && $node->class instanceof Node\Name) {
-            return $scope->resolveName($node->class);
-        }
-        if ($node instanceof StaticCall && $node->class instanceof Node\Name) {
-            return $scope->resolveName($node->class);
-        }
-        if ($node instanceof ClassConstFetch && $node->class instanceof Node\Name) {
+        if (($node instanceof New_ || $node instanceof StaticCall || $node instanceof ClassConstFetch)
+            && $node->class instanceof Node\Name) {
             return $scope->resolveName($node->class);
         }
 
         return null;
-    }
-
-    /**
-     * @return array<int, IdentifierRuleError>
-     */
-    private function buildError(Node\Expr $node): array
-    {
-        return [
-            RuleErrorBuilder::message('Direct use of Carbon is disallowed; use the `Date` facade instead, e.g. `Date::now()`.')
-                ->identifier('carbon.disallowDirectUsage')
-                ->build(),
-        ];
     }
 }
