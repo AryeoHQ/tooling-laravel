@@ -8,6 +8,6 @@ parameters:
         - identifier: phpstanApi.runtimeReflection
 services:
     -
-        class: Tooling\PHPStan\Rules\PHPStan\RuleMustExtendRule
+        class: Tooling\PhpStan\Rules\PhpStan\RuleMustExtendRule
         tags:
             - phpstan.rules.rule

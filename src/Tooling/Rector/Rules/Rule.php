@@ -36,11 +36,11 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
 
     protected UseNodesToAddCollector $useNodesToAddCollector;
 
-    protected null|Sample $sample {
+    final protected null|Sample $sample {
         get => collect(new ReflectionClass($this)->getAttributes(Sample::class))->first()?->newInstance()->for($this);
     }
 
-    protected null|Definition $definition {
+    final protected null|Definition $definition {
         get => collect(new ReflectionClass($this)->getAttributes(Definition::class))->first()?->newInstance();
     }
 
@@ -54,25 +54,25 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
         return true;
     }
 
-    public function shouldRefactor(\PhpParser\Node $node): bool
+    final protected function shouldRefactor(\PhpParser\Node $node): bool
     {
         return $this->nodeTypes->filter(fn (NodeType $allowed) => $node instanceof $allowed->class)->isNotEmpty()
             && $this->shouldHandle($node);
     }
 
-    public function refactor(\PhpParser\Node $node): null|\PhpParser\Node
+    final public function refactor(\PhpParser\Node $node): null|\PhpParser\Node
     {
         return $this->shouldRefactor($node) ? $this->handle($node) : null;
     }
 
-    public function getNodeTypes(): array
+    final public function getNodeTypes(): array
     {
         throw_unless($this->nodeTypes->isNotEmpty(), NodeTypeMissing::class, $this);
 
         return $this->nodeTypes->map->class->all();
     }
 
-    public function getRuleDefinition(): RuleDefinition
+    final public function getRuleDefinition(): RuleDefinition
     {
         throw_unless($this->definition, DefinitionMissing::class, $this);
         throw_unless($this->sample, SampleMissing::class, $this);

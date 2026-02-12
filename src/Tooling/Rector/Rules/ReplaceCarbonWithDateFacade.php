@@ -8,7 +8,7 @@ use PhpParser\Node;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\StaticCall;
 use Rector\StaticTypeMapper\ValueObject\Type\FullyQualifiedObjectType;
-use Tooling\PHPStan\Rules\Carbon\DisallowDirectUsage;
+use Tooling\PhpStan\Rules\Carbon\DisallowDirectUsage;
 use Tooling\Rector\Rules\Definitions\Attributes\Definition;
 use Tooling\Rector\Rules\Samples\Attributes\Sample;
 use Tooling\Rules\Attributes\NodeType;

@@ -1,6 +1,6 @@
 <?php
 
-use Tooling\PHPStan\Discovery;
+use Tooling\PhpStan\Discovery;
 
 $discovery = new Discovery;
 

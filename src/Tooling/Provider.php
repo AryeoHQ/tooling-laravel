@@ -39,15 +39,15 @@ class Provider extends ServiceProvider
 
     private function registerBindings(): void
     {
-        $this->registerBindingsForPHPStan();
+        $this->registerBindingsForPhpStan();
         $this->registerBindingsForRector();
     }
 
-    private function registerBindingsForPHPStan(): void
+    private function registerBindingsForPhpStan(): void
     {
         tap(
             AnalyseCommand::class, // @phpstan-ignore phpstanApi.classConstant
-            fn ($commandClass) => app()->when(PHPStan\Console\Inspector::class)->needs($commandClass)->give(
+            fn ($commandClass) => app()->when(PhpStan\Console\Inspector::class)->needs($commandClass)->give(
                 fn () => with(
                     new ReflectionClass($commandClass),
                     fn (ReflectionClass $reflection) => tap(
@@ -94,7 +94,7 @@ class Provider extends ServiceProvider
         $this->commands(
             ToolingDiscover::class,
             CloneBaseCommand::class,
-            PHPStan\Console\Commands\PHPStan::class,
+            PhpStan\Console\Commands\PhpStan::class,
             Rector\Console\Commands\Rector::class,
             Pint\Console\Commands\Pint::class
         );

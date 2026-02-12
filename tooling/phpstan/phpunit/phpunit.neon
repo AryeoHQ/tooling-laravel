@@ -28,25 +28,25 @@ parametersSchema:
     ])
 services:
     -
-        class: Tooling\PHPStan\Rules\PHPUnit\TestClassMustExtendTestCase
+        class: Tooling\PhpStan\Rules\PhpUnit\TestClassMustExtendTestCase
         tags:
             - phpstan.rules.rule
         arguments:
             testCaseClass: %aryeo.tests.testCaseClass%
     -
-        class: Tooling\PHPStan\Rules\PHPUnit\TestMethodMustNotHaveTestPrefix
+        class: Tooling\PhpStan\Rules\PhpUnit\TestMethodMustNotHaveTestPrefix
         tags:
             - phpstan.rules.rule
         arguments:
             testCaseClass: %aryeo.tests.testCaseClass%
     -
-        class: Tooling\PHPStan\Rules\PHPUnit\TestMethodNameMustBeSnakeCase
+        class: Tooling\PhpStan\Rules\PhpUnit\TestMethodNameMustBeSnakeCase
         tags:
             - phpstan.rules.rule
         arguments:
             testCaseClass: %aryeo.tests.testCaseClass%
     -
-        class: Tooling\PHPStan\Rules\PHPUnit\TestMethodMustHaveTestAttribute
+        class: Tooling\PhpStan\Rules\PhpUnit\TestMethodMustHaveTestAttribute
         tags:
             - phpstan.rules.rule
         arguments:
