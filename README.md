@@ -1,13 +1,20 @@
 # Tooling for Laravel
-Unified Artisan commands and with preconfigured rules for PHPStan, Rector, and Laravel Pint.
+
+Unified Artisan commands with preconfigured rules for [PHPStan](docs/phpstan.md), [Rector](docs/rector.md), and [Laravel Pint](docs/pint.md).
+
+Each tool ships with an opinionated configuration out of the box. All native CLI arguments and options are forwarded through the Artisan commands, so everything you can do with the underlying tool directly is available here.
 
 ## Installation
+
 ```bash
 composer require aryeo/tooling-laravel
 ```
 
+> Requires PHP 8.4+
+
 ## Configuration
-You can instruct each tool which paths to inspect using:
+
+Instruct each tool which paths to analyse using environment variables:
 
 ### In a Laravel Application `.env`:
 ```env
@@ -24,8 +31,9 @@ env:
   - PINT_PATHS=src,tests
 ```
 
+The config file (`config/tooling.php`) maps these environment variables to the appropriate CLI arguments for each tool and sets the default configuration file paths. You generally don't need to modify it.
+
 ## Usage
-The commands you use depend on your context:
 
 ### In a Laravel Application:
 ```bash
@@ -41,10 +49,32 @@ php ./vendor/bin/testbench tooling:pint
 php ./vendor/bin/testbench tooling:rector
 ```
 
-## Extending Tooling
-Additional configurations can be registered via `composer.json`:
+All native CLI options are forwarded. For example:
 
-> Note: Packages that register configurations will be automatically available when installed as a dependency.
+```bash
+php artisan tooling:rector --dry-run
+php artisan tooling:phpstan --generate-baseline
+php artisan tooling:pint --test
+```
+
+### Discovery
+
+The `tooling:discover` command rebuilds the cached tooling manifest by scanning all installed packages for tooling configurations. This runs **automatically** after `composer install` and `composer update` via a Composer plugin — you typically don't need to run it manually.
+
+```bash
+php artisan tooling:discover
+```
+
+#### How Discovery Works
+
+1. A Composer plugin fires on `post-autoload-dump`
+2. It runs `tooling:discover`, which scans every installed package's `extra.tooling`
+3. A manifest is cached at `vendor/aryeo/tooling-laravel/cache/configurations.php`
+4. PHPStan and Rector read from this manifest at runtime to load all registered configurations
+
+## Extending Tooling
+
+Packages can register their own PHPStan and Rector configurations via `composer.json`. When the package is installed as a dependency, its rules are automatically discovered and loaded.
 
 ```json
 {
@@ -59,14 +89,16 @@ Additional configurations can be registered via `composer.json`:
 }
 ```
 
-### Considerations
-Sometimes it is necessary for fixtures to purposefully violate domain specific PHPStan rules. Similarly, Rector rules that automatically fix these PHPStan violations for developer convenience may also exist.
+See [PHPStan — Registering Rules](docs/phpstan.md#registering-rules) and [Rector — Registering Rules](docs/rector.md#registering-rules) for details on each format.
 
-However, this will either incorrectly cause PHPStan (and by extension CI) to fail or override the developers intent of creating an "incorrect" setup for the purposes of testing.
+## Considerations
 
-To provide affordance for these testing scenarios, we have adopted the standard that classes within a `Fixtures` namespace anywhere in `Tests` should be ignored for PHPStan & Rector rules. It is your responsibility to write your rules to account for this affordance if appropriate.
+### Fixtures Namespace
 
-#### Example
+Sometimes test fixtures purposefully violate domain-specific rules. To avoid false failures in PHPStan or unintended corrections by Rector, classes within a `Fixtures` namespace anywhere in `Tests` should be excluded from your rules.
+
+It is your responsibility to account for this in any custom rules you write:
+
 ```php
 $className = $node->namespacedName?->toString() ?? '';
 
@@ -74,3 +106,5 @@ if (str($className)->is('Tests\\*Fixtures\\*')) {
     return [];
 }
 ```
+
+The base rule classes documented in [PHPStan](docs/phpstan.md) and [Rector](docs/rector.md) do not enforce this automatically — the check belongs in your `shouldHandle()` method where contextually appropriate.

@@ -1,4 +1,13 @@
 includes:
+    - ../rector/rector.neon
     - %rootDir%/../../../vendor/phpstan/phpstan-deprecation-rules/rules.neon
     - %rootDir%/../../../vendor/phpstan/phpstan-strict-rules/rules.neon
     - phar://phpstan.phar/conf/bleedingEdge.neon
+parameters:
+    ignoreErrors:
+        - identifier: phpstanApi.runtimeReflection
+services:
+    -
+        class: Tooling\PHPStan\Rules\PHPStan\RuleMustExtendRule
+        tags:
+            - phpstan.rules.rule

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tooling\Rector\Support\Nodes\Concerns;
+namespace Tooling\Nodes\Concerns;
 
 trait FormatsTypesForDocBlock
 {
@@ -32,7 +32,11 @@ trait FormatsTypesForDocBlock
     {
         $cleanType = ltrim($type, '\\');
 
-        // If it's a built-in type, return as-is. Otherwise, add a leading backslash.
-        return in_array($cleanType, $this->builtInTypes, true) ? $cleanType : "\\{$cleanType}";
+        return $this->isBuiltInType($cleanType) ? $cleanType : "\\{$cleanType}";
+    }
+
+    private function isBuiltInType(string $type): bool
+    {
+        return in_array(ltrim($type, '\\'), $this->builtInTypes, true);
     }
 }

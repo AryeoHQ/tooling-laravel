@@ -10,15 +10,14 @@ use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ReflectionProvider;
-use PHPStan\Rules\IdentifierRuleError;
-use PHPStan\Rules\Rule;
-use PHPStan\Rules\RuleErrorBuilder;
-use PHPStan\ShouldNotHappenException;
+use Tooling\PHPStan\Rules\Rule;
+use Tooling\Rules\Attributes\NodeType;
 
 /**
- * @implements Rule<Class_>
+ * @extends Rule<Class_>
  */
-final class TestClassMustExtendTestCase implements Rule
+#[NodeType(Class_::class)]
+final class TestClassMustExtendTestCase extends Rule
 {
     private readonly ReflectionProvider $reflectionProvider;
 
@@ -35,31 +34,9 @@ final class TestClassMustExtendTestCase implements Rule
     }
 
     /**
-     * {@inheritDoc}
-     */
-    public function getNodeType(): string
-    {
-        return Class_::class;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
      * @param  Class_  $node
-     *
-     * @throws ShouldNotHappenException
      */
-    public function processNode(Node $node, Scope $scope): array
-    {
-        return $this->passes($node) ? [] : $this->buildError($node);
-    }
-
-    private function passes(Class_ $node): bool
-    {
-        return ! $this->violated($node);
-    }
-
-    private function violated(Class_ $node): bool
+    public function shouldHandle(Node $node, Scope $scope): bool
     {
         if ($node->isAbstract()) {
             return false;
@@ -77,47 +54,19 @@ final class TestClassMustExtendTestCase implements Rule
             return false;
         }
 
-        return $this->doesNotExtendTestCase($node);
+        return $this->doesNotInherit(
+            $node, $this->testCaseClasses->all(), $this->reflectionProvider
+        );
     }
 
-    private function extendsTestCase(Class_ $node, string $testCaseClass): bool
+    public function handle(Node $node, Scope $scope): void
     {
-        $className = $node->namespacedName?->toString() ?? $node->name?->toString();
-        if ($className === null) {
-            return false;
-        }
+        $classes = $this->testCaseClasses->join(', ', ', or ');
 
-        if (! $this->reflectionProvider->hasClass($className)) {
-            return false;
-        }
-
-        $classReflection = $this->reflectionProvider->getClass($className);
-
-        if (! $this->reflectionProvider->hasClass($testCaseClass)) {
-            return false;
-        }
-
-        return $classReflection->isSubclassOfClass($this->reflectionProvider->getClass($testCaseClass));
-    }
-
-    private function doesNotExtendTestCase(Class_ $node): bool
-    {
-        return $this->testCaseClasses->filter(
-            fn (string $testCaseClass) => $this->extendsTestCase($node, $testCaseClass)
-        )->isEmpty();
-    }
-
-    /**
-     * @return array<array-key, IdentifierRuleError>
-     */
-    private function buildError(Class_ $node): array
-    {
-        $classes = $this->testCaseClasses->join(', ', ' or ');
-
-        return [
-            RuleErrorBuilder::message("Test class must extend: {$classes}.")
-                ->identifier('phpunit.testClassMustExtendTestCase')
-                ->build(),
-        ];
+        $this->error(
+            message: "Test class must extend: {$classes}.",
+            line: $node->getStartLine(),
+            identifier: 'phpunit.testClassMustExtendTestCase'
+        );
     }
 }
