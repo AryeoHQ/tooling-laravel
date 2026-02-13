@@ -15,7 +15,7 @@ trait ValidatesInheritance
     /**
      * @param  string|array<int, string>  $expected
      */
-    protected function inherits(Class_|Enum_ $node, string|array $expected): bool
+    final protected function inherits(Class_|Enum_ $node, string|array $expected): bool
     {
         return $this->inheritsDirectly($node, $expected) || $this->inheritsDeeply($node, $expected);
     }
@@ -23,7 +23,7 @@ trait ValidatesInheritance
     /**
      * @param  string|array<int, string>  $expected
      */
-    protected function doesNotInherit(Class_|Enum_ $node, string|array $expected): bool
+    final protected function doesNotInherit(Class_|Enum_ $node, string|array $expected): bool
     {
         return ! $this->inherits($node, $expected);
     }

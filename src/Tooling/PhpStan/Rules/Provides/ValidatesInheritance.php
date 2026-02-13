@@ -16,7 +16,7 @@ trait ValidatesInheritance
     /**
      * @param  string|array<int, string>  $expected
      */
-    protected function inherits(Class_|Enum_|ClassReflection $node, string|array $expected, ReflectionProvider $reflectionProvider): bool
+    final protected function inherits(Class_|Enum_|ClassReflection $node, string|array $expected, ReflectionProvider $reflectionProvider): bool
     {
         if ($node instanceof ClassReflection) {
             return $this->inheritsViaReflection($node, $expected);
@@ -28,7 +28,7 @@ trait ValidatesInheritance
     /**
      * @param  string|array<int, string>  $expected
      */
-    protected function doesNotInherit(Class_|Enum_|ClassReflection $node, string|array $expected, ReflectionProvider $reflectionProvider): bool
+    final protected function doesNotInherit(Class_|Enum_|ClassReflection $node, string|array $expected, ReflectionProvider $reflectionProvider): bool
     {
         return ! $this->inherits($node, $expected, $reflectionProvider);
     }
@@ -36,7 +36,7 @@ trait ValidatesInheritance
     /**
      * @param  string|array<int, string>  $expected
      */
-    protected function inheritsDirectly(Class_|Enum_ $node, string|array $expected): bool
+    private function inheritsDirectly(Class_|Enum_ $node, string|array $expected): bool
     {
         if (! $node instanceof Class_) {
             return false;
