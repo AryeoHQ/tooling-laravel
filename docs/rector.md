@@ -161,11 +161,10 @@ $this->doesNotInherit($node, 'Some\BaseClass');
 
 #### `ValidatesAttributes`
 
-Check for PHP attributes on classes or methods:
+Check for PHP attributes on classes, methods, functions, or properties:
 
 ```php
-$this->classHasAttribute($node, 'App\Attributes\SomeAttribute');
-$this->methodHasAttribute('App\Attributes\Route', $methodNode);
+$this->hasAttribute($node, 'App\Attributes\SomeAttribute');
 ```
 
 #### `EnsuresInterfaces`
