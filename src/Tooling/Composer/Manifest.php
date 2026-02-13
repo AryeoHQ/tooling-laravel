@@ -88,11 +88,11 @@ final class Manifest
     private function collectPhpStan(): Collection
     {
         return $this->packages->map(
-            fn (Package $package): null|string => $this->extractPHPStan($package)
+            fn (Package $package): null|string => $this->extractPhpStan($package)
         )->flatten()->filter()->unique()->values();
     }
 
-    private function extractPHPStan(Package $package): null|string
+    private function extractPhpStan(Package $package): null|string
     {
         $configuration = data_get($package, 'extra.tooling.phpstan');
 
