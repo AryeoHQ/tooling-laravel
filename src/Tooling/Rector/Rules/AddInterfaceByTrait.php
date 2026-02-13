@@ -14,9 +14,7 @@ use Tooling\Rector\Rules\Samples\Attributes\Sample;
 use Tooling\Rules\Attributes\NodeType;
 
 /**
- * @api used in rector-doctrine
- *
- * @see \Rector\Tests\Transform\Rector\Class_\AddInterfaceByTraitRector\AddInterfaceByTraitRectorTest
+ * @extends Rule<Node>
  */
 #[Definition('Add interface by used trait')]
 #[NodeType(Class_::class)]

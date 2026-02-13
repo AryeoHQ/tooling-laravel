@@ -13,6 +13,9 @@ use Tooling\Rector\Rules\Definitions\Attributes\Definition;
 use Tooling\Rector\Rules\Samples\Attributes\Sample;
 use Tooling\Rules\Attributes\NodeType;
 
+/**
+ * @extends Rule<Node>
+ */
 #[Definition('Replace direct Carbon usage with the Date facade')]
 #[NodeType(StaticCall::class)]
 #[NodeType(New_::class)]

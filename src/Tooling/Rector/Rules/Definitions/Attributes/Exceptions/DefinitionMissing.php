@@ -9,6 +9,7 @@ use Tooling\Rector\Rules\Rule;
 
 class DefinitionMissing extends RuntimeException
 {
+    /** @param Rule<\PhpParser\Node> $rule */
     public function __construct(Rule $rule)
     {
         parent::__construct(

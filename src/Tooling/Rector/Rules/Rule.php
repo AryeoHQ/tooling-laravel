@@ -23,7 +23,9 @@ use Tooling\Rules\Attributes\NodeType;
 use Tooling\Rules\Provides\DefinesNodeTypes;
 
 /**
- * @implements Contracts\Rule<Node>
+ * @template TNodeType of Node
+ *
+ * @implements Contracts\Rule<TNodeType>
  */
 abstract class Rule extends AbstractRector implements Contracts\Rule
 {

@@ -14,9 +14,7 @@ use Tooling\Rector\Rules\Samples\Attributes\Sample;
 use Tooling\Rules\Attributes\NodeType;
 
 /**
- * @api
- *
- * @see \Rector\Tests\Transform\Rector\Class_\AddTraitByInterfaceRector\AddTraitByInterfaceRectorTest
+ * @extends Rule<Node>
  */
 #[Definition('Add trait by implemented interface')]
 #[NodeType(Class_::class)]
