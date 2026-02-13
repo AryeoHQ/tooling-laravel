@@ -161,7 +161,7 @@ $this->doesNotInherit($node, 'Some\BaseClass');
 
 #### `ValidatesAttributes`
 
-Check for PHP attributes on any node type that supports them (classes, methods, functions, closures, properties, constants, enum cases, parameters, and property hooks):
+Check for PHP attributes on any node type that supports them (classes, methods, functions, closures, arrow functions, properties, constants, enum cases, parameters, and property hooks):
 
 ```php
 $this->hasAttribute($node, 'App\Attributes\SomeAttribute');
