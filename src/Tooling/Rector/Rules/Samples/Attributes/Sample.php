@@ -15,6 +15,7 @@ class Sample
 {
     public readonly string $namespace;
 
+    /** @var Rule<\PhpParser\Node> */
     public readonly Rule $for;
 
     public string $name {
@@ -26,6 +27,7 @@ class Sample
         $this->namespace = $namespace;
     }
 
+    /** @param Rule<\PhpParser\Node> $rule */
     public function for(Rule $rule): static
     {
         $this->for = $rule;
