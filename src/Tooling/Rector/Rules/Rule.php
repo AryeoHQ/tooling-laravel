@@ -63,7 +63,7 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
     {
         throw_unless($this->nodeTypes->isNotEmpty(), NodeTypeMissing::class, $this);
 
-        return $this->nodeTypes->map(fn (NodeType $nodeType) => $nodeType->class)->all();
+        return $this->nodeTypes->map->class->all();
     }
 
     final public function getRuleDefinition(): RuleDefinition
