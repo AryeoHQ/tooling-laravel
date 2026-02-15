@@ -12,7 +12,6 @@ use Tooling\Rector\Rules\Definitions\Attributes\Definition;
 use Tooling\Rector\Rules\Definitions\Attributes\Exceptions\DefinitionMissing;
 use Tooling\Rector\Rules\Provides\EnsuresInterfaces;
 use Tooling\Rector\Rules\Provides\EnsuresTraits;
-use Tooling\Rector\Rules\Provides\ParsesNodes;
 use Tooling\Rector\Rules\Provides\ValidatesAttributes;
 use Tooling\Rector\Rules\Provides\ValidatesInheritance;
 use Tooling\Rector\Rules\Samples\Attributes\Exceptions\SampleMissing;
@@ -31,7 +30,6 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
     use DefinesNodeTypes;
     use EnsuresInterfaces;
     use EnsuresTraits;
-    use ParsesNodes;
     use ValidatesAttributes;
     use ValidatesInheritance;
 

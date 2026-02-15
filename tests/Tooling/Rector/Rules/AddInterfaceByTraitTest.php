@@ -7,24 +7,26 @@ namespace Tests\Tooling\Rector\Rules;
 use PhpParser\Node\Stmt\Class_;
 use PHPUnit\Framework\Attributes\Test;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
-use Tests\TestCase;
-use Tests\Tooling\Concerns\GetsFixtures;
 use Tests\Fixtures\Tooling\Concern;
 use Tests\Fixtures\Tooling\Contract;
+use Tests\TestCase;
+use Tests\Tooling\Concerns\GetsFixtures;
 use Tooling\Rector\Rules\AddInterfaceByTrait;
-use Tooling\Rector\Rules\Provides\ParsesNodes;
 use Tooling\Rector\Rules\Provides\ValidatesInheritance;
+use Tooling\Rector\Testing\ParsesNodes;
+use Tooling\Rector\Testing\ResolvesRectorRules;
 
 class AddInterfaceByTraitTest extends TestCase
 {
     use GetsFixtures;
     use ParsesNodes;
+    use ResolvesRectorRules;
     use ValidatesInheritance;
 
     #[Test]
     public function it_has_rule_definition(): void
     {
-        $rule = app(AddInterfaceByTrait::class);
+        $rule = $this->resolveRule(AddInterfaceByTrait::class);
 
         $ruleDefinition = $rule->getRuleDefinition();
 
@@ -39,7 +41,7 @@ class AddInterfaceByTraitTest extends TestCase
 
         $this->assertFalse($this->inherits($classNode, Contract::class));
 
-        $rule = app(AddInterfaceByTrait::class);
+        $rule = $this->resolveRule(AddInterfaceByTrait::class);
         $rule->configure([Concern::class => Contract::class]);
 
         $result = $rule->refactor($classNode);
@@ -55,7 +57,7 @@ class AddInterfaceByTraitTest extends TestCase
 
         $this->assertTrue($this->inherits($classNode, Contract::class));
 
-        $rule = app(AddInterfaceByTrait::class);
+        $rule = $this->resolveRule(AddInterfaceByTrait::class);
         $rule->configure([Concern::class => Contract::class]);
 
         $result = $rule->refactor($classNode);
@@ -68,7 +70,7 @@ class AddInterfaceByTraitTest extends TestCase
     {
         $classNode = $this->getClassNode($this->getFixturePath('ClassWithInterface.php'));
 
-        $rule = app(AddInterfaceByTrait::class);
+        $rule = $this->resolveRule(AddInterfaceByTrait::class);
         $rule->configure([Concern::class => Contract::class]);
 
         $result = $rule->refactor($classNode);

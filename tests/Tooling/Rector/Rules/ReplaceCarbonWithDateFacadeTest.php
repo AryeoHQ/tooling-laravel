@@ -17,15 +17,17 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tests\Tooling\Concerns\GetsFixtures;
 use Tooling\Rector\Rules\ReplaceCarbonWithDateFacade;
+use Tooling\Rector\Testing\ResolvesRectorRules;
 
 class ReplaceCarbonWithDateFacadeTest extends TestCase
 {
     use GetsFixtures;
+    use ResolvesRectorRules;
 
     #[Test]
     public function it_has_rule_definition(): void
     {
-        $rule = app(ReplaceCarbonWithDateFacade::class);
+        $rule = $this->resolveRule(ReplaceCarbonWithDateFacade::class);
 
         $ruleDefinition = $rule->getRuleDefinition();
 
@@ -40,7 +42,7 @@ class ReplaceCarbonWithDateFacadeTest extends TestCase
             StaticCall::class,
         );
 
-        $rule = app(ReplaceCarbonWithDateFacade::class);
+        $rule = $this->resolveRule(ReplaceCarbonWithDateFacade::class);
         $result = $rule->refactor($node);
 
         $this->assertInstanceOf(StaticCall::class, $result);
@@ -57,7 +59,7 @@ class ReplaceCarbonWithDateFacadeTest extends TestCase
             New_::class,
         );
 
-        $rule = app(ReplaceCarbonWithDateFacade::class);
+        $rule = $this->resolveRule(ReplaceCarbonWithDateFacade::class);
         $result = $rule->refactor($node);
 
         $this->assertInstanceOf(StaticCall::class, $result);
@@ -75,7 +77,7 @@ class ReplaceCarbonWithDateFacadeTest extends TestCase
             StaticCall::class,
         );
 
-        $rule = app(ReplaceCarbonWithDateFacade::class);
+        $rule = $this->resolveRule(ReplaceCarbonWithDateFacade::class);
         $result = $rule->refactor($node);
 
         $this->assertInstanceOf(StaticCall::class, $result);
@@ -92,7 +94,7 @@ class ReplaceCarbonWithDateFacadeTest extends TestCase
             StaticCall::class,
         );
 
-        $rule = app(ReplaceCarbonWithDateFacade::class);
+        $rule = $this->resolveRule(ReplaceCarbonWithDateFacade::class);
         $result = $rule->refactor($node);
 
         $this->assertNull($result);
