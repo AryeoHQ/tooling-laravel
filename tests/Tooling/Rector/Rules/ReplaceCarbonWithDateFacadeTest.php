@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Tooling\Rector\Rules;
 
+use Illuminate\Support\Facades\Date;
 use PhpParser\Node;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Name\FullyQualified;
 use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\NameResolver;
@@ -42,7 +44,8 @@ class ReplaceCarbonWithDateFacadeTest extends TestCase
         $result = $rule->refactor($node);
 
         $this->assertInstanceOf(StaticCall::class, $result);
-        $this->assertSame('Date', $result->class->toString());
+        $this->assertInstanceOf(FullyQualified::class, $result->class);
+        $this->assertSame(Date::class, $result->class->toString());
         $this->assertSame('now', $result->name->toString());
     }
 
@@ -58,7 +61,8 @@ class ReplaceCarbonWithDateFacadeTest extends TestCase
         $result = $rule->refactor($node);
 
         $this->assertInstanceOf(StaticCall::class, $result);
-        $this->assertSame('Date', $result->class->toString());
+        $this->assertInstanceOf(FullyQualified::class, $result->class);
+        $this->assertSame(Date::class, $result->class->toString());
         $this->assertSame('create', $result->name->toString());
         $this->assertCount(1, $result->args);
     }
@@ -75,7 +79,8 @@ class ReplaceCarbonWithDateFacadeTest extends TestCase
         $result = $rule->refactor($node);
 
         $this->assertInstanceOf(StaticCall::class, $result);
-        $this->assertSame('Date', $result->class->toString());
+        $this->assertInstanceOf(FullyQualified::class, $result->class);
+        $this->assertSame(Date::class, $result->class->toString());
         $this->assertSame('now', $result->name->toString());
     }
 

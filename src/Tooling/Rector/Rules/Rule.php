@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tooling\Rector\Rules;
 
 use PhpParser\Node;
-use Rector\PostRector\Collector\UseNodesToAddCollector;
 use Rector\Rector\AbstractRector;
 use ReflectionClass;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
@@ -36,8 +35,6 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
     use ValidatesAttributes;
     use ValidatesInheritance;
 
-    protected UseNodesToAddCollector $useNodesToAddCollector;
-
     final protected null|Sample $sample {
         get => collect(new ReflectionClass($this)->getAttributes(Sample::class))->first()?->newInstance()->for($this);
     }
@@ -46,10 +43,7 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
         get => collect(new ReflectionClass($this)->getAttributes(Definition::class))->first()?->newInstance();
     }
 
-    public function __construct(UseNodesToAddCollector $useNodesToAddCollector)
-    {
-        $this->useNodesToAddCollector = $useNodesToAddCollector;
-    }
+    public function prepare(\PhpParser\Node $node): void {}
 
     public function shouldHandle(\PhpParser\Node $node): bool
     {
@@ -71,7 +65,7 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
     {
         throw_unless($this->nodeTypes->isNotEmpty(), NodeTypeMissing::class, $this);
 
-        return $this->nodeTypes->map->class->all();
+        return $this->nodeTypes->map(fn (NodeType $nodeType) => $nodeType->class)->all();
     }
 
     final public function getRuleDefinition(): RuleDefinition

@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace Tooling\Rector\Rules\Provides;
 
-use Illuminate\Support\Str;
-use PhpParser\Node\Name;
+use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Class_;
-use Rector\StaticTypeMapper\ValueObject\Type\FullyQualifiedObjectType;
-use Throwable;
 
 trait EnsuresInterfaces
 {
@@ -18,15 +15,7 @@ trait EnsuresInterfaces
             return $node;
         }
 
-        try {
-            $this->useNodesToAddCollector->addUseImport(
-                new FullyQualifiedObjectType($interface)
-            );
-        } catch (Throwable $e) {
-            // continue without adding the use statement
-        }
-
-        $interfaceNode = new Name(Str::afterLast($interface, '\\'));
+        $interfaceNode = new FullyQualified(ltrim($interface, '\\'));
 
         if ($node->implements === []) {
             $node->implements = [$interfaceNode];

@@ -63,12 +63,8 @@ final class TestMethodMustHaveTestAttribute extends Rule
             return false;
         }
 
-        foreach ($node->attrGroups as $attrGroup) {
-            foreach ($attrGroup->attrs as $attr) {
-                if ($attr->name->toString() === 'Test' || $attr->name->toString() === 'PHPUnit\\Framework\\Attributes\\Test') {
-                    return false;
-                }
-            }
+        if ($this->hasAttribute($node, \PHPUnit\Framework\Attributes\Test::class)) {
+            return false;
         }
 
         return true;

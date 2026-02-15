@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\Test;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 use Tests\TestCase;
 use Tests\Tooling\Concerns\GetsFixtures;
+use Tests\Fixtures\Tooling\Concern;
+use Tests\Fixtures\Tooling\Contract;
 use Tooling\Rector\Rules\AddInterfaceByTrait;
 use Tooling\Rector\Rules\Provides\ParsesNodes;
 use Tooling\Rector\Rules\Provides\ValidatesInheritance;
@@ -35,15 +37,15 @@ class AddInterfaceByTraitTest extends TestCase
     {
         $classNode = $this->getClassNode($this->getFixturePath('ClassWithTrait.php'));
 
-        $this->assertFalse($this->inherits($classNode, 'Contract'));
+        $this->assertFalse($this->inherits($classNode, Contract::class));
 
         $rule = app(AddInterfaceByTrait::class);
-        $rule->configure(['Concern' => 'Contract']);
+        $rule->configure([Concern::class => Contract::class]);
 
         $result = $rule->refactor($classNode);
 
         $this->assertInstanceOf(Class_::class, $result);
-        $this->assertTrue($this->inherits($result, 'Contract'));
+        $this->assertTrue($this->inherits($result, Contract::class));
     }
 
     #[Test]
@@ -51,10 +53,10 @@ class AddInterfaceByTraitTest extends TestCase
     {
         $classNode = $this->getClassNode($this->getFixturePath('ClassWithTraitAndInterface.php'));
 
-        $this->assertTrue($this->inherits($classNode, 'Contract'));
+        $this->assertTrue($this->inherits($classNode, Contract::class));
 
         $rule = app(AddInterfaceByTrait::class);
-        $rule->configure(['Concern' => 'Contract']);
+        $rule->configure([Concern::class => Contract::class]);
 
         $result = $rule->refactor($classNode);
 
@@ -67,7 +69,7 @@ class AddInterfaceByTraitTest extends TestCase
         $classNode = $this->getClassNode($this->getFixturePath('ClassWithInterface.php'));
 
         $rule = app(AddInterfaceByTrait::class);
-        $rule->configure(['Concern' => 'Contract']);
+        $rule->configure([Concern::class => Contract::class]);
 
         $result = $rule->refactor($classNode);
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tooling\Rector\Rules\Provides;
 
-use Illuminate\Support\Str;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Enum_;
@@ -77,22 +76,24 @@ trait ValidatesInheritance
         $items = is_array($expected) ? $expected : [$expected];
 
         foreach ($items as $item) {
-            if ($reflection->getName() === $item || class_basename($reflection->getName()) === $item) {
+            $normalizedItem = ltrim($item, '\\');
+
+            if ($reflection->getName() === $normalizedItem) {
                 return true;
             }
 
-            if ($this->classExists($item) && $reflection->isSubclassOf($item)) {
+            if ($this->classExists($normalizedItem) && $reflection->isSubclassOf($normalizedItem)) {
                 return true;
             }
 
             foreach ($reflection->getInterfaceNames() as $interface) {
-                if ($interface === $item || class_basename($interface) === $item) {
+                if ($interface === $normalizedItem) {
                     return true;
                 }
             }
 
             foreach ($this->getAllTraits($reflection) as $trait) {
-                if ($trait === $item || class_basename($trait) === $item) {
+                if ($trait === $normalizedItem) {
                     return true;
                 }
             }
@@ -107,11 +108,7 @@ trait ValidatesInheritance
             return false;
         }
 
-        $parentName = $node->extends->toString();
-
-        return strcasecmp($parentName, $expected) === 0
-            || strcasecmp(class_basename($parentName), $expected) === 0
-            || strcasecmp(class_basename($parentName), class_basename($expected)) === 0;
+        return strcasecmp($node->extends->toString(), ltrim($expected, '\\')) === 0;
     }
 
     private function implementsInterface(Class_ $node, string $interface): bool
@@ -120,14 +117,10 @@ trait ValidatesInheritance
             return false;
         }
 
+        $expected = ltrim($interface, '\\');
+
         foreach ($node->implements as $implementedInterface) {
-            $interfaceName = $implementedInterface->toString();
-
-            if ($interfaceName === $interface) {
-                return true;
-            }
-
-            if (Str::afterLast($interfaceName, '\\') === $interface) {
+            if ($implementedInterface->toString() === $expected) {
                 return true;
             }
         }
@@ -141,16 +134,12 @@ trait ValidatesInheritance
             return false;
         }
 
+        $expected = ltrim($trait, '\\');
+
         foreach ($node->stmts as $stmt) {
             if ($stmt instanceof Node\Stmt\TraitUse) {
                 foreach ($stmt->traits as $implementedTrait) {
-                    $traitName = $implementedTrait->toString();
-
-                    if ($traitName === $trait) {
-                        return true;
-                    }
-
-                    if (Str::afterLast($traitName, '\\') === $trait) {
+                    if ($implementedTrait->toString() === $expected) {
                         return true;
                     }
                 }

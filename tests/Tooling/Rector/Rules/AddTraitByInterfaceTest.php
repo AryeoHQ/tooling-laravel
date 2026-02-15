@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\Test;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 use Tests\TestCase;
 use Tests\Tooling\Concerns\GetsFixtures;
+use Tests\Fixtures\Tooling\Concern;
+use Tests\Fixtures\Tooling\Contract;
 use Tooling\Rector\Rules\AddTraitByInterface;
 use Tooling\Rector\Rules\Provides\ParsesNodes;
 use Tooling\Rector\Rules\Provides\ValidatesInheritance;
@@ -35,15 +37,15 @@ class AddTraitByInterfaceTest extends TestCase
     {
         $classNode = $this->getClassNode($this->getFixturePath('ClassWithInterface.php'));
 
-        $this->assertFalse($this->inherits($classNode, 'Concern'));
+        $this->assertFalse($this->inherits($classNode, Concern::class));
 
         $rule = app(AddTraitByInterface::class);
-        $rule->configure(['Contract' => 'Concern']);
+        $rule->configure([Contract::class => Concern::class]);
 
         $result = $rule->refactor($classNode);
 
         $this->assertInstanceOf(Class_::class, $result);
-        $this->assertTrue($this->inherits($result, 'Concern'));
+        $this->assertTrue($this->inherits($result, Concern::class));
     }
 
     #[Test]
@@ -51,10 +53,10 @@ class AddTraitByInterfaceTest extends TestCase
     {
         $classNode = $this->getClassNode($this->getFixturePath('ClassWithTraitAndInterface.php'));
 
-        $this->assertTrue($this->inherits($classNode, 'Concern'));
+        $this->assertTrue($this->inherits($classNode, Concern::class));
 
         $rule = app(AddTraitByInterface::class);
-        $rule->configure(['Contract' => 'Concern']);
+        $rule->configure([Contract::class => Concern::class]);
 
         $result = $rule->refactor($classNode);
 
@@ -67,7 +69,7 @@ class AddTraitByInterfaceTest extends TestCase
         $classNode = $this->getClassNode($this->getFixturePath('ClassWithTrait.php'));
 
         $rule = app(AddTraitByInterface::class);
-        $rule->configure(['Contract' => 'Concern']);
+        $rule->configure([Contract::class => Concern::class]);
 
         $result = $rule->refactor($classNode);
 
