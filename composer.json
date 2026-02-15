@@ -11,11 +11,13 @@
         "larastan/larastan": "^3.8",
         "laravel/framework": "^12.36",
         "laravel/pint": "^1.25",
+        "nesbot/carbon": "^3.11",
         "nikic/php-parser": "^5.6",
         "phpstan/phpstan": "^2.1",
         "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^12.5",
         "rector/rector": "^2.1",
         "shipmonk/composer-dependency-analyser": "^1.8",
         "symfony/console": "^7.3",
@@ -25,10 +27,8 @@
     },
     "require-dev": {
         "brianium/paratest": "^7.14",
-        "nesbot/carbon": "^3.11",
         "orchestra/testbench": "^10.6",
-        "orchestra/testbench-core": "^10.7",
-        "phpunit/phpunit": "^12.5"
+        "orchestra/testbench-core": "^10.7"
     },
     "autoload": {
         "psr-4": {
