@@ -4,7 +4,6 @@ use ShipMonk\ComposerDependencyAnalyser\Config\Configuration;
 use ShipMonk\ComposerDependencyAnalyser\Config\ErrorType;
 
 return (new Configuration())
-    ->ignoreErrorsOnPackage('laravel/pint', [ErrorType::UNUSED_DEPENDENCY])
     ->ignoreErrorsOnPackage('shipmonk/composer-dependency-analyser', [ErrorType::UNUSED_DEPENDENCY])
     ->ignoreErrorsOnPackage('larastan/larastan', [ErrorType::UNUSED_DEPENDENCY])
     ->ignoreErrorsOnPackage('canvural/larastan-strict-rules', [ErrorType::UNUSED_DEPENDENCY])
