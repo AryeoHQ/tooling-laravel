@@ -6,7 +6,7 @@ namespace Tests\Fixtures\Tooling\PhpStan\PhpUnit;
 
 use PHPUnit\Framework\Attributes\Test;
 
-class MyTest extends \Tests\TestCase
+class ValidTestMethodTest extends \Tests\TestCase
 {
     #[Test]
     public function it_does_something(): void {}

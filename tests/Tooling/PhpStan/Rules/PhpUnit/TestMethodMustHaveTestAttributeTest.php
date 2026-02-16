@@ -27,13 +27,13 @@ class TestMethodMustHaveTestAttributeTest extends RuleTestCase
     #[Test]
     public function it_passes_when_test_method_has_test_attribute(): void
     {
-        $this->analyse([$this->getFixturePath('PhpStan/PhpUnit/ValidTestMethod.php')], []);
+        $this->analyse([$this->getFixturePath('PhpStan/PhpUnit/ValidTestMethodTest.php')], []);
     }
 
     #[Test]
     public function it_fails_when_test_method_does_not_have_test_attribute(): void
     {
-        $this->analyse([$this->getFixturePath('PhpStan/PhpUnit/InvalidTestMethod.php')], [
+        $this->analyse([$this->getFixturePath('PhpStan/PhpUnit/InvalidTestMethodTest.php')], [
             [
                 'Test method must use the #[Test] attribute.',
                 9,
