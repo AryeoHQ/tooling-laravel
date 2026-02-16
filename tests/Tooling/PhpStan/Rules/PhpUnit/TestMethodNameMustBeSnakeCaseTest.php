@@ -27,13 +27,13 @@ class TestMethodNameMustBeSnakeCaseTest extends RuleTestCase
     #[Test]
     public function it_passes_when_test_method_is_snake_case(): void
     {
-        $this->analyse([$this->getFixturePath('PhpStan/PhpUnit/ValidSnakeCaseMethod.php')], []);
+        $this->analyse([$this->getFixturePath('PhpStan/PhpUnit/ValidSnakeCaseMethodTest.php')], []);
     }
 
     #[Test]
     public function it_fails_when_test_method_is_not_snake_case(): void
     {
-        $this->analyse([$this->getFixturePath('PhpStan/PhpUnit/InvalidCamelCaseMethod.php')], [
+        $this->analyse([$this->getFixturePath('PhpStan/PhpUnit/InvalidCamelCaseMethodTest.php')], [
             [
                 'Test method must be snake cased.',
                 9,
