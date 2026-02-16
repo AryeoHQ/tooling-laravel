@@ -6,8 +6,6 @@ namespace Tooling\Rector\Rules\Contracts;
 
 use PhpParser\Node;
 
-// TODO: We should use the `handle()` / `shouldHandle()` for both PHPStan and Rector rules.
-
 /**
  * @template TNodeType of \PhpParser\Node
  */

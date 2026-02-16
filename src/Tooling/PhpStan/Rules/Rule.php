@@ -49,7 +49,13 @@ abstract class Rule implements Contracts\Rule
     {
         $nodeClass = $this->nodeTypes->first()->class;
 
-        return $node instanceof $nodeClass && $this->shouldHandle($node, $scope);
+        if (! ($node instanceof $nodeClass)) {
+            return false;
+        }
+
+        $this->prepare($node, $scope);
+
+        return $this->shouldHandle($node, $scope);
     }
 
     /**
@@ -58,8 +64,6 @@ abstract class Rule implements Contracts\Rule
     final public function processNode(Node $node, Scope $scope): array
     {
         $this->errors = collect();
-
-        $this->prepare($node, $scope);
 
         if (! $this->shouldProcessNode($node, $scope)) {
             return [];
