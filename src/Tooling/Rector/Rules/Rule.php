@@ -11,9 +11,11 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 use Tooling\Rector\Rules\Definitions\Attributes\Definition;
 use Tooling\Rector\Rules\Definitions\Attributes\Exceptions\DefinitionMissing;
 use Tooling\Rector\Rules\Provides\EnsuresInterfaces;
+use Tooling\Rector\Rules\Provides\EnsuresMethods;
 use Tooling\Rector\Rules\Provides\EnsuresTraits;
 use Tooling\Rector\Rules\Provides\ValidatesAttributes;
 use Tooling\Rector\Rules\Provides\ValidatesInheritance;
+use Tooling\Rector\Rules\Provides\ValidatesMethods;
 use Tooling\Rector\Rules\Samples\Attributes\Exceptions\SampleMissing;
 use Tooling\Rector\Rules\Samples\Attributes\Sample;
 use Tooling\Rules\Attributes\Exceptions\NodeTypeMissing;
@@ -29,9 +31,11 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
 {
     use DefinesNodeTypes;
     use EnsuresInterfaces;
+    use EnsuresMethods;
     use EnsuresTraits;
     use ValidatesAttributes;
     use ValidatesInheritance;
+    use ValidatesMethods;
 
     final protected null|Sample $sample {
         get => collect(new ReflectionClass($this)->getAttributes(Sample::class))->first()?->newInstance()->for($this);
@@ -68,7 +72,7 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
     {
         throw_unless($this->nodeTypes->isNotEmpty(), NodeTypeMissing::class, $this);
 
-        return $this->nodeTypes->map->class->all();
+        return $this->nodeTypes->map(fn (NodeType $nodeType) => $nodeType->class)->all();
     }
 
     final public function getRuleDefinition(): RuleDefinition

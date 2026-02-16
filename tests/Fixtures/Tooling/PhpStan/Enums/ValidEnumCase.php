@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Tooling\PhpStan\Enums;
 
-enum Status
+enum ValidEnumCase
 {
     case Pending;
     case Approved;
