@@ -6,7 +6,6 @@ namespace Tooling\Rector\Rules\Contracts;
 
 use PhpParser\Node;
 
-
 /**
  * @template TNodeType of \PhpParser\Node
  */
