@@ -50,14 +50,17 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
 
     final protected function shouldRefactor(\PhpParser\Node $node): bool
     {
-        return $this->nodeTypes->filter(fn (NodeType $allowed) => $node instanceof $allowed->class)->isNotEmpty()
-            && $this->shouldHandle($node);
+        if ($this->nodeTypes->filter(fn (NodeType $allowed) => $node instanceof $allowed->class)->isEmpty()) {
+            return false;
+        }
+
+        $this->prepare($node);
+
+        return $this->shouldHandle($node);
     }
 
     final public function refactor(\PhpParser\Node $node): null|\PhpParser\Node
     {
-        $this->prepare($node);
-
         return $this->shouldRefactor($node) ? $this->handle($node) : null;
     }
 
