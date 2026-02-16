@@ -56,6 +56,8 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
 
     final public function refactor(\PhpParser\Node $node): null|\PhpParser\Node
     {
+        $this->prepare($node);
+
         return $this->shouldRefactor($node) ? $this->handle($node) : null;
     }
 
