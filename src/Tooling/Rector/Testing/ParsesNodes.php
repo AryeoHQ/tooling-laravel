@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Tooling\Rector\Rules\Provides;
+namespace Tooling\Rector\Testing;
 
 use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\Enum_;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\NameResolver;
@@ -14,8 +15,23 @@ trait ParsesNodes
 {
     protected function getClassNode(string $path): null|Class_
     {
-        $classContent = file_get_contents($path);
-        $nodes = $this->parse($classContent);
+        return $this->findNode($path, Class_::class);
+    }
+
+    protected function getEnumNode(string $path): null|Enum_
+    {
+        return $this->findNode($path, Enum_::class);
+    }
+
+    /**
+     * @template T of Class_|Enum_
+     *
+     * @param  class-string<T>  $type
+     * @return T|null
+     */
+    private function findNode(string $path, string $type): null|Class_|Enum_
+    {
+        $nodes = (new ParserFactory)->createForNewestSupportedVersion()->parse(file_get_contents($path));
 
         $traverser = new NodeTraverser;
         $traverser->addVisitor(new NameResolver);
@@ -24,7 +40,7 @@ trait ParsesNodes
         foreach ($nodes as $node) {
             if ($node instanceof Namespace_) {
                 foreach ($node->stmts as $stmt) {
-                    if ($stmt instanceof Class_) {
+                    if ($stmt instanceof $type) {
                         return $stmt;
                     }
                 }
@@ -32,15 +48,5 @@ trait ParsesNodes
         }
 
         return null;
-    }
-
-    /**
-     * @return \PhpParser\Node\Stmt[]|null
-     */
-    private function parse(string $code): null|array
-    {
-        $parser = (new ParserFactory)->createForNewestSupportedVersion();
-
-        return $parser->parse($code);
     }
 }

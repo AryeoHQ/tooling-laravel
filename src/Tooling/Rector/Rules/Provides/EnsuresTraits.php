@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace Tooling\Rector\Rules\Provides;
 
-use Illuminate\Support\Str;
-use PhpParser\Node\Name;
+use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\TraitUse;
-use Rector\StaticTypeMapper\ValueObject\Type\FullyQualifiedObjectType;
-use Throwable;
 
 trait EnsuresTraits
 {
@@ -19,15 +16,7 @@ trait EnsuresTraits
             return $node;
         }
 
-        try {
-            $this->useNodesToAddCollector->addUseImport(
-                new FullyQualifiedObjectType($trait)
-            );
-        } catch (Throwable $e) {
-            // continue without adding the use statement
-        }
-
-        $traitNode = new Name(Str::afterLast($trait, '\\'));
+        $traitNode = new FullyQualified(ltrim($trait, '\\'));
         $traitUseNode = new TraitUse([$traitNode]);
 
         if ($node->stmts === []) {

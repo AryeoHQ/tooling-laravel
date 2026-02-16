@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tooling\PhpStan\Rules\Carbon;
 
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use PhpParser\Node;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\New_;
@@ -20,12 +22,9 @@ final class DisallowDirectUsage extends Rule
 {
     /** @var string[] */
     public const DISALLOWED = [
-        'Carbon',
-        'CarbonImmutable',
-        'Carbon\\Carbon',
-        'Carbon\\CarbonImmutable',
-        'Illuminate\\Support\\Carbon',
-        'Illuminate\\Support\\CarbonImmutable',
+        Carbon::class,
+        CarbonImmutable::class,
+        \Illuminate\Support\Carbon::class,
     ];
 
     public function shouldHandle(Node $node, Scope $scope): bool
@@ -34,7 +33,6 @@ final class DisallowDirectUsage extends Rule
             return false;
         }
 
-        // Allow ::class usage as it's just getting the class name string, not using Carbon
         if ($node instanceof ClassConstFetch && $node->name instanceof Node\Identifier && $node->name->name === 'class') {
             return false;
         }

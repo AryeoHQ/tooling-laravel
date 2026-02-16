@@ -14,7 +14,7 @@ use Tooling\Rector\Rules\Samples\Attributes\Sample;
 use Tooling\Rules\Attributes\NodeType;
 
 /**
- * @extends Rule<Node>
+ * @extends Rule<Class_|Enum_>
  */
 #[Definition('Add trait by implemented interface')]
 #[NodeType(Class_::class)]
@@ -27,10 +27,6 @@ final class AddTraitByInterface extends Rule implements ConfigurableRectorInterf
 
     public function handle(Node $node): null|Node
     {
-        if (! $node instanceof Class_ && ! $node instanceof Enum_) {
-            return null;
-        }
-
         $hasChanged = false;
 
         foreach ($this->traitByInterface as $interfaceName => $traitName) {

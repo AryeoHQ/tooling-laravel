@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tooling\Rector\Rules;
 
 use PhpParser\Node;
-use Rector\PostRector\Collector\UseNodesToAddCollector;
 use Rector\Rector\AbstractRector;
 use ReflectionClass;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
@@ -13,7 +12,6 @@ use Tooling\Rector\Rules\Definitions\Attributes\Definition;
 use Tooling\Rector\Rules\Definitions\Attributes\Exceptions\DefinitionMissing;
 use Tooling\Rector\Rules\Provides\EnsuresInterfaces;
 use Tooling\Rector\Rules\Provides\EnsuresTraits;
-use Tooling\Rector\Rules\Provides\ParsesNodes;
 use Tooling\Rector\Rules\Provides\ValidatesAttributes;
 use Tooling\Rector\Rules\Provides\ValidatesInheritance;
 use Tooling\Rector\Rules\Samples\Attributes\Exceptions\SampleMissing;
@@ -32,11 +30,8 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
     use DefinesNodeTypes;
     use EnsuresInterfaces;
     use EnsuresTraits;
-    use ParsesNodes;
     use ValidatesAttributes;
     use ValidatesInheritance;
-
-    protected UseNodesToAddCollector $useNodesToAddCollector;
 
     final protected null|Sample $sample {
         get => collect(new ReflectionClass($this)->getAttributes(Sample::class))->first()?->newInstance()->for($this);
@@ -46,10 +41,7 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
         get => collect(new ReflectionClass($this)->getAttributes(Definition::class))->first()?->newInstance();
     }
 
-    public function __construct(UseNodesToAddCollector $useNodesToAddCollector)
-    {
-        $this->useNodesToAddCollector = $useNodesToAddCollector;
-    }
+    public function prepare(\PhpParser\Node $node): void {}
 
     public function shouldHandle(\PhpParser\Node $node): bool
     {
@@ -64,6 +56,8 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
 
     final public function refactor(\PhpParser\Node $node): null|\PhpParser\Node
     {
+        $this->prepare($node);
+
         return $this->shouldRefactor($node) ? $this->handle($node) : null;
     }
 

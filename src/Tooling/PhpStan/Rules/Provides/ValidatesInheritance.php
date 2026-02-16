@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tooling\PhpStan\Rules\Provides;
 
-use Illuminate\Support\Str;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Enum_;
@@ -67,11 +66,9 @@ trait ValidatesInheritance
             return false;
         }
 
-        $parentName = $node->extends->toString();
+        $parentName = ltrim($node->extends->toString(), '\\');
 
-        return strcasecmp($parentName, $expected) === 0
-            || strcasecmp(class_basename($parentName), $expected) === 0
-            || strcasecmp(class_basename($parentName), class_basename($expected)) === 0;
+        return strcasecmp($parentName, ltrim($expected, '\\')) === 0;
     }
 
     private function implementsInterface(Class_ $node, string $interface): bool
@@ -81,13 +78,7 @@ trait ValidatesInheritance
         }
 
         foreach ($node->implements as $implementedInterface) {
-            $interfaceName = $implementedInterface->toString();
-
-            if ($interfaceName === $interface) {
-                return true;
-            }
-
-            if (Str::afterLast($interfaceName, '\\') === $interface) {
+            if (strcasecmp(ltrim($implementedInterface->toString(), '\\'), ltrim($interface, '\\')) === 0) {
                 return true;
             }
         }
@@ -104,13 +95,7 @@ trait ValidatesInheritance
         foreach ($node->stmts as $stmt) {
             if ($stmt instanceof Node\Stmt\TraitUse) {
                 foreach ($stmt->traits as $implementedTrait) {
-                    $traitName = $implementedTrait->toString();
-
-                    if ($traitName === $trait) {
-                        return true;
-                    }
-
-                    if (Str::afterLast($traitName, '\\') === $trait) {
+                    if (strcasecmp(ltrim($implementedTrait->toString(), '\\'), ltrim($trait, '\\')) === 0) {
                         return true;
                     }
                 }
@@ -148,24 +133,26 @@ trait ValidatesInheritance
         $items = is_array($expected) ? $expected : [$expected];
 
         foreach ($items as $item) {
-            if ($reflection->getName() === $item || class_basename($reflection->getName()) === $item) {
+            $normalizedItem = ltrim($item, '\\');
+
+            if (ltrim($reflection->getName(), '\\') === $normalizedItem) {
                 return true;
             }
 
             foreach ($reflection->getParents() as $parent) {
-                if ($parent->getName() === $item || class_basename($parent->getName()) === $item) {
+                if (ltrim($parent->getName(), '\\') === $normalizedItem) {
                     return true;
                 }
             }
 
             foreach ($reflection->getInterfaces() as $interface) {
-                if ($interface->getName() === $item || class_basename($interface->getName()) === $item) {
+                if (ltrim($interface->getName(), '\\') === $normalizedItem) {
                     return true;
                 }
             }
 
             foreach ($this->getAllTraits($reflection) as $trait) {
-                if ($trait->getName() === $item || class_basename($trait->getName()) === $item) {
+                if (ltrim($trait->getName(), '\\') === $normalizedItem) {
                     return true;
                 }
             }

@@ -7,22 +7,26 @@ namespace Tests\Tooling\Rector\Rules;
 use PhpParser\Node\Stmt\Class_;
 use PHPUnit\Framework\Attributes\Test;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
+use Tests\Fixtures\Tooling\Concern;
+use Tests\Fixtures\Tooling\Contract;
 use Tests\TestCase;
 use Tests\Tooling\Concerns\GetsFixtures;
 use Tooling\Rector\Rules\AddTraitByInterface;
-use Tooling\Rector\Rules\Provides\ParsesNodes;
 use Tooling\Rector\Rules\Provides\ValidatesInheritance;
+use Tooling\Rector\Testing\ParsesNodes;
+use Tooling\Rector\Testing\ResolvesRectorRules;
 
 class AddTraitByInterfaceTest extends TestCase
 {
     use GetsFixtures;
     use ParsesNodes;
+    use ResolvesRectorRules;
     use ValidatesInheritance;
 
     #[Test]
     public function it_has_rule_definition(): void
     {
-        $rule = app(AddTraitByInterface::class);
+        $rule = $this->resolveRule(AddTraitByInterface::class);
 
         $ruleDefinition = $rule->getRuleDefinition();
 
@@ -35,15 +39,15 @@ class AddTraitByInterfaceTest extends TestCase
     {
         $classNode = $this->getClassNode($this->getFixturePath('ClassWithInterface.php'));
 
-        $this->assertFalse($this->inherits($classNode, 'Concern'));
+        $this->assertFalse($this->inherits($classNode, Concern::class));
 
-        $rule = app(AddTraitByInterface::class);
-        $rule->configure(['Contract' => 'Concern']);
+        $rule = $this->resolveRule(AddTraitByInterface::class);
+        $rule->configure([Contract::class => Concern::class]);
 
         $result = $rule->refactor($classNode);
 
         $this->assertInstanceOf(Class_::class, $result);
-        $this->assertTrue($this->inherits($result, 'Concern'));
+        $this->assertTrue($this->inherits($result, Concern::class));
     }
 
     #[Test]
@@ -51,10 +55,10 @@ class AddTraitByInterfaceTest extends TestCase
     {
         $classNode = $this->getClassNode($this->getFixturePath('ClassWithTraitAndInterface.php'));
 
-        $this->assertTrue($this->inherits($classNode, 'Concern'));
+        $this->assertTrue($this->inherits($classNode, Concern::class));
 
-        $rule = app(AddTraitByInterface::class);
-        $rule->configure(['Contract' => 'Concern']);
+        $rule = $this->resolveRule(AddTraitByInterface::class);
+        $rule->configure([Contract::class => Concern::class]);
 
         $result = $rule->refactor($classNode);
 
@@ -66,8 +70,8 @@ class AddTraitByInterfaceTest extends TestCase
     {
         $classNode = $this->getClassNode($this->getFixturePath('ClassWithTrait.php'));
 
-        $rule = app(AddTraitByInterface::class);
-        $rule->configure(['Contract' => 'Concern']);
+        $rule = $this->resolveRule(AddTraitByInterface::class);
+        $rule->configure([Contract::class => Concern::class]);
 
         $result = $rule->refactor($classNode);
 

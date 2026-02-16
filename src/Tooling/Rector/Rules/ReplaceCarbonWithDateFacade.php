@@ -7,7 +7,7 @@ namespace Tooling\Rector\Rules;
 use PhpParser\Node;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\StaticCall;
-use Rector\StaticTypeMapper\ValueObject\Type\FullyQualifiedObjectType;
+use PhpParser\Node\Name\FullyQualified;
 use Tooling\PhpStan\Rules\Carbon\DisallowDirectUsage;
 use Tooling\Rector\Rules\Definitions\Attributes\Definition;
 use Tooling\Rector\Rules\Samples\Attributes\Sample;
@@ -52,10 +52,8 @@ final class ReplaceCarbonWithDateFacade extends Rule
 
     private function replaceNew(New_ $node): StaticCall
     {
-        $this->addDateFacadeImport();
-
         return new StaticCall(
-            new Node\Name('Date'),
+            new FullyQualified(self::DATE_FACADE),
             'create',
             $node->args,
         );
@@ -63,24 +61,11 @@ final class ReplaceCarbonWithDateFacade extends Rule
 
     private function replaceStaticCall(StaticCall $node): StaticCall
     {
-        $this->addDateFacadeImport();
-
         return new StaticCall(
-            new Node\Name('Date'),
+            new FullyQualified(self::DATE_FACADE),
             $node->name,
             $node->args,
         );
-    }
-
-    private function addDateFacadeImport(): void
-    {
-        try {
-            $this->useNodesToAddCollector->addUseImport(
-                new FullyQualifiedObjectType(self::DATE_FACADE)
-            );
-        } catch (\Throwable) {
-            // continue without adding the use statement
-        }
     }
 
     private function isCarbonClass(string $className): bool
