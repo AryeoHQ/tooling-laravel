@@ -25,7 +25,9 @@ trait ValidatesMethods
     private function hasMethodDirectly(ClassLike $node, string $expected): bool
     {
         foreach ($node->stmts as $stmt) {
-            if ($stmt instanceof ClassMethod && $stmt->name->toString() === $expected) {
+            if ($stmt instanceof ClassMethod
+                && $stmt->name->toString() === $expected
+                && $stmt->stmts !== null) {
                 return true;
             }
         }
@@ -47,6 +49,10 @@ trait ValidatesMethods
             return false;
         }
 
-        return $classReflection->hasMethod($expected);
+        if (! $classReflection->hasNativeMethod($expected)) {
+            return false;
+        }
+
+        return ! $classReflection->getNativeMethod($expected)->isAbstract();
     }
 }
