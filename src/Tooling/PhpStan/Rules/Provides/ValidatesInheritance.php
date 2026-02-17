@@ -7,8 +7,8 @@ namespace Tooling\PhpStan\Rules\Provides;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Enum_;
-use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ClassReflection;
+use PHPStan\Type\ObjectType;
 
 trait ValidatesInheritance
 {
@@ -61,13 +61,13 @@ trait ValidatesInheritance
      */
     private function inheritsDeeply(Class_|Enum_ $node, string|array $expected): bool
     {
-        $scope = $node->getAttribute('scope');
+        $className = $node->namespacedName?->toString();
 
-        if (! $scope instanceof Scope) {
+        if ($className === null) {
             return false;
         }
 
-        $classReflection = $scope->getClassReflection();
+        $classReflection = (new ObjectType($className))->getClassReflection();
 
         if (! $classReflection instanceof ClassReflection) {
             return false;

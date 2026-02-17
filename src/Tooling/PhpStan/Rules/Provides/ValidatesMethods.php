@@ -6,8 +6,8 @@ namespace Tooling\PhpStan\Rules\Provides;
 
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\ClassMethod;
-use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ClassReflection;
+use PHPStan\Type\ObjectType;
 
 trait ValidatesMethods
 {
@@ -38,13 +38,13 @@ trait ValidatesMethods
 
     private function hasMethodDeeply(ClassLike $node, string $expected): bool
     {
-        $scope = $node->getAttribute('scope');
+        $className = $node->namespacedName?->toString();
 
-        if (! $scope instanceof Scope) {
+        if ($className === null) {
             return false;
         }
 
-        $classReflection = $scope->getClassReflection();
+        $classReflection = (new ObjectType($className))->getClassReflection();
 
         if (! $classReflection instanceof ClassReflection) {
             return false;
