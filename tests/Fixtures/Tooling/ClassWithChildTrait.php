@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Tooling;
 
-trait Concern
+class ClassWithChildTrait
 {
-    public function concern(): void {}
+    use ChildConcern;
 }

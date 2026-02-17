@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Tooling;
 
-trait Concern
+trait ChildConcern
 {
-    public function concern(): void {}
+    use ParentConcern;
 }

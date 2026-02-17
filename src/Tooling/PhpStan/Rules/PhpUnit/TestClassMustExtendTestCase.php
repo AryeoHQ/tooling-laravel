@@ -9,7 +9,6 @@ use Illuminate\Support\Collection;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PHPStan\Analyser\Scope;
-use PHPStan\Reflection\ReflectionProvider;
 use Tooling\PhpStan\Rules\Rule;
 use Tooling\Rules\Attributes\NodeType;
 
@@ -19,17 +18,14 @@ use Tooling\Rules\Attributes\NodeType;
 #[NodeType(Class_::class)]
 final class TestClassMustExtendTestCase extends Rule
 {
-    private readonly ReflectionProvider $reflectionProvider;
-
     /** @var Collection<int, class-string> */
     private Collection $testCaseClasses;
 
     /**
      * @param  class-string|array<array-key, class-string>  $testCaseClass
      */
-    public function __construct(ReflectionProvider $reflectionProvider, string|array $testCaseClass = 'Tests\\TestCase')
+    public function __construct(string|array $testCaseClass = 'Tests\\TestCase')
     {
-        $this->reflectionProvider = $reflectionProvider;
         $this->testCaseClasses = collect(Arr::wrap($testCaseClass));
     }
 
@@ -55,7 +51,7 @@ final class TestClassMustExtendTestCase extends Rule
         }
 
         return $this->doesNotInherit(
-            $node, $this->testCaseClasses->all(), $this->reflectionProvider
+            $node, $this->testCaseClasses->all()
         );
     }
 

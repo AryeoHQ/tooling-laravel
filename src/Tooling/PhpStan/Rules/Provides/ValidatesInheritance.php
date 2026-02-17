@@ -8,28 +8,28 @@ use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Enum_;
 use PHPStan\Reflection\ClassReflection;
-use PHPStan\Reflection\ReflectionProvider;
+use PHPStan\Type\ObjectType;
 
 trait ValidatesInheritance
 {
     /**
      * @param  string|array<int, string>  $expected
      */
-    final protected function inherits(Class_|Enum_|ClassReflection $node, string|array $expected, ReflectionProvider $reflectionProvider): bool
+    final protected function inherits(Class_|Enum_|ClassReflection $node, string|array $expected): bool
     {
         if ($node instanceof ClassReflection) {
             return $this->inheritsViaReflection($node, $expected);
         }
 
-        return $this->inheritsDirectly($node, $expected) || $this->inheritsDeeply($node, $expected, $reflectionProvider);
+        return $this->inheritsDirectly($node, $expected) || $this->inheritsDeeply($node, $expected);
     }
 
     /**
      * @param  string|array<int, string>  $expected
      */
-    final protected function doesNotInherit(Class_|Enum_|ClassReflection $node, string|array $expected, ReflectionProvider $reflectionProvider): bool
+    final protected function doesNotInherit(Class_|Enum_|ClassReflection $node, string|array $expected): bool
     {
-        return ! $this->inherits($node, $expected, $reflectionProvider);
+        return ! $this->inherits($node, $expected);
     }
 
     /**
@@ -37,14 +37,10 @@ trait ValidatesInheritance
      */
     private function inheritsDirectly(Class_|Enum_ $node, string|array $expected): bool
     {
-        if (! $node instanceof Class_) {
-            return false;
-        }
-
         $items = is_array($expected) ? $expected : [$expected];
 
         foreach ($items as $item) {
-            if ($this->extendsClass($node, $item)) {
+            if ($node instanceof Class_ && $this->extendsClass($node, $item)) {
                 return true;
             }
 
@@ -60,69 +56,24 @@ trait ValidatesInheritance
         return false;
     }
 
-    private function extendsClass(Class_ $node, string $expected): bool
-    {
-        if ($node->extends === null) {
-            return false;
-        }
-
-        $parentName = ltrim($node->extends->toString(), '\\');
-
-        return strcasecmp($parentName, ltrim($expected, '\\')) === 0;
-    }
-
-    private function implementsInterface(Class_ $node, string $interface): bool
-    {
-        if ($node->implements === []) {
-            return false;
-        }
-
-        foreach ($node->implements as $implementedInterface) {
-            if (strcasecmp(ltrim($implementedInterface->toString(), '\\'), ltrim($interface, '\\')) === 0) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function usesTrait(Class_ $node, string $trait): bool
-    {
-        if ($node->stmts === []) {
-            return false;
-        }
-
-        foreach ($node->stmts as $stmt) {
-            if ($stmt instanceof Node\Stmt\TraitUse) {
-                foreach ($stmt->traits as $implementedTrait) {
-                    if (strcasecmp(ltrim($implementedTrait->toString(), '\\'), ltrim($trait, '\\')) === 0) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
     /**
      * @param  string|array<int, string>  $expected
      */
-    private function inheritsDeeply(Class_|Enum_ $node, string|array $expected, ReflectionProvider $reflectionProvider): bool
+    private function inheritsDeeply(Class_|Enum_ $node, string|array $expected): bool
     {
-        $className = $node->namespacedName !== null
-            ? $node->namespacedName->toString()
-            : ($node->name?->toString() ?? null);
+        $className = $node->namespacedName?->toString();
 
         if ($className === null) {
-            throw new \RuntimeException('Could not determine class name from node');
-        }
-
-        if (! $reflectionProvider->hasClass($className)) {
             return false;
         }
 
-        return $this->inheritsViaReflection($reflectionProvider->getClass($className), $expected);
+        $classReflection = (new ObjectType($className))->getClassReflection();
+
+        if (! $classReflection instanceof ClassReflection) {
+            return false;
+        }
+
+        return $this->inheritsViaReflection($classReflection, $expected);
     }
 
     /**
@@ -161,6 +112,51 @@ trait ValidatesInheritance
         return false;
     }
 
+    private function extendsClass(Class_ $node, string $expected): bool
+    {
+        if ($node->extends === null) {
+            return false;
+        }
+
+        $parentName = ltrim($node->extends->toString(), '\\');
+
+        return strcasecmp($parentName, ltrim($expected, '\\')) === 0;
+    }
+
+    private function implementsInterface(Class_|Enum_ $node, string $interface): bool
+    {
+        if ($node->implements === []) {
+            return false;
+        }
+
+        foreach ($node->implements as $implementedInterface) {
+            if (strcasecmp(ltrim($implementedInterface->toString(), '\\'), ltrim($interface, '\\')) === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function usesTrait(Class_|Enum_ $node, string $trait): bool
+    {
+        if ($node->stmts === []) {
+            return false;
+        }
+
+        foreach ($node->stmts as $stmt) {
+            if ($stmt instanceof Node\Stmt\TraitUse) {
+                foreach ($stmt->traits as $implementedTrait) {
+                    if (strcasecmp(ltrim($implementedTrait->toString(), '\\'), ltrim($trait, '\\')) === 0) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     /**
      * @return array<string, ClassReflection>
      */
@@ -170,6 +166,10 @@ trait ValidatesInheritance
 
         foreach ($reflection->getParents() as $parent) {
             $traits = array_merge($traits, $parent->getTraits());
+        }
+
+        foreach ($traits as $trait) {
+            $traits = array_merge($traits, $this->getAllTraits($trait));
         }
 
         return $traits;

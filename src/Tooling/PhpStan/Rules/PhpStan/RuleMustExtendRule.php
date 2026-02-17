@@ -7,7 +7,6 @@ namespace Tooling\PhpStan\Rules\PhpStan;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PHPStan\Analyser\Scope;
-use PHPStan\Reflection\ReflectionProvider;
 use Tooling\PhpStan\Rules\Rule;
 use Tooling\Rules\Attributes\NodeType;
 
@@ -17,13 +16,6 @@ use Tooling\Rules\Attributes\NodeType;
 #[NodeType(Class_::class)]
 final class RuleMustExtendRule extends Rule
 {
-    private readonly ReflectionProvider $reflectionProvider;
-
-    public function __construct(ReflectionProvider $reflectionProvider)
-    {
-        $this->reflectionProvider = $reflectionProvider;
-    }
-
     /**
      * @param  Class_  $node
      */
@@ -37,11 +29,11 @@ final class RuleMustExtendRule extends Rule
             return false;
         }
 
-        if (! $this->inherits($node, \PHPStan\Rules\Rule::class, $this->reflectionProvider)) {
+        if (! $this->inherits($node, \PHPStan\Rules\Rule::class)) {
             return false;
         }
 
-        return $this->doesNotInherit($node, Rule::class, $this->reflectionProvider);
+        return $this->doesNotInherit($node, Rule::class);
     }
 
     public function handle(Node $node, Scope $scope): void

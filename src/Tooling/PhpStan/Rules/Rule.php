@@ -11,6 +11,7 @@ use PHPStan\Rules\IdentifierRuleError;
 use PHPStan\Rules\RuleErrorBuilder;
 use Tooling\PhpStan\Rules\Provides\ValidatesAttributes;
 use Tooling\PhpStan\Rules\Provides\ValidatesInheritance;
+use Tooling\PhpStan\Rules\Provides\ValidatesMethods;
 use Tooling\Rules\Attributes\Exceptions\NodeTypeMissing;
 use Tooling\Rules\Provides\DefinesNodeTypes;
 
@@ -24,6 +25,7 @@ abstract class Rule implements Contracts\Rule
     use DefinesNodeTypes;
     use ValidatesAttributes;
     use ValidatesInheritance;
+    use ValidatesMethods;
 
     /** @var Collection<int, IdentifierRuleError> */
     final protected Collection $errors;

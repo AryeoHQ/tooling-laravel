@@ -19,9 +19,7 @@ class RuleMustExtendRuleTest extends RuleTestCase
 
     protected function getRule(): Rule
     {
-        return new RuleMustExtendRule(
-            self::getContainer()->getByType(\PHPStan\Reflection\ReflectionProvider::class)
-        );
+        return new RuleMustExtendRule;
     }
 
     #[Test]

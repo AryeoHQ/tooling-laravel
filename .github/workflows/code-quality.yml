@@ -9,7 +9,7 @@ concurrency:
 
 jobs:
   code-style:
-    runs-on: ubuntu-latest-4-cores
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout ref
@@ -25,7 +25,7 @@ jobs:
         run: ./vendor/bin/testbench tooling:pint --test
 
   static-analysis:
-    runs-on: ubuntu-latest-4-cores
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout ref
@@ -46,7 +46,7 @@ jobs:
         run: ./vendor/bin/testbench tooling:phpstan --memory-limit=4G --error-format=github
 
   dependency-analysis:
-    runs-on: ubuntu-latest-4-cores
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout ref
@@ -62,7 +62,7 @@ jobs:
         run: ./vendor/bin/composer-dependency-analyser
 
   tests:
-    runs-on: ubuntu-latest-4-cores
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
