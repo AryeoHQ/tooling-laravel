@@ -10,6 +10,7 @@ use ReflectionClass;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 use Tooling\Rector\Rules\Definitions\Attributes\Definition;
 use Tooling\Rector\Rules\Definitions\Attributes\Exceptions\DefinitionMissing;
+use Tooling\Rector\Rules\Provides\EnsuresAttributes;
 use Tooling\Rector\Rules\Provides\EnsuresInterfaces;
 use Tooling\Rector\Rules\Provides\EnsuresMethods;
 use Tooling\Rector\Rules\Provides\EnsuresTraits;
@@ -30,6 +31,7 @@ use Tooling\Rules\Provides\DefinesNodeTypes;
 abstract class Rule extends AbstractRector implements Contracts\Rule
 {
     use DefinesNodeTypes;
+    use EnsuresAttributes;
     use EnsuresInterfaces;
     use EnsuresMethods;
     use EnsuresTraits;
