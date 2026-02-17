@@ -7,7 +7,9 @@ namespace Tooling\Rector\Rules\Provides;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Enum_;
-use ReflectionClass;
+use PHPStan\Analyser\Scope;
+use PHPStan\Reflection\ClassReflection;
+use Rector\NodeTypeResolver\Node\AttributeKey;
 
 trait ValidatesInheritance
 {
@@ -60,40 +62,49 @@ trait ValidatesInheritance
      */
     private function inheritsDeeply(Class_|Enum_ $node, string|array $expected): bool
     {
-        $className = $node->namespacedName !== null
-            ? $node->namespacedName->toString()
-            : ($node->name?->toString() ?? null);
+        $scope = $node->getAttribute(AttributeKey::SCOPE);
 
-        if ($className === null) {
-            throw new \RuntimeException('Could not determine class name from node');
+        if (! $scope instanceof Scope) {
+            return false;
         }
 
-        if (! $this->classExists($className)) {
-            throw new \RuntimeException("Class '$className' does not exist or could not be autoloaded");
+        $classReflection = $scope->getClassReflection();
+
+        if (! $classReflection instanceof ClassReflection) {
+            return false;
         }
 
-        $reflection = new ReflectionClass($className);
+        return $this->inheritsViaReflection($classReflection, $expected);
+    }
+
+    /**
+     * @param  string|array<int, string>  $expected
+     */
+    private function inheritsViaReflection(ClassReflection $reflection, string|array $expected): bool
+    {
         $items = is_array($expected) ? $expected : [$expected];
 
         foreach ($items as $item) {
             $normalizedItem = ltrim($item, '\\');
 
-            if ($reflection->getName() === $normalizedItem) {
+            if (ltrim($reflection->getName(), '\\') === $normalizedItem) {
                 return true;
             }
 
-            if ($this->classExists($normalizedItem) && $reflection->isSubclassOf($normalizedItem)) {
-                return true;
+            foreach ($reflection->getParents() as $parent) {
+                if (ltrim($parent->getName(), '\\') === $normalizedItem) {
+                    return true;
+                }
             }
 
-            foreach ($reflection->getInterfaceNames() as $interface) {
-                if ($interface === $normalizedItem) {
+            foreach ($reflection->getInterfaces() as $interface) {
+                if (ltrim($interface->getName(), '\\') === $normalizedItem) {
                     return true;
                 }
             }
 
             foreach ($this->getAllTraits($reflection) as $trait) {
-                if ($trait === $normalizedItem) {
+                if (ltrim($trait->getName(), '\\') === $normalizedItem) {
                     return true;
                 }
             }
@@ -149,26 +160,21 @@ trait ValidatesInheritance
         return false;
     }
 
-    private function classExists(string $className): bool
-    {
-        return class_exists($className, true)
-            || interface_exists($className, true)
-            || trait_exists($className, true)
-            || enum_exists($className, true);
-    }
-
     /**
-     * @param  ReflectionClass<object>  $reflection
-     * @return array<string>
+     * @return array<string, ClassReflection>
      */
-    private function getAllTraits(ReflectionClass $reflection): array
+    private function getAllTraits(ClassReflection $reflection): array
     {
-        $traits = [];
+        $traits = $reflection->getTraits();
 
-        do {
-            $traits = array_merge($traits, $reflection->getTraitNames());
-        } while ($reflection = $reflection->getParentClass());
+        foreach ($reflection->getParents() as $parent) {
+            $traits = array_merge($traits, $parent->getTraits());
+        }
 
-        return array_unique($traits);
+        foreach ($traits as $trait) {
+            $traits = array_merge($traits, $this->getAllTraits($trait));
+        }
+
+        return $traits;
     }
 }
