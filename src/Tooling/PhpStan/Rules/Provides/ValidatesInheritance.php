@@ -37,14 +37,10 @@ trait ValidatesInheritance
      */
     private function inheritsDirectly(Class_|Enum_ $node, string|array $expected): bool
     {
-        if (! $node instanceof Class_) {
-            return false;
-        }
-
         $items = is_array($expected) ? $expected : [$expected];
 
         foreach ($items as $item) {
-            if ($this->extendsClass($node, $item)) {
+            if ($node instanceof Class_ && $this->extendsClass($node, $item)) {
                 return true;
             }
 
@@ -127,7 +123,7 @@ trait ValidatesInheritance
         return strcasecmp($parentName, ltrim($expected, '\\')) === 0;
     }
 
-    private function implementsInterface(Class_ $node, string $interface): bool
+    private function implementsInterface(Class_|Enum_ $node, string $interface): bool
     {
         if ($node->implements === []) {
             return false;
@@ -142,7 +138,7 @@ trait ValidatesInheritance
         return false;
     }
 
-    private function usesTrait(Class_ $node, string $trait): bool
+    private function usesTrait(Class_|Enum_ $node, string $trait): bool
     {
         if ($node->stmts === []) {
             return false;

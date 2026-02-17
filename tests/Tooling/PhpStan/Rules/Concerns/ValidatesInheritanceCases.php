@@ -124,4 +124,76 @@ trait ValidatesInheritanceCases
 
         $this->assertFalse($this->inherits($node, [Contract::class, ParentContract::class]));
     }
+
+    #[Test]
+    public function it_detects_an_enum_directly_implements_an_interface(): void
+    {
+        $node = $this->getEnumNode($this->getFixturePath('EnumWithInterface.php'));
+
+        $this->assertTrue($this->inherits($node, Contract::class));
+    }
+
+    #[Test]
+    public function it_detects_an_enum_does_not_directly_implement_an_unrelated_interface(): void
+    {
+        $node = $this->getEnumNode($this->getFixturePath('EnumWithTrait.php'));
+
+        $this->assertFalse($this->inherits($node, Contract::class));
+    }
+
+    #[Test]
+    public function it_detects_an_enum_directly_uses_a_trait(): void
+    {
+        $node = $this->getEnumNode($this->getFixturePath('EnumWithTrait.php'));
+
+        $this->assertTrue($this->inherits($node, Concern::class));
+    }
+
+    #[Test]
+    public function it_detects_an_enum_does_not_directly_use_an_unrelated_trait(): void
+    {
+        $node = $this->getEnumNode($this->getFixturePath('EnumWithInterface.php'));
+
+        $this->assertFalse($this->inherits($node, Concern::class));
+    }
+
+    #[Test]
+    public function it_detects_an_enum_indirectly_implements_a_parent_interface(): void
+    {
+        $node = $this->getEnumNodeWithScope($this->getFixturePath('EnumWithChildInterface.php'));
+
+        $this->assertTrue($this->inherits($node, ParentContract::class));
+    }
+
+    #[Test]
+    public function it_detects_an_enum_indirectly_uses_a_trait_via_another_trait(): void
+    {
+        $node = $this->getEnumNodeWithScope($this->getFixturePath('EnumWithChildTrait.php'));
+
+        $this->assertTrue($this->inherits($node, ParentConcern::class));
+    }
+
+    #[Test]
+    public function it_detects_an_enum_does_not_inherit_an_unrelated_class(): void
+    {
+        $node = $this->getEnumNodeWithScope($this->getFixturePath('EnumWithTrait.php'));
+
+        $this->assertTrue($this->doesNotInherit($node, ParentClass::class));
+    }
+
+    #[Test]
+    public function it_accepts_an_array_of_expected_values_for_an_enum(): void
+    {
+        $node = $this->getEnumNode($this->getFixturePath('EnumWithTraitAndInterface.php'));
+
+        $this->assertTrue($this->inherits($node, [Contract::class, Concern::class]));
+    }
+
+    #[Test]
+    public function it_returns_false_when_none_of_the_expected_values_match_for_an_enum(): void
+    {
+        $node = $this->getEnumNode($this->getFixturePath('EnumWithTrait.php'));
+
+        $this->assertFalse($this->inherits($node, [Contract::class, ParentContract::class]));
+    }
 }
