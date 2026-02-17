@@ -7,29 +7,29 @@ namespace Tooling\PhpStan\Rules\Provides;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Enum_;
+use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ClassReflection;
-use PHPStan\Reflection\ReflectionProvider;
 
 trait ValidatesInheritance
 {
     /**
      * @param  string|array<int, string>  $expected
      */
-    final protected function inherits(Class_|Enum_|ClassReflection $node, string|array $expected, ReflectionProvider $reflectionProvider): bool
+    final protected function inherits(Class_|Enum_|ClassReflection $node, string|array $expected): bool
     {
         if ($node instanceof ClassReflection) {
             return $this->inheritsViaReflection($node, $expected);
         }
 
-        return $this->inheritsDirectly($node, $expected) || $this->inheritsDeeply($node, $expected, $reflectionProvider);
+        return $this->inheritsDirectly($node, $expected) || $this->inheritsDeeply($node, $expected);
     }
 
     /**
      * @param  string|array<int, string>  $expected
      */
-    final protected function doesNotInherit(Class_|Enum_|ClassReflection $node, string|array $expected, ReflectionProvider $reflectionProvider): bool
+    final protected function doesNotInherit(Class_|Enum_|ClassReflection $node, string|array $expected): bool
     {
-        return ! $this->inherits($node, $expected, $reflectionProvider);
+        return ! $this->inherits($node, $expected);
     }
 
     /**
@@ -54,6 +54,62 @@ trait ValidatesInheritance
 
             if ($this->usesTrait($node, $item)) {
                 return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  string|array<int, string>  $expected
+     */
+    private function inheritsDeeply(Class_|Enum_ $node, string|array $expected): bool
+    {
+        $scope = $node->getAttribute('scope');
+
+        if (! $scope instanceof Scope) {
+            return false;
+        }
+
+        $classReflection = $scope->getClassReflection();
+
+        if (! $classReflection instanceof ClassReflection) {
+            return false;
+        }
+
+        return $this->inheritsViaReflection($classReflection, $expected);
+    }
+
+    /**
+     * @param  string|array<int, string>  $expected
+     */
+    private function inheritsViaReflection(ClassReflection $reflection, string|array $expected): bool
+    {
+        $items = is_array($expected) ? $expected : [$expected];
+
+        foreach ($items as $item) {
+            $normalizedItem = ltrim($item, '\\');
+
+            if (ltrim($reflection->getName(), '\\') === $normalizedItem) {
+                return true;
+            }
+
+            foreach ($reflection->getParents() as $parent) {
+                if (ltrim($parent->getName(), '\\') === $normalizedItem) {
+                    return true;
+                }
+            }
+
+            foreach ($reflection->getInterfaces() as $interface) {
+                if (ltrim($interface->getName(), '\\') === $normalizedItem) {
+                    return true;
+                }
+            }
+
+            foreach ($this->getAllTraits($reflection) as $trait) {
+                if (ltrim($trait->getName(), '\\') === $normalizedItem) {
+                    return true;
+                }
             }
         }
 
@@ -106,62 +162,6 @@ trait ValidatesInheritance
     }
 
     /**
-     * @param  string|array<int, string>  $expected
-     */
-    private function inheritsDeeply(Class_|Enum_ $node, string|array $expected, ReflectionProvider $reflectionProvider): bool
-    {
-        $className = $node->namespacedName !== null
-            ? $node->namespacedName->toString()
-            : ($node->name?->toString() ?? null);
-
-        if ($className === null) {
-            throw new \RuntimeException('Could not determine class name from node');
-        }
-
-        if (! $reflectionProvider->hasClass($className)) {
-            return false;
-        }
-
-        return $this->inheritsViaReflection($reflectionProvider->getClass($className), $expected);
-    }
-
-    /**
-     * @param  string|array<int, string>  $expected
-     */
-    private function inheritsViaReflection(ClassReflection $reflection, string|array $expected): bool
-    {
-        $items = is_array($expected) ? $expected : [$expected];
-
-        foreach ($items as $item) {
-            $normalizedItem = ltrim($item, '\\');
-
-            if (ltrim($reflection->getName(), '\\') === $normalizedItem) {
-                return true;
-            }
-
-            foreach ($reflection->getParents() as $parent) {
-                if (ltrim($parent->getName(), '\\') === $normalizedItem) {
-                    return true;
-                }
-            }
-
-            foreach ($reflection->getInterfaces() as $interface) {
-                if (ltrim($interface->getName(), '\\') === $normalizedItem) {
-                    return true;
-                }
-            }
-
-            foreach ($this->getAllTraits($reflection) as $trait) {
-                if (ltrim($trait->getName(), '\\') === $normalizedItem) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * @return array<string, ClassReflection>
      */
     private function getAllTraits(ClassReflection $reflection): array
@@ -170,6 +170,10 @@ trait ValidatesInheritance
 
         foreach ($reflection->getParents() as $parent) {
             $traits = array_merge($traits, $parent->getTraits());
+        }
+
+        foreach ($traits as $trait) {
+            $traits = array_merge($traits, $this->getAllTraits($trait));
         }
 
         return $traits;

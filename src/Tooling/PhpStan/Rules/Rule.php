@@ -65,6 +65,8 @@ abstract class Rule implements Contracts\Rule
      */
     final public function processNode(Node $node, Scope $scope): array
     {
+        $node->setAttribute('scope', $scope);
+
         $this->errors = collect();
 
         if (! $this->shouldProcessNode($node, $scope)) {

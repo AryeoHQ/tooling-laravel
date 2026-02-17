@@ -19,9 +19,7 @@ class TestMethodNameMustBeSnakeCaseTest extends RuleTestCase
 
     protected function getRule(): Rule
     {
-        return new TestMethodNameMustBeSnakeCase(
-            self::getContainer()->getByType(\PHPStan\Reflection\ReflectionProvider::class)
-        );
+        return new TestMethodNameMustBeSnakeCase;
     }
 
     #[Test]

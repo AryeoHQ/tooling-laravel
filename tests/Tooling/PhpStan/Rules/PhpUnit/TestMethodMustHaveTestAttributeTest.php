@@ -19,9 +19,7 @@ class TestMethodMustHaveTestAttributeTest extends RuleTestCase
 
     protected function getRule(): Rule
     {
-        return new TestMethodMustHaveTestAttribute(
-            self::getContainer()->getByType(\PHPStan\Reflection\ReflectionProvider::class)
-        );
+        return new TestMethodMustHaveTestAttribute;
     }
 
     #[Test]

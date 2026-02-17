@@ -19,9 +19,7 @@ class TestMethodMustNotHaveTestPrefixTest extends RuleTestCase
 
     protected function getRule(): Rule
     {
-        return new TestMethodMustNotHaveTestPrefix(
-            self::getContainer()->getByType(\PHPStan\Reflection\ReflectionProvider::class)
-        );
+        return new TestMethodMustNotHaveTestPrefix;
     }
 
     #[Test]

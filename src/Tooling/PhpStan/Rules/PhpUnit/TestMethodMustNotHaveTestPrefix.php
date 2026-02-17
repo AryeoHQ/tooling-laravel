@@ -9,7 +9,6 @@ use Illuminate\Support\Collection;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\ClassMethod;
 use PHPStan\Analyser\Scope;
-use PHPStan\Reflection\ReflectionProvider;
 use Tooling\PhpStan\Rules\Rule;
 use Tooling\Rules\Attributes\NodeType;
 
@@ -19,17 +18,14 @@ use Tooling\Rules\Attributes\NodeType;
 #[NodeType(ClassMethod::class)]
 final class TestMethodMustNotHaveTestPrefix extends Rule
 {
-    private readonly ReflectionProvider $reflectionProvider;
-
     /** @var Collection<int, class-string> */
     private Collection $testCaseClasses;
 
     /**
      * @param  class-string|array<array-key, class-string>  $testCaseClass
      */
-    public function __construct(ReflectionProvider $reflectionProvider, string|array $testCaseClass = 'Tests\\TestCase')
+    public function __construct(string|array $testCaseClass = 'Tests\\TestCase')
     {
-        $this->reflectionProvider = $reflectionProvider;
         $this->testCaseClasses = collect(Arr::wrap($testCaseClass));
     }
 
@@ -48,7 +44,7 @@ final class TestMethodMustNotHaveTestPrefix extends Rule
             return false;
         }
 
-        if (! $this->inherits($scopeReflection, $this->testCaseClasses->all(), $this->reflectionProvider)) {
+        if (! $this->inherits($scopeReflection, $this->testCaseClasses->all())) {
             return false;
         }
 

@@ -7,7 +7,6 @@ namespace Tooling\PhpStan\Rules\Rector;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PHPStan\Analyser\Scope;
-use PHPStan\Reflection\ReflectionProvider;
 use Rector\Rector\AbstractRector;
 use Tooling\PhpStan\Rules\Rule;
 use Tooling\Rector;
@@ -19,13 +18,6 @@ use Tooling\Rules\Attributes\NodeType;
 #[NodeType(Class_::class)]
 final class RuleMustExtendRule extends Rule
 {
-    private readonly ReflectionProvider $reflectionProvider;
-
-    public function __construct(ReflectionProvider $reflectionProvider)
-    {
-        $this->reflectionProvider = $reflectionProvider;
-    }
-
     /**
      * @param  Class_  $node
      */
@@ -39,11 +31,11 @@ final class RuleMustExtendRule extends Rule
             return false;
         }
 
-        if (! $this->inherits($node, AbstractRector::class, $this->reflectionProvider)) {
+        if (! $this->inherits($node, AbstractRector::class)) {
             return false;
         }
 
-        return $this->doesNotInherit($node, Rector\Rules\Rule::class, $this->reflectionProvider);
+        return $this->doesNotInherit($node, Rector\Rules\Rule::class);
     }
 
     public function handle(Node $node, Scope $scope): void
