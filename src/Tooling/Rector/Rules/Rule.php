@@ -84,12 +84,4 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
             $this->sample->toCodeSample(),
         );
     }
-
-    private function classExists(string $className): bool
-    {
-        return class_exists($className, true)
-            || interface_exists($className, true)
-            || trait_exists($className, true)
-            || enum_exists($className, true);
-    }
 }

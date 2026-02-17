@@ -4,4 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures\Tooling;
 
-trait Concern {}
+trait Concern
+{
+    public function concern(): void {}
+}

@@ -6,23 +6,23 @@ namespace Tooling\PhpStan\Rules\Provides;
 
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\ClassMethod;
+use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ClassReflection;
-use PHPStan\Reflection\ReflectionProvider;
 
 trait ValidatesMethods
 {
-    protected function hasMethod(ClassLike|ClassReflection $node, string $expected, ReflectionProvider $reflectionProvider): bool
+    protected function hasMethod(ClassLike|ClassReflection $node, string $expected): bool
     {
         if ($node instanceof ClassReflection) {
             return $this->hasMethodViaReflection($node, $expected);
         }
 
-        return $this->hasMethodDirectly($node, $expected) || $this->hasMethodDeeply($node, $expected, $reflectionProvider);
+        return $this->hasMethodDirectly($node, $expected) || $this->hasMethodDeeply($node, $expected);
     }
 
-    protected function doesNotHaveMethod(ClassLike|ClassReflection $node, string $expected, ReflectionProvider $reflectionProvider): bool
+    protected function doesNotHaveMethod(ClassLike|ClassReflection $node, string $expected): bool
     {
-        return ! $this->hasMethod($node, $expected, $reflectionProvider);
+        return ! $this->hasMethod($node, $expected);
     }
 
     private function hasMethodDirectly(ClassLike $node, string $expected): bool
@@ -36,21 +36,21 @@ trait ValidatesMethods
         return false;
     }
 
-    private function hasMethodDeeply(ClassLike $node, string $expected, ReflectionProvider $reflectionProvider): bool
+    private function hasMethodDeeply(ClassLike $node, string $expected): bool
     {
-        $className = $node->namespacedName !== null
-            ? $node->namespacedName->toString()
-            : ($node->name?->toString() ?? null);
+        $scope = $node->getAttribute('scope');
 
-        if ($className === null) {
+        if (! $scope instanceof Scope) {
             return false;
         }
 
-        if (! $reflectionProvider->hasClass($className)) {
+        $classReflection = $scope->getClassReflection();
+
+        if (! $classReflection instanceof ClassReflection) {
             return false;
         }
 
-        return $this->hasMethodViaReflection($reflectionProvider->getClass($className), $expected);
+        return $this->hasMethodViaReflection($classReflection, $expected);
     }
 
     private function hasMethodViaReflection(ClassReflection $reflection, string $expected): bool

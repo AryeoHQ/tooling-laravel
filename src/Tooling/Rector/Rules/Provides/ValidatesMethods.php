@@ -6,7 +6,9 @@ namespace Tooling\Rector\Rules\Provides;
 
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\ClassMethod;
-use ReflectionClass;
+use PHPStan\Analyser\Scope;
+use PHPStan\Reflection\ClassReflection;
+use Rector\NodeTypeResolver\Node\AttributeKey;
 
 trait ValidatesMethods
 {
@@ -33,20 +35,18 @@ trait ValidatesMethods
 
     private function hasMethodDeeply(ClassLike $node, string $expected): bool
     {
-        $className = $node->namespacedName !== null
-            ? $node->namespacedName->toString()
-            : ($node->name?->toString() ?? null);
+        $scope = $node->getAttribute(AttributeKey::SCOPE);
 
-        if ($className === null) {
+        if (! $scope instanceof Scope) {
             return false;
         }
 
-        if (! $this->classExists($className)) {
+        $classReflection = $scope->getClassReflection();
+
+        if (! $classReflection instanceof ClassReflection) {
             return false;
         }
 
-        $reflection = new ReflectionClass($className);
-
-        return $reflection->hasMethod($expected);
+        return $classReflection->hasMethod($expected);
     }
 }
