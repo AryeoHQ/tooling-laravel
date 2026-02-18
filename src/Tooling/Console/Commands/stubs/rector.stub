@@ -1,0 +1,31 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{namespace}};
+
+use PhpParser\Node;
+use PhpParser\Node\Stmt\Class_;
+use Tooling\Rector\Rules\Definitions\Attributes\Definition;
+use Tooling\Rector\Rules\Rule;
+use Tooling\Rules\Attributes\NodeType;
+
+/**
+ * @extends Rule<Class_>
+ */
+#[Definition('Add description of what the rule does')]
+#[NodeType(Class_::class)]
+final class {{class}} extends Rule
+{
+    public function shouldHandle(Node $node): bool
+    {
+        return true;
+    }
+
+    public function handle(Node $node): Node
+    {
+        // Apply the transformation
+
+        return $node;
+    }
+}
