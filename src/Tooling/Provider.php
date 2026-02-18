@@ -11,6 +11,7 @@ use Rector\Console\ConsoleApplication;
 use Rector\DependencyInjection\RectorContainerFactory;
 use Rector\ValueObject\Bootstrap\BootstrapConfigs;
 use ReflectionClass;
+use Tooling\Console\Commands\MakeAnalyzer;
 use Tooling\Console\Commands\ToolingDiscover;
 use Tooling\Pint\Console\Commands\CloneBaseCommand;
 
@@ -94,6 +95,7 @@ class Provider extends ServiceProvider
         $this->commands(
             ToolingDiscover::class,
             CloneBaseCommand::class,
+            MakeAnalyzer::class,
             PhpStan\Console\Commands\PhpStan::class,
             Rector\Console\Commands\Rector::class,
             Pint\Console\Commands\Pint::class
