@@ -15,6 +15,109 @@ The package registers its own rules via `extra.tooling.rector.rules` in `compose
 - **PHPUnit annotation-to-attribute conversions** — `@covers`, `@dataProvider`, `@depends`, `@ticket`, and `test` prefix are converted to their PHP attribute equivalents
 - **Carbon to Date facade** — replaces direct `Carbon\Carbon` and `Carbon\CarbonImmutable` usage with `Illuminate\Support\Facades\Date` (companion to the [PHPStan rule](phpstan.md) that disallows direct Carbon usage)
 
+### Configurable Rules
+
+The package also ships configurable rules that downstream packages can register with their own configuration. These are not loaded by default — each consuming package opts in by registering them in their `composer.json` (see [Registering Rules](#registering-rules)).
+
+#### `AddInterfaceByClass`
+
+Adds an interface to a class that extends a specific parent class.
+
+**Configuration:** Parent class → interface to add.
+
+```php
+use Tooling\Rector\Rules\AddInterfaceByClass;
+
+return [
+    AddInterfaceByClass::class => [
+        'App\Models\Model' => 'App\Contracts\Modelable',
+    ],
+];
+```
+
+Before:
+
+```php
+class Post extends Model
+{
+}
+```
+
+After:
+
+```php
+class Post extends Model implements Modelable
+{
+}
+```
+
+#### `AddInterfaceByTrait`
+
+Adds an interface to a class or enum that uses a specific trait.
+
+**Configuration:** Trait → interface to add.
+
+```php
+use Tooling\Rector\Rules\AddInterfaceByTrait;
+
+return [
+    AddInterfaceByTrait::class => [
+        'App\Concerns\HasFilters' => 'App\Contracts\Filterable',
+    ],
+];
+```
+
+Before:
+
+```php
+class Model
+{
+    use HasFilters;
+}
+```
+
+After:
+
+```php
+class Model implements Filterable
+{
+    use HasFilters;
+}
+```
+
+#### `AddTraitByInterface`
+
+Adds a trait to a class or enum that implements a specific interface.
+
+**Configuration:** Interface → trait to add.
+
+```php
+use Tooling\Rector\Rules\AddTraitByInterface;
+
+return [
+    AddTraitByInterface::class => [
+        'App\Contracts\Filterable' => 'App\Concerns\HasFilters',
+    ],
+];
+```
+
+Before:
+
+```php
+class Model implements Filterable
+{
+}
+```
+
+After:
+
+```php
+class Model implements Filterable
+{
+    use HasFilters;
+}
+```
+
 ### Downstream Package Rules
 
 Rules registered by other packages via `extra.tooling.rector` in their `composer.json` are automatically discovered and loaded. See [Registering Rules](#registering-rules).
@@ -234,16 +337,19 @@ To make your rules available to all consumers of your package, register them in 
     "extra": {
         "tooling": {
             "rector": {
-                "rules": "tooling/rector/rules.php"
+                "rules": "tooling/rector/rules.php",
+                "configured_rules": "tooling/rector/configured-rules.php"
             }
         }
     }
 }
 ```
 
+Simple rules and configured rules are registered in **separate files**, each pointed to by its own key.
+
 ### Simple Rules
 
-Return a flat array of rule classes:
+The `rules` key points to a file that returns a flat array of rule classes:
 
 ```php
 <?php
@@ -259,20 +365,26 @@ return [
 
 ### Configured Rules
 
-Return an associative array where keys are rule classes and values are configuration arrays:
+The `configured_rules` key points to a separate file that returns an associative array where keys are rule classes and values are configuration arrays:
 
 ```php
 <?php
 
-use Your\Rector\Rules\AddInterfaceByTrait;
+use Tooling\Rector\Rules\AddInterfaceByClass;
+use Tooling\Rector\Rules\AddInterfaceByTrait;
+use Tooling\Rector\Rules\AddTraitByInterface;
 
 return [
+    AddInterfaceByClass::class => [
+        'App\Models\Model' => 'App\Contracts\Modelable',
+    ],
     AddInterfaceByTrait::class => [
         'App\Concerns\HasFilters' => 'App\Contracts\Filterable',
     ],
+    AddTraitByInterface::class => [
+        'App\Contracts\Filterable' => 'App\Concerns\HasFilters',
+    ],
 ];
 ```
-
-Both styles can coexist in the same file — flat entries are loaded as simple rules, associative entries are loaded as configured rules.
 
 After `composer install` or `composer update`, the Composer plugin automatically runs `tooling:discover` to rebuild the manifest. Your rules will be included in subsequent Rector runs.
