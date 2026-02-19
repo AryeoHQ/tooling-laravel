@@ -20,7 +20,7 @@ use PhpParser\Node\Stmt\Property;
 trait ValidatesAttributes
 {
     /** @param class-string $attribute */
-    public function hasAttribute(ArrowFunction|ClassConst|ClassLike|ClassMethod|Closure|Const_|EnumCase|Function_|Param|Property|PropertyHook $node, string $attribute): bool
+    final protected function hasAttribute(ArrowFunction|ClassConst|ClassLike|ClassMethod|Closure|Const_|EnumCase|Function_|Param|Property|PropertyHook $node, string $attribute): bool
     {
         if ($node->attrGroups === []) {
             return false;
@@ -37,5 +37,11 @@ trait ValidatesAttributes
         }
 
         return false;
+    }
+
+    /** @param class-string $attribute */
+    final protected function doesNotHaveAttribute(ArrowFunction|ClassConst|ClassLike|ClassMethod|Closure|Const_|EnumCase|Function_|Param|Property|PropertyHook $node, string $attribute): bool
+    {
+        return ! $this->hasAttribute($node, $attribute);
     }
 }

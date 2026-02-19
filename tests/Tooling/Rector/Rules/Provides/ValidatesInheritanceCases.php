@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Tooling\PhpStan\Rules\Concerns;
+namespace Tests\Tooling\Rector\Rules\Provides;
 
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Fixtures\Tooling\Concern;
@@ -195,5 +195,53 @@ trait ValidatesInheritanceCases
         $node = $this->getEnumNode($this->getFixturePath('EnumWithTrait.php'));
 
         $this->assertFalse($this->inherits($node, [Contract::class, ParentContract::class]));
+    }
+
+    #[Test]
+    public function it_detects_an_interface_directly_extends_another_interface(): void
+    {
+        $node = $this->getInterfaceNode($this->getFixturePath('ChildContract.php'));
+
+        $this->assertTrue($this->inherits($node, ParentContract::class));
+    }
+
+    #[Test]
+    public function it_detects_an_interface_does_not_directly_extend_an_unrelated_interface(): void
+    {
+        $node = $this->getInterfaceNode($this->getFixturePath('Contract.php'));
+
+        $this->assertFalse($this->inherits($node, ParentContract::class));
+    }
+
+    #[Test]
+    public function it_detects_an_interface_does_not_inherit_an_unrelated_interface(): void
+    {
+        $node = $this->getInterfaceNode($this->getFixturePath('Contract.php'));
+
+        $this->assertTrue($this->doesNotInherit($node, ParentContract::class));
+    }
+
+    #[Test]
+    public function it_detects_a_trait_directly_uses_another_trait(): void
+    {
+        $node = $this->getTraitNode($this->getFixturePath('TraitWithTrait.php'));
+
+        $this->assertTrue($this->inherits($node, Concern::class));
+    }
+
+    #[Test]
+    public function it_detects_a_trait_does_not_directly_use_an_unrelated_trait(): void
+    {
+        $node = $this->getTraitNode($this->getFixturePath('TraitWithoutTrait.php'));
+
+        $this->assertFalse($this->inherits($node, Concern::class));
+    }
+
+    #[Test]
+    public function it_detects_a_trait_does_not_inherit_an_unrelated_trait(): void
+    {
+        $node = $this->getTraitNode($this->getFixturePath('TraitWithoutTrait.php'));
+
+        $this->assertTrue($this->doesNotInherit($node, Concern::class));
     }
 }
