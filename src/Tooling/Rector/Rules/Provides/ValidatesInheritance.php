@@ -7,6 +7,8 @@ namespace Tooling\Rector\Rules\Provides;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Enum_;
+use PhpParser\Node\Stmt\Interface_;
+use PhpParser\Node\Stmt\Trait_;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ClassReflection;
 use Rector\NodeTypeResolver\Node\AttributeKey;
@@ -16,7 +18,7 @@ trait ValidatesInheritance
     /**
      * @param  string|array<int, string>  $expected
      */
-    final protected function inherits(Class_|Enum_ $node, string|array $expected): bool
+    final protected function inherits(Class_|Enum_|Interface_|Trait_ $node, string|array $expected): bool
     {
         return $this->inheritsDirectly($node, $expected) || $this->inheritsDeeply($node, $expected);
     }
@@ -24,7 +26,7 @@ trait ValidatesInheritance
     /**
      * @param  string|array<int, string>  $expected
      */
-    final protected function doesNotInherit(Class_|Enum_ $node, string|array $expected): bool
+    final protected function doesNotInherit(Class_|Enum_|Interface_|Trait_ $node, string|array $expected): bool
     {
         return ! $this->inherits($node, $expected);
     }
@@ -32,7 +34,7 @@ trait ValidatesInheritance
     /**
      * @param  string|array<int, string>  $expected
      */
-    private function inheritsDirectly(Class_|Enum_ $node, string|array $expected): bool
+    private function inheritsDirectly(Class_|Enum_|Interface_|Trait_ $node, string|array $expected): bool
     {
         $items = is_array($expected) ? $expected : [$expected];
 
@@ -41,11 +43,17 @@ trait ValidatesInheritance
                 return true;
             }
 
-            if ($this->implementsInterface($node, $item)) {
+            if ($node instanceof Interface_ && $this->extendsInterface($node, $item)) {
                 return true;
             }
 
-            if ($this->usesTrait($node, $item)) {
+            if ($node instanceof Class_ || $node instanceof Enum_) {
+                if ($this->implementsInterface($node, $item)) {
+                    return true;
+                }
+            }
+
+            if (! $node instanceof Interface_ && $this->usesTrait($node, $item)) {
                 return true;
             }
         }
@@ -56,7 +64,7 @@ trait ValidatesInheritance
     /**
      * @param  string|array<int, string>  $expected
      */
-    private function inheritsDeeply(Class_|Enum_ $node, string|array $expected): bool
+    private function inheritsDeeply(Class_|Enum_|Interface_|Trait_ $node, string|array $expected): bool
     {
         $scope = $node->getAttribute(AttributeKey::SCOPE);
 
@@ -118,6 +126,19 @@ trait ValidatesInheritance
         return strcasecmp($node->extends->toString(), ltrim($expected, '\\')) === 0;
     }
 
+    private function extendsInterface(Interface_ $node, string $expected): bool
+    {
+        $normalized = ltrim($expected, '\\');
+
+        foreach ($node->extends as $extend) {
+            if (strcasecmp(ltrim($extend->toString(), '\\'), $normalized) === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function implementsInterface(Class_|Enum_ $node, string $interface): bool
     {
         if ($node->implements === []) {
@@ -127,7 +148,7 @@ trait ValidatesInheritance
         $expected = ltrim($interface, '\\');
 
         foreach ($node->implements as $implementedInterface) {
-            if ($implementedInterface->toString() === $expected) {
+            if (strcasecmp(ltrim($implementedInterface->toString(), '\\'), $expected) === 0) {
                 return true;
             }
         }
@@ -135,7 +156,7 @@ trait ValidatesInheritance
         return false;
     }
 
-    private function usesTrait(Class_|Enum_ $node, string $trait): bool
+    private function usesTrait(Class_|Enum_|Trait_ $node, string $trait): bool
     {
         if ($node->stmts === []) {
             return false;
@@ -146,7 +167,7 @@ trait ValidatesInheritance
         foreach ($node->stmts as $stmt) {
             if ($stmt instanceof Node\Stmt\TraitUse) {
                 foreach ($stmt->traits as $implementedTrait) {
-                    if ($implementedTrait->toString() === $expected) {
+                    if (strcasecmp(ltrim($implementedTrait->toString(), '\\'), $expected) === 0) {
                         return true;
                     }
                 }

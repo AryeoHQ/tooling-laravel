@@ -11,6 +11,8 @@ use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\NameResolver;
 use PhpParser\ParserFactory;
+use PHPStan\Reflection\ClassReflection;
+use PHPStan\Type\ObjectType;
 use Rector\NodeTypeResolver\PHPStan\Scope\PHPStanNodeScopeResolver;
 
 trait ParsesNodesWithScope
@@ -25,6 +27,18 @@ trait ParsesNodesWithScope
     protected function getEnumNodeWithScope(string $path): null|Enum_
     {
         return $this->findNodeWithScope($path, Enum_::class);
+    }
+
+    /**
+     * @param  class-string  $className
+     */
+    protected function getClassReflection(string $className): null|ClassReflection
+    {
+        if ($this->rectorConfig === null) {
+            $this->setUpResolvesRectorRules();
+        }
+
+        return (new ObjectType($className))->getClassReflection();
     }
 
     /**

@@ -13,6 +13,7 @@ interface Rule
 {
     /**
      * @param  TNodeType  $node
+     * @return TNodeType|null
      */
     public function handle(Node $node): null|Node;
 

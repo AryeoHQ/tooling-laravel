@@ -38,7 +38,7 @@ final class AddInterfaceByTrait extends Rule implements ConfigurableRectorInterf
                 continue;
             }
 
-            $this->ensureInterfaceIsImplemented($node, $interfaceName);
+            $this->addInterface($node, $interfaceName);
             $hasChanged = true;
         }
 

@@ -6,8 +6,10 @@ namespace Tests\Tooling\PhpStan\Rules;
 
 use Tests\TestCase;
 use Tests\Tooling\Concerns\GetsFixtures;
-use Tests\Tooling\PhpStan\Rules\Concerns\ValidatesInheritanceCases;
-use Tests\Tooling\PhpStan\Rules\Concerns\ValidatesMethodsCases;
+use Tests\Tooling\PhpStan\Rules\Provides\ValidatesAttributesCases;
+use Tests\Tooling\PhpStan\Rules\Provides\ValidatesInheritanceCases;
+use Tests\Tooling\PhpStan\Rules\Provides\ValidatesMethodsCases;
+use Tooling\PhpStan\Rules\Provides\ValidatesAttributes;
 use Tooling\PhpStan\Rules\Provides\ValidatesInheritance;
 use Tooling\PhpStan\Rules\Provides\ValidatesMethods;
 use Tooling\Rector\Testing\ParsesNodes;
@@ -18,6 +20,8 @@ class RuleTest extends TestCase
     use GetsFixtures;
     use ParsesNodes;
     use ParsesNodesWithScope;
+    use ValidatesAttributes;
+    use ValidatesAttributesCases;
     use ValidatesInheritance;
     use ValidatesInheritanceCases;
     use ValidatesMethods;

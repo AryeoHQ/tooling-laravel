@@ -10,10 +10,10 @@ use ReflectionClass;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 use Tooling\Rector\Rules\Definitions\Attributes\Definition;
 use Tooling\Rector\Rules\Definitions\Attributes\Exceptions\DefinitionMissing;
-use Tooling\Rector\Rules\Provides\EnsuresAttributes;
-use Tooling\Rector\Rules\Provides\EnsuresInterfaces;
-use Tooling\Rector\Rules\Provides\EnsuresMethods;
-use Tooling\Rector\Rules\Provides\EnsuresTraits;
+use Tooling\Rector\Rules\Provides\ManagesAttributes;
+use Tooling\Rector\Rules\Provides\ManagesInterfaces;
+use Tooling\Rector\Rules\Provides\ManagesMethods;
+use Tooling\Rector\Rules\Provides\ManagesTraits;
 use Tooling\Rector\Rules\Provides\ValidatesAttributes;
 use Tooling\Rector\Rules\Provides\ValidatesInheritance;
 use Tooling\Rector\Rules\Provides\ValidatesMethods;
@@ -31,10 +31,10 @@ use Tooling\Rules\Provides\DefinesNodeTypes;
 abstract class Rule extends AbstractRector implements Contracts\Rule
 {
     use DefinesNodeTypes;
-    use EnsuresAttributes;
-    use EnsuresInterfaces;
-    use EnsuresMethods;
-    use EnsuresTraits;
+    use ManagesAttributes;
+    use ManagesInterfaces;
+    use ManagesMethods;
+    use ManagesTraits;
     use ValidatesAttributes;
     use ValidatesInheritance;
     use ValidatesMethods;
@@ -65,6 +65,10 @@ abstract class Rule extends AbstractRector implements Contracts\Rule
         return $this->shouldHandle($node);
     }
 
+    /**
+     * @param  TNodeType  $node
+     * @return TNodeType|null
+     */
     final public function refactor(\PhpParser\Node $node): null|\PhpParser\Node
     {
         return $this->shouldRefactor($node) ? $this->handle($node) : null;

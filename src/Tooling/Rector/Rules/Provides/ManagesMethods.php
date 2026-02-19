@@ -6,16 +6,19 @@ namespace Tooling\Rector\Rules\Provides;
 
 use PhpParser\Modifiers;
 use PhpParser\Node;
-use PhpParser\Node\Stmt\ClassLike;
+use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
+use PhpParser\Node\Stmt\Enum_;
+use PhpParser\Node\Stmt\Interface_;
+use PhpParser\Node\Stmt\Trait_;
 
-trait EnsuresMethods
+trait ManagesMethods
 {
     /**
      * @param  string  $returnType  The return type of the method. (bool, int|bool, etc.)
      * @param  int  $visibility  (@see PhpParser\Modifiers)
      */
-    public function ensureMethodIsDefined(Node\Stmt\ClassLike $node, string $method, string $returnType, int $visibility = Modifiers::PUBLIC): Node\Stmt\ClassLike
+    final protected function addMethod(Class_|Enum_|Interface_|Trait_ $node, string $method, string $returnType, int $visibility = Modifiers::PUBLIC): Class_|Enum_|Interface_|Trait_
     {
         if ($this->hasMethod($node, $method)) {
             return $node;
@@ -30,7 +33,7 @@ trait EnsuresMethods
         return $node;
     }
 
-    public function ensureMethodIsNotDefined(ClassLike $node, string $method): ClassLike
+    final protected function removeMethod(Class_|Enum_|Interface_|Trait_ $node, string $method): Class_|Enum_|Interface_|Trait_
     {
         if (! $this->hasMethod($node, $method)) {
             return $node;
