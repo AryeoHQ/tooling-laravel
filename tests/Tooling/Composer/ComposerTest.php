@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Tooling\Composer;
 
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Stringable;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Finder\SplFileInfo;
@@ -129,5 +130,25 @@ class ComposerTest extends TestCase
         $this->assertStringContainsString('vendor', $path);
         $this->assertStringEndsWith('vendor/autoload.php', $path);
         $this->assertFileExists($path);
+    }
+
+    #[Test]
+    public function it_returns_false_for_is_optimized(): void
+    {
+        Process::run('composer dump --no-scripts --no-interaction');
+
+        $composer = app(Composer::class);
+
+        $this->assertFalse($composer->isOptimized);
+    }
+
+    #[Test]
+    public function it_returns_true_for_is_optimized(): void
+    {
+        Process::run('composer dump -o --no-scripts --no-interaction');
+
+        $composer = app(Composer::class);
+
+        $this->assertTrue($composer->isOptimized);
     }
 }

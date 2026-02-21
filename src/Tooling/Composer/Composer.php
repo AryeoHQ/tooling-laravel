@@ -47,6 +47,13 @@ class Composer
         get => $this->classMap ??= collect((array) require $this->classMapFile->getRealPath());
     }
 
+    public bool $isOptimized {
+        get => $this->isOptimized ??= str_contains(
+            file_get_contents($this->classMapFile->getRealPath()),
+            '$baseDir . '
+        );
+    }
+
     public Packages $packages { get => $this->packages ??= Packages::make($this->vendorDirectory); }
 
     public Package $currentAsPackage {
