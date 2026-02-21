@@ -74,6 +74,44 @@ class PackageTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_autoload_as_object(): void
+    {
+        $autoload = (object) ['psr-4' => (object) ['App\\' => 'src/']];
+        $data = (object) ['autoload' => $autoload];
+        $package = new Package($data);
+
+        $this->assertIsObject($package->autoload);
+        $this->assertSame($autoload, $package->autoload);
+    }
+
+    #[Test]
+    public function it_returns_default_stdclass_when_autoload_is_missing(): void
+    {
+        $data = (object) ['name' => 'vendor/package'];
+        $package = new Package($data);
+
+        $this->assertInstanceOf(stdClass::class, $package->autoload);
+        $this->assertEquals(new stdClass, $package->autoload);
+    }
+
+    #[Test]
+    public function it_exposes_psr4_mappings_from_autoload(): void
+    {
+        $data = (object) [
+            'autoload' => (object) [
+                'psr-4' => (object) [
+                    'App\\' => 'app/',
+                    'Database\\Factories\\' => 'database/factories/',
+                ],
+            ],
+        ];
+        $package = new Package($data);
+
+        $this->assertObjectHasProperty('psr-4', $package->autoload);
+        $this->assertSame('app/', $package->autoload->{'psr-4'}->{'App\\'});
+    }
+
+    #[Test]
     public function it_handles_complete_package_data(): void
     {
         $data = (object) [
@@ -85,6 +123,9 @@ class PackageTest extends TestCase
                     'providers' => ['Illuminate\Foundation\Providers\FoundationServiceProvider'],
                 ],
             ],
+            'autoload' => (object) [
+                'psr-4' => (object) ['Illuminate\\' => 'src/Illuminate/'],
+            ],
         ];
         $package = new Package($data);
 
@@ -93,6 +134,8 @@ class PackageTest extends TestCase
         $this->assertSame('11.0.0', $package->version->toString());
         $this->assertSame('The Laravel Framework', $package->description->toString());
         $this->assertIsObject($package->extra);
+        $this->assertIsObject($package->autoload);
+        $this->assertObjectHasProperty('psr-4', $package->autoload);
     }
 
     #[Test]

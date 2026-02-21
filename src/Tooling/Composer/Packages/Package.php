@@ -19,6 +19,8 @@ final class Package
 
     public null|object $extra { get => $this->extra ??= $this->get('extra', new stdClass); }
 
+    public null|object $autoload { get => $this->autoload ??= $this->get('autoload', new stdClass); }
+
     public function __construct(object $data)
     {
         $this->data = $data;
