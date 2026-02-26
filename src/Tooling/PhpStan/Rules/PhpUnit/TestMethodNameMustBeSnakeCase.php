@@ -52,6 +52,10 @@ final class TestMethodNameMustBeSnakeCase extends Rule
             return false;
         }
 
+        if ($node->isStatic()) {
+            return false;
+        }
+
         return $this->isNotSnakeCased($node);
     }
 
