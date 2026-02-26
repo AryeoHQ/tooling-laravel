@@ -11,6 +11,7 @@ use Rector\Console\ConsoleApplication;
 use Rector\DependencyInjection\RectorContainerFactory;
 use Rector\ValueObject\Bootstrap\BootstrapConfigs;
 use ReflectionClass;
+use Tooling\Composer\Composer;
 use Tooling\Console\Commands\MakeAnalyzer;
 use Tooling\Console\Commands\ToolingDiscover;
 use Tooling\Pint\Console\Commands\CloneBaseCommand;
@@ -40,8 +41,14 @@ class Provider extends ServiceProvider
 
     private function registerBindings(): void
     {
+        $this->registerBindingsForComposer();
         $this->registerBindingsForPhpStan();
         $this->registerBindingsForRector();
+    }
+
+    private function registerBindingsForComposer(): void
+    {
+        app()->singleton(Composer::class);
     }
 
     private function registerBindingsForPhpStan(): void
@@ -88,7 +95,7 @@ class Provider extends ServiceProvider
 
     private function bootCommands(): void
     {
-        if (! $this->app->runningInConsole()) {
+        if (! app()->runningInConsole()) {
             return;
         }
 
