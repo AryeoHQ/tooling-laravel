@@ -21,6 +21,8 @@ final class Package
 
     public null|object $autoload { get => $this->autoload ??= $this->get('autoload', new stdClass); }
 
+    public null|object $autoloadDev { get => $this->autoloadDev ??= $this->get('autoload-dev', new stdClass); }
+
     public function __construct(object $data)
     {
         $this->data = $data;

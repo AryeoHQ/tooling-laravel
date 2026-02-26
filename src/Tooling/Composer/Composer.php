@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace Tooling\Composer;
 
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Process;
+use Illuminate\Support\LazyCollection;
 use Illuminate\Support\Stringable;
+use RuntimeException;
+use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
 use Tooling\Composer\Packages\Package;
 use Tooling\Composer\Packages\Packages;
@@ -14,6 +18,9 @@ use function Illuminate\Filesystem\join_paths;
 
 class Composer
 {
+    /** @var array<string, mixed> */
+    private array $cache = [];
+
     public string $vendorDirectory {
         get {
             return collect([__DIR__.'/../../../vendor', __DIR__.'/../../../../../../vendor'])->map(
@@ -44,11 +51,11 @@ class Composer
 
     /** @var Collection<array-key, mixed> */
     public Collection $classMap {
-        get => $this->classMap ??= collect((array) require $this->classMapFile->getRealPath());
+        get => $this->cache[__FUNCTION__] ??= collect((array) require $this->classMapFile->getRealPath());
     }
 
     public bool $isOptimized {
-        get => $this->isOptimized ??= str_contains(
+        get => $this->cache[__FUNCTION__] ??= str_contains(
             file_get_contents($this->classMapFile->getRealPath()),
             '$baseDir . '
         );
@@ -71,8 +78,77 @@ class Composer
         );
     }
 
+    public bool $isClassMapStale {
+        get {
+            $sourceDirectories = $this->psr4SourceDirectories();
+
+            if ($sourceDirectories->isEmpty()) {
+                return false;
+            }
+
+            $classMapMTime = $this->classMapFile->getMTime();
+
+            $hasNewerFiles = LazyCollection::make(Finder::create()->files()->name('*.php')->in($sourceDirectories->all()))
+                ->contains(fn (SplFileInfo $file): bool => $file->getMTime() > $classMapMTime);
+
+            if ($hasNewerFiles) {
+                return true;
+            }
+
+            $hasDeletedFiles = $this->classMap
+                ->filter(fn (mixed $filePath): bool => is_string($filePath))
+                ->filter(fn (string $filePath): bool => $sourceDirectories->contains(
+                    fn (string $directory): bool => str_starts_with($filePath, $directory)
+                ))
+                ->contains(fn (string $filePath): bool => ! file_exists($filePath));
+
+            return $hasDeletedFiles;
+        }
+    }
+
+    public function optimizeClassMap(): void
+    {
+        if ($this->isOptimized && ! $this->isClassMapStale) {
+            return;
+        }
+
+        $result = Process::path($this->baseDirectory->toString())
+            ->run('composer dump-autoload -o --no-scripts --no-interaction');
+
+        if (! $result->successful()) {
+            throw new RuntimeException('Failed to optimize classmap: '.$result->errorOutput());
+        }
+
+        $path = $this->classMapFile->getRealPath();
+
+        if (function_exists('opcache_invalidate')) {
+            opcache_invalidate($path, true);
+        }
+
+        clearstatcache(true, $path);
+
+        $this->cache = [];
+    }
+
     public function vendorPath(string ...$path): string
     {
         return join_paths($this->vendorDirectory, ...$path);
+    }
+
+    /** @return Collection<int, non-empty-string> */
+    private function psr4SourceDirectories(): Collection
+    {
+        $package = $this->currentAsPackage;
+        $basePath = $this->baseDirectory->toString();
+
+        return collect([
+            (array) ($package->autoload->{'psr-4'} ?? new \stdClass),
+            (array) ($package->autoloadDev->{'psr-4'} ?? new \stdClass),
+        ])
+            ->flatMap(fn (array $mapping): array => array_values($mapping))
+            ->flatten()
+            ->map(fn (string $relativePath): string|false => realpath(join_paths($basePath, $relativePath)))
+            ->filter(fn (string|false $path): bool => $path !== false && is_dir($path))
+            ->values();
     }
 }
