@@ -11,15 +11,18 @@ parameters:
         -
             message: '#Dynamic call to static method PHPUnit\\Framework\\Assert::assert.*\(\)#'
             paths:
-                - %rootDir%/../../../tests/*
+                - %rootDir%/../../../**/*Test.php
+                - %rootDir%/../../../**/*TestCase.php
         -
             message: '#Call to method PHPUnit\\Framework\\Assert::assert.*\(\) .* will always evaluate to true#'
             paths:
-                - %rootDir%/../../../tests/*
+                - %rootDir%/../../../**/*Test.php
+                - %rootDir%/../../../**/*TestCase.php
         -
             message: "#^Called 'Model::make\\(\\)' which performs unnecessary work, use 'new Model\\(\\)'\\.$#"
             paths:
-                - %rootDir%/../../../tests/*
+                - %rootDir%/../../../**/*Test.php
+                - %rootDir%/../../../**/*TestCase.php
 parametersSchema:
     aryeo: structure([
         tests: structure([
