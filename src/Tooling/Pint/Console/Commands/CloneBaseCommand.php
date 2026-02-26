@@ -20,7 +20,7 @@ class CloneBaseCommand extends Command
     protected $hidden = true;
 
     private Composer $composer {
-        get => $this->composer ??= new Composer;
+        get => $this->composer ??= resolve(Composer::class);
     }
 
     /** @var ReflectionClass<Pint> */

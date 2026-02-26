@@ -18,6 +18,12 @@ use Tooling\Composer\Packages\Packages;
 class ComposerTest extends TestCase
 {
     #[Test]
+    public function it_is_registered_as_a_singleton(): void
+    {
+        $this->assertSame(app(Composer::class), app(Composer::class));
+    }
+
+    #[Test]
     public function it_resolves_vendor_directory(): void
     {
         $composer = app(Composer::class);
