@@ -52,6 +52,10 @@ final class TestMethodMustNotHaveTestPrefix extends Rule
             return false;
         }
 
+        if ($node->isStatic()) {
+            return false;
+        }
+
         return str_starts_with($node->name->toString(), 'test');
     }
 

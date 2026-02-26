@@ -10,4 +10,9 @@ class ValidTestMethodTest extends \Tests\TestCase
 {
     #[Test]
     public function it_does_something(): void {}
+
+    public static function data_provider(): array
+    {
+        return [];
+    }
 }

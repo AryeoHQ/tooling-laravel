@@ -52,6 +52,10 @@ final class TestMethodMustHaveTestAttribute extends Rule
             return false;
         }
 
+        if ($node->isStatic()) {
+            return false;
+        }
+
         $methodName = $node->name->toString();
         if (str_starts_with($methodName, '__') ||
             in_array($methodName, ['setUp', 'tearDown', 'setUpBeforeClass', 'tearDownAfterClass'], true)
