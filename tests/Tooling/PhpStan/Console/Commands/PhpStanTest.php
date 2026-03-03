@@ -13,11 +13,11 @@ class PhpStanTest extends TestCase implements ForVendorBinary
 {
     use VendorBinaryCases;
 
-    public string $command { get => PhpStan\Console\Commands\PhpStan::class; }
+    public string $command = PhpStan\Console\Commands\PhpStan::class;
 
-    public string $binary { get => 'phpstan'; }
+    public string $binary = 'phpstan';
 
-    public null|string $subcommand { get => 'analyse'; }
+    public null|string $subcommand = 'analyse';
 
-    public string $inspector { get => PhpStan\Console\Inspector::class; }
+    public string $inspector = PhpStan\Console\Inspector::class;
 }

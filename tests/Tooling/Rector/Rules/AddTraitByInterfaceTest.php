@@ -7,6 +7,7 @@ namespace Tests\Tooling\Rector\Rules;
 use PhpParser\Node\Stmt\Class_;
 use PHPUnit\Framework\Attributes\Test;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
+use Tests\Fixtures\Tooling\AnotherConcern;
 use Tests\Fixtures\Tooling\Concern;
 use Tests\Fixtures\Tooling\Contract;
 use Tests\TestCase;
@@ -76,5 +77,23 @@ class AddTraitByInterfaceTest extends TestCase
         $result = $rule->refactor($classNode);
 
         $this->assertNull($result);
+    }
+
+    #[Test]
+    public function it_adds_multiple_traits_when_configured_with_array(): void
+    {
+        $classNode = $this->getClassNode($this->getFixturePath('ClassWithInterface.php'));
+
+        $this->assertFalse($this->inherits($classNode, Concern::class));
+        $this->assertFalse($this->inherits($classNode, AnotherConcern::class));
+
+        $rule = $this->resolveRule(AddTraitByInterface::class);
+        $rule->configure([Contract::class => [Concern::class, AnotherConcern::class]]);
+
+        $result = $rule->refactor($classNode);
+
+        $this->assertInstanceOf(Class_::class, $result);
+        $this->assertTrue($this->inherits($result, Concern::class));
+        $this->assertTrue($this->inherits($result, AnotherConcern::class));
     }
 }

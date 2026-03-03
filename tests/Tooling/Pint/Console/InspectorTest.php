@@ -13,9 +13,9 @@ class InspectorTest extends TestCase implements ForInspector
 {
     use InspectorCases;
 
-    public string $class { get => Pint\Console\Inspector::class; }
+    public string $class = Pint\Console\Inspector::class;
 
-    public string $path { get => '/usr/local/bin/pint'; }
+    public string $path = '/usr/local/bin/pint';
 
     public array $arguments {
         get => [

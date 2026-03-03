@@ -13,11 +13,11 @@ class RectorTest extends TestCase implements ForVendorBinary
 {
     use VendorBinaryCases;
 
-    public string $command { get => Rector\Console\Commands\Rector::class; }
+    public string $command = Rector\Console\Commands\Rector::class;
 
-    public string $binary { get => 'rector'; }
+    public string $binary = 'rector';
 
-    public null|string $subcommand { get => 'process'; }
+    public null|string $subcommand = 'process';
 
-    public string $inspector { get => Rector\Console\Inspector::class; }
+    public string $inspector = Rector\Console\Inspector::class;
 }

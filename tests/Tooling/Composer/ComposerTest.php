@@ -177,8 +177,7 @@ class ComposerTest extends TestCase
         $composer = app(Composer::class);
 
         // Touch a source file so its mtime is newer than the classmap
-        sleep(1);
-        touch($composer->baseDirectory->toString().'/src/Tooling/Composer/Composer.php');
+        touch($composer->baseDirectory->toString().'/src/Tooling/Composer/Composer.php', time() + 10);
 
         $this->assertTrue($composer->isClassMapStale);
     }

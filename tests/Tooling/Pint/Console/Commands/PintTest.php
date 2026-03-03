@@ -13,11 +13,11 @@ class PintTest extends TestCase implements ForVendorBinary
 {
     use VendorBinaryCases;
 
-    public string $command { get => Pint\Console\Commands\Pint::class; }
+    public string $command = Pint\Console\Commands\Pint::class;
 
-    public string $binary { get => 'pint'; }
+    public string $binary = 'pint';
 
-    public null|string $subcommand { get => null; }
+    public null|string $subcommand = null;
 
-    public string $inspector { get => Pint\Console\Inspector::class; }
+    public string $inspector = Pint\Console\Inspector::class;
 }

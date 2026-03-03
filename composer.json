@@ -11,6 +11,7 @@
         "larastan/larastan": "^3.8",
         "laravel/framework": "^12.36",
         "laravel/pint": "^1.25",
+        "laravel/prompts": "^0.3.13",
         "nesbot/carbon": "^3.11",
         "nikic/php-parser": "^5.6",
         "phpstan/phpstan": "^2.1",
@@ -37,6 +38,7 @@
     },
     "autoload-dev": {
         "psr-4": {
+            "App\\": "vendor/orchestra/testbench-core/laravel/app/",
             "Tests\\": "tests/"
         }
     },
@@ -62,7 +64,8 @@
         },
         "tooling": {
             "rector": {
-                "rules": "tooling/rector/rules.php"
+                "rules": "tooling/rector/rules.php",
+                "configured_rules": "tooling/rector/configured-rules.php"
             }
         }
     },

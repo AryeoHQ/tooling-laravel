@@ -26,11 +26,13 @@ Adds an interface to a class that extends a specific parent class.
 **Configuration:** Parent class → interface to add.
 
 ```php
+use App\Contracts\Modelable;
+use App\Models\Model;
 use Tooling\Rector\Rules\AddInterfaceByClass;
 
 return [
     AddInterfaceByClass::class => [
-        'App\Models\Model' => 'App\Contracts\Modelable',
+        Model::class => Modelable::class,
     ],
 ];
 ```
@@ -55,17 +57,38 @@ class Post extends Model implements Modelable
 
 Adds an interface to a class or enum that uses a specific trait.
 
-**Configuration:** Trait → interface to add.
+**Configuration:** Trait → interface(s) to add. Values can be a single class string or an array of class strings.
 
 ```php
+use App\Concerns\HasFilters;
+use App\Contracts\Filterable;
 use Tooling\Rector\Rules\AddInterfaceByTrait;
 
 return [
     AddInterfaceByTrait::class => [
-        'App\Concerns\HasFilters' => 'App\Contracts\Filterable',
+        HasFilters::class => Filterable::class,
     ],
 ];
 ```
+
+Multiple interfaces can be mapped to the same trait:
+
+```php
+use App\Concerns\HasFilters;
+use App\Contracts\Filterable;
+use App\Contracts\Searchable;
+
+return [
+    AddInterfaceByTrait::class => [
+        HasFilters::class => [
+            Filterable::class,
+            Searchable::class,
+        ],
+    ],
+];
+```
+
+> **Note**: Array values are normalized automatically. When multiple packages register the same trait key, `array_merge_recursive` collapses them into arrays — the rule handles this transparently.
 
 Before:
 
@@ -89,17 +112,38 @@ class Model implements Filterable
 
 Adds a trait to a class or enum that implements a specific interface.
 
-**Configuration:** Interface → trait to add.
+**Configuration:** Interface → trait(s) to add. Values can be a single class string or an array of class strings.
 
 ```php
+use App\Concerns\HasFilters;
+use App\Contracts\Filterable;
 use Tooling\Rector\Rules\AddTraitByInterface;
 
 return [
     AddTraitByInterface::class => [
-        'App\Contracts\Filterable' => 'App\Concerns\HasFilters',
+        Filterable::class => HasFilters::class,
     ],
 ];
 ```
+
+Multiple traits can be mapped to the same interface:
+
+```php
+use App\Concerns\HasFilters;
+use App\Concerns\HasScopes;
+use App\Contracts\Filterable;
+
+return [
+    AddTraitByInterface::class => [
+        Filterable::class => [
+            HasFilters::class,
+            HasScopes::class,
+        ],
+    ],
+];
+```
+
+> **Note**: Array values are normalized automatically. When multiple packages register the same interface key, `array_merge_recursive` collapses them into arrays — the rule handles this transparently.
 
 Before:
 
@@ -146,6 +190,16 @@ All native Rector CLI options work through the Artisan command:
 php artisan tooling:rector --dry-run
 php artisan tooling:rector --clear-cache
 ```
+
+## Scaffolding a Rule
+
+Use the `make:rector:rule` command to scaffold a new Rector rule:
+
+```bash
+php artisan make:rector:rule MyRuleName
+```
+
+The generated rule extends `Tooling\Rector\Rules\Rule` and includes `#[Definition]` and `#[NodeType]` attributes. See [Generator Commands](generator-commands.md) for details on the generator command system.
 
 ## Writing Custom Rules
 
@@ -370,19 +424,23 @@ The `configured_rules` key points to a separate file that returns an associative
 ```php
 <?php
 
+use App\Concerns\HasFilters;
+use App\Contracts\Filterable;
+use App\Contracts\Modelable;
+use App\Models\Model;
 use Tooling\Rector\Rules\AddInterfaceByClass;
 use Tooling\Rector\Rules\AddInterfaceByTrait;
 use Tooling\Rector\Rules\AddTraitByInterface;
 
 return [
     AddInterfaceByClass::class => [
-        'App\Models\Model' => 'App\Contracts\Modelable',
+        Model::class => Modelable::class,
     ],
     AddInterfaceByTrait::class => [
-        'App\Concerns\HasFilters' => 'App\Contracts\Filterable',
+        HasFilters::class => Filterable::class,
     ],
     AddTraitByInterface::class => [
-        'App\Contracts\Filterable' => 'App\Concerns\HasFilters',
+        Filterable::class => HasFilters::class,
     ],
 ];
 ```

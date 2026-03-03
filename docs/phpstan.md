@@ -66,6 +66,10 @@ Two meta rules enforce that custom PHPStan and Rector rules extend the base `Rul
 - PHPStan rules must extend `Tooling\PHPStan\Rules\Rule`
 - Rector rules must extend `Tooling\Rector\Rules\Rule`
 
+### Generator Command Enforcement
+
+Seven rules enforce correct trait/interface composition on [generator commands](generator-commands.md). Companion [Rector configured rules](rector.md#configurable-rules) can auto-fix most of these violations automatically.
+
 ### Downstream Package Rules
 
 Rules registered by other packages via `extra.tooling.phpstan` in their `composer.json` are automatically discovered and included. See [Registering Rules](#registering-rules).
@@ -95,6 +99,16 @@ php artisan tooling:phpstan --generate-baseline
 php artisan tooling:phpstan --level=8
 php artisan tooling:phpstan --memory-limit=512M
 ```
+
+## Scaffolding a Rule
+
+Use the `make:phpstan:rule` command to scaffold a new PHPStan rule:
+
+```bash
+php artisan make:phpstan:rule MyRuleName
+```
+
+The generated rule extends `Tooling\PHPStan\Rules\Rule` and includes the `#[NodeType]` attribute. See [Generator Commands](generator-commands.md) for details on the generator command system.
 
 ## Writing Custom Rules
 
