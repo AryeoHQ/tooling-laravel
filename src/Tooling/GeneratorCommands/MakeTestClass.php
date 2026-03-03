@@ -8,7 +8,9 @@ use Illuminate\Console\GeneratorCommand;
 use Illuminate\Foundation\Console\TestMakeCommand;
 use Illuminate\Support\Stringable;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
 use Tooling\Composer\Composer;
 use Tooling\GeneratorCommands\Concerns\SearchesClasses;
 use Tooling\GeneratorCommands\Concerns\SearchesNamespaces;
@@ -152,5 +154,13 @@ class MakeTestClass extends TestMakeCommand
         return [
             new InputOption('force', 'f', InputOption::VALUE_NONE, 'Create the class even if it already exists'),
         ];
+    }
+
+    /**
+     * Override to skip base command prompts
+     */
+    protected function afterPromptingForMissingArguments(InputInterface $input, OutputInterface $output)
+    {
+        //
     }
 }
