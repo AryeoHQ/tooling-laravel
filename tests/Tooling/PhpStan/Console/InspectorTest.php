@@ -15,9 +15,9 @@ class InspectorTest extends TestCase implements ForInspector
 {
     use InspectorCases;
 
-    public string $class { get => PhpStanInspector::class; }
+    public string $class = PhpStanInspector::class;
 
-    public string $path { get => '/usr/local/bin/phpstan'; }
+    public string $path = '/usr/local/bin/phpstan';
 
     public array $arguments {
         get => [

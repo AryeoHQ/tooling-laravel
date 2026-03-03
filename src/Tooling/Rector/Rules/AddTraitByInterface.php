@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tooling\Rector\Rules;
 
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
@@ -22,24 +23,26 @@ use Tooling\Rules\Attributes\NodeType;
 #[Sample('tooling.rector.rules.samples')]
 final class AddTraitByInterface extends Rule implements ConfigurableRectorInterface
 {
-    /** @var array<class-string, class-string> */
+    /** @var array<class-string, list<class-string>> */
     private array $traitByInterface = [];
 
     public function handle(Node $node): null|Node
     {
         $hasChanged = false;
 
-        foreach ($this->traitByInterface as $interfaceName => $traitName) {
+        foreach ($this->traitByInterface as $interfaceName => $traitNames) {
             if (! $this->inherits($node, $interfaceName)) {
                 continue;
             }
 
-            if ($this->inherits($node, $traitName)) {
-                continue;
-            }
+            foreach ($traitNames as $traitName) {
+                if ($this->inherits($node, $traitName)) {
+                    continue;
+                }
 
-            $this->addTrait($node, $traitName);
-            $hasChanged = true;
+                $this->addTrait($node, $traitName);
+                $hasChanged = true;
+            }
         }
 
         return $hasChanged ? $node : null;
@@ -52,8 +55,11 @@ final class AddTraitByInterface extends Rule implements ConfigurableRectorInterf
     {
         tap(collect($configuration), function (Collection $collection) {
             $collection->keys()->ensure('string');
-            $collection->ensure('string');
+            $collection->each(fn (mixed $value) => collect(Arr::wrap($value))->ensure('string'));
         });
-        $this->traitByInterface = $configuration;
+        $this->traitByInterface = array_map(
+            fn (string|array $value): array => Arr::flatten(Arr::wrap($value)),
+            $configuration,
+        );
     }
 }

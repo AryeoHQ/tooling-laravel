@@ -26,7 +26,7 @@ final class {{class}} extends Rule
         $this->error(
             message: 'Add error message here',
             line: $node->name->getStartLine(),
-            identifier: 'dot.separated.indentifier'
+            identifier: 'dot.separated.identifier'
         );
     }
 }

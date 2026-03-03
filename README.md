@@ -1,6 +1,6 @@
 # Tooling for Laravel
 
-Unified Artisan commands with preconfigured rules for [PHPStan](docs/phpstan.md), [Rector](docs/rector.md), and [Laravel Pint](docs/pint.md).
+Unified Artisan commands with preconfigured rules for [PHPStan](docs/phpstan.md), [Rector](docs/rector.md), and [Laravel Pint](docs/pint.md), plus conveniences for building [generator commands](docs/generator-commands.md).
 
 Each tool ships with an opinionated configuration out of the box. All native CLI arguments and options are forwarded through the Artisan commands, so everything you can do with the underlying tool directly is available here.
 
@@ -40,7 +40,9 @@ The config file (`config/tooling.php`) maps these environment variables to the a
 php artisan tooling:phpstan
 php artisan tooling:pint
 php artisan tooling:rector
-php artisan tooling:make-analyzer {library} {name}
+php artisan make:test
+php artisan make:rector:rule {name}
+php artisan make:phpstan:rule {name}
 ```
 
 ### In a Package:
@@ -48,7 +50,9 @@ php artisan tooling:make-analyzer {library} {name}
 php ./vendor/bin/testbench tooling:phpstan
 php ./vendor/bin/testbench tooling:pint
 php ./vendor/bin/testbench tooling:rector
-php ./vendor/bin/testbench tooling:make-analyzer {library} {name}
+php ./vendor/bin/testbench make:test
+php ./vendor/bin/testbench make:rector:rule {name}
+php ./vendor/bin/testbench make:phpstan:rule {name}
 ```
 
 All native CLI options are forwarded. For example:

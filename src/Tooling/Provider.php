@@ -12,8 +12,8 @@ use Rector\DependencyInjection\RectorContainerFactory;
 use Rector\ValueObject\Bootstrap\BootstrapConfigs;
 use ReflectionClass;
 use Tooling\Composer\Composer;
-use Tooling\Console\Commands\MakeAnalyzer;
 use Tooling\Console\Commands\ToolingDiscover;
+use Tooling\GeneratorCommands\MakeTestClass;
 use Tooling\Pint\Console\Commands\CloneBaseCommand;
 
 class Provider extends ServiceProvider
@@ -102,8 +102,10 @@ class Provider extends ServiceProvider
         $this->commands(
             ToolingDiscover::class,
             CloneBaseCommand::class,
-            MakeAnalyzer::class,
+            MakeTestClass::class,
+            PhpStan\Console\Commands\Make\MakeRule::class,
             PhpStan\Console\Commands\PhpStan::class,
+            Rector\Console\Commands\Make\MakeRule::class,
             Rector\Console\Commands\Rector::class,
             Pint\Console\Commands\Pint::class
         );

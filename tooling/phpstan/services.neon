@@ -3,3 +3,35 @@ services:
         class: Tooling\PhpStan\Rules\Enums\CaseMustBePascal
         tags:
             - phpstan.rules.rule
+    -
+        class: Tooling\PhpStan\Rules\TestsReferenceMustHaveReferenceTestCases
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\PhpStan\Rules\GeneratorCommands\GeneratesFileMustUseGeneratorCommandCompatibility
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\PhpStan\Rules\GeneratorCommands\GeneratesFileMustExtendGeneratorCommand
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\PhpStan\Rules\GeneratorCommands\GeneratorCommandCompatibilityMustImplementGeneratesFile
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\PhpStan\Rules\GeneratorCommands\CreatesColocatedTestsMustImplementGeneratesFile
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\PhpStan\Rules\GeneratorCommands\RetrievesNamespaceFromInputMustUseSearchesNamespaces
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\PhpStan\Rules\GeneratorCommands\SearchesClassesMustUseSearchesNamespaces
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Tooling\PhpStan\Rules\GeneratorCommands\ReferenceTestCasesMustImplementTestsReference
+        tags:
+            - phpstan.rules.rule
