@@ -24,14 +24,6 @@ services:
         tags:
             - phpstan.rules.rule
     -
-        class: Tooling\PhpStan\Rules\GeneratorCommands\RetrievesNamespaceFromInputMustUseSearchesNamespaces
-        tags:
-            - phpstan.rules.rule
-    -
-        class: Tooling\PhpStan\Rules\GeneratorCommands\SearchesClassesMustUseSearchesNamespaces
-        tags:
-            - phpstan.rules.rule
-    -
         class: Tooling\PhpStan\Rules\GeneratorCommands\ReferenceTestCasesMustImplementTestsReference
         tags:
             - phpstan.rules.rule

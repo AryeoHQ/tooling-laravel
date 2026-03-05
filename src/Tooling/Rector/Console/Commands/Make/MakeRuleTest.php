@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tooling\GeneratorCommands\References\Contracts\Reference;
 use Tooling\GeneratorCommands\Testing\Concerns\GeneratesFileTestCases;
-use Tooling\GeneratorCommands\Testing\Concerns\RetrievesNamespaceFromInputTestCases;
+use Tooling\GeneratorCommands\Testing\Concerns\RetrievesNamespaceTestCases;
 use Tooling\Rector\Console\Commands\Make\References\RectorRule;
 
 #[CoversClass(MakeRule::class)]
@@ -18,7 +18,7 @@ class MakeRuleTest extends TestCase
 {
     use GeneratesFileTestCases;
     use InteractsWithPublishedFiles; // @phpstan-ignore-line
-    use RetrievesNamespaceFromInputTestCases;
+    use RetrievesNamespaceTestCases;
 
     /** @var array<array-key, string> */
     protected array $files {

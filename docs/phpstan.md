@@ -68,7 +68,7 @@ Two meta rules enforce that custom PHPStan and Rector rules extend the base `Rul
 
 ### Generator Command Enforcement
 
-Seven rules enforce correct trait/interface composition on [generator commands](generator-commands.md). Companion [Rector configured rules](rector.md#configurable-rules) can auto-fix most of these violations automatically.
+Five rules enforce correct trait/interface composition on [generator commands](generator-commands.md). Companion [Rector configured rules](rector.md#configurable-rules) can auto-fix most of these violations automatically.
 
 ### Downstream Package Rules
 

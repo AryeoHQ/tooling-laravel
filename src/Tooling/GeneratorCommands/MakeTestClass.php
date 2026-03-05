@@ -13,12 +13,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Tooling\Composer\Composer;
 use Tooling\GeneratorCommands\Concerns\SearchesClasses;
-use Tooling\GeneratorCommands\Concerns\SearchesNamespaces;
 
 class MakeTestClass extends TestMakeCommand
 {
     use SearchesClasses;
-    use SearchesNamespaces;
 
     protected $description = 'Create a co-located test.';
 
