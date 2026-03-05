@@ -189,9 +189,10 @@ class ComposerTest extends TestCase
 
         $composer = app(Composer::class);
 
-        // Create a temporary PHP file in the source directory, re-dump, then delete it
-        $tempFile = $composer->baseDirectory->toString().'/src/Tooling/Composer/TemporaryStaleTestClass.php';
-        file_put_contents($tempFile, "<?php\n\nnamespace Tooling\\Composer;\n\nclass TemporaryStaleTestClass {}\n");
+        // Create a temporary PHP file in a PSR-4 source directory, re-dump, then delete it.
+        // Uses the testbench app directory (vendor-based, gitignored) to avoid polluting the project tree.
+        $tempFile = $composer->baseDirectory->toString().'/vendor/orchestra/testbench-core/laravel/app/TemporaryStaleTestClass.php';
+        file_put_contents($tempFile, "<?php\n\nnamespace App;\n\nclass TemporaryStaleTestClass {}\n");
 
         Process::run('composer dump -o --no-scripts --no-interaction');
 

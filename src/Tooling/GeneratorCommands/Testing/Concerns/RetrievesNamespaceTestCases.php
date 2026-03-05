@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 /**
  * @mixin \Tests\TestCase
  */
-trait RetrievesNamespaceFromInputTestCases
+trait RetrievesNamespaceTestCases
 {
     #[Test]
     public function it_resolves_the_namespace_with_a_trailing_backslash(): void

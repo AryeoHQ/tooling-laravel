@@ -9,10 +9,11 @@ use Tooling\Composer\Composer;
 
 /**
  * @mixin \Illuminate\Console\GeneratorCommand
- * @mixin \Tooling\GeneratorCommands\Concerns\SearchesNamespaces
  */
 trait SearchesClasses
 {
+    use SearchesNamespaces;
+
     /** @var Collection<int, string> */
     protected Collection $searchableClasses {
         get => $this->searchableClasses ??= $this->discoverSearchableClasses();

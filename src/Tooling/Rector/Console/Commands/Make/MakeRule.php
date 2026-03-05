@@ -10,8 +10,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
 use Tooling\GeneratorCommands\Concerns\CreatesColocatedTests;
 use Tooling\GeneratorCommands\Concerns\GeneratorCommandCompatibility;
-use Tooling\GeneratorCommands\Concerns\RetrievesNamespaceFromInput;
-use Tooling\GeneratorCommands\Concerns\SearchesNamespaces;
+use Tooling\GeneratorCommands\Concerns\RetrievesNamespace;
 use Tooling\GeneratorCommands\Contracts\GeneratesFile;
 use Tooling\GeneratorCommands\References\Contracts\Reference;
 use Tooling\Rector\Console\Commands\Make\References\RectorRule;
@@ -21,8 +20,7 @@ class MakeRule extends GeneratorCommand implements GeneratesFile
 {
     use CreatesColocatedTests;
     use GeneratorCommandCompatibility;
-    use RetrievesNamespaceFromInput;
-    use SearchesNamespaces;
+    use RetrievesNamespace;
 
     protected $type = 'Rector Rule';
 
@@ -43,7 +41,7 @@ class MakeRule extends GeneratorCommand implements GeneratesFile
 
     public function handle(): null|bool
     {
-        $this->promptForNamespace();
+        $this->resolveNamespace();
 
         return parent::handle();
     }
@@ -52,7 +50,7 @@ class MakeRule extends GeneratorCommand implements GeneratesFile
     {
         return [
             new InputOption('force', 'f', InputOption::VALUE_NONE, 'Create the class even if it already exists'),
-            new InputOption('namespace', null, InputOption::VALUE_OPTIONAL, 'The root namespace'),
+            ...$this->getNamespaceInputOptions(),
         ];
     }
 }
