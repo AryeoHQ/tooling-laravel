@@ -261,4 +261,20 @@ trait ValidatesInheritanceCases
 
         $this->assertTrue($this->doesNotInherit($reflection, ParentContract::class));
     }
+
+    #[Test]
+    public function it_detects_a_class_does_not_inherit_from_itself(): void
+    {
+        $node = $this->getClassNodeWithScope($this->getFixturePath('ClassWithInterface.php'));
+
+        $this->assertFalse($this->inherits($node, ClassWithInterface::class));
+    }
+
+    #[Test]
+    public function it_detects_a_class_does_not_inherit_from_itself_via_reflection(): void
+    {
+        $reflection = $this->getClassReflection(ClassWithInterface::class);
+
+        $this->assertFalse($this->inherits($reflection, ClassWithInterface::class));
+    }
 }
