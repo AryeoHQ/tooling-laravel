@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Tooling\Rector\Rules\Provides;
 
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Fixtures\Tooling\ClassWithInterface;
 use Tests\Fixtures\Tooling\Concern;
 use Tests\Fixtures\Tooling\Contract;
 use Tests\Fixtures\Tooling\ParentClass;
@@ -243,5 +244,13 @@ trait ValidatesInheritanceCases
         $node = $this->getTraitNode($this->getFixturePath('TraitWithoutTrait.php'));
 
         $this->assertTrue($this->doesNotInherit($node, Concern::class));
+    }
+
+    #[Test]
+    public function it_detects_a_class_does_not_inherit_from_itself(): void
+    {
+        $node = $this->getClassNodeWithScope($this->getFixturePath('ClassWithInterface.php'));
+
+        $this->assertFalse($this->inherits($node, ClassWithInterface::class));
     }
 }

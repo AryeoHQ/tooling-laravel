@@ -95,7 +95,7 @@ trait ValidatesInheritance
             $normalizedItem = ltrim($item, '\\');
 
             if (ltrim($reflection->getName(), '\\') === $normalizedItem) {
-                return true;
+                continue;
             }
 
             foreach ($reflection->getParents() as $parent) {
