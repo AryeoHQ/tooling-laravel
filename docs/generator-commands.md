@@ -137,6 +137,12 @@ If you want the namespace as a positional argument instead of an option (e.g. `m
     }
 ```
 
+## References
+
+### `GenericClass`
+
+A `Reference` implementation for commands that operate on an existing class. Unlike domain-specific references (`RectorRule`, `PhpStanRule`) which accept a `name` and `baseNamespace`, `GenericClass` accepts a complete FQCN and resolves its base namespace via longest-prefix matching against the project's PSR-4 autoload entries in `composer.json`.
+
 ## Testing
 
 The package provides reusable test traits for generator commands:
@@ -144,6 +150,18 @@ The package provides reusable test traits for generator commands:
 - **`GeneratesFileTestCases`** — asserts the command generates a file with the correct namespace. The test class must define `$baselineInput` (array of artisan input) and a `$reference` property.
 - **`ReferenceTestCases`** — tests each derived property on a `Reference`. The test class must implement `TestsReference`, which declares `$subject`, `$expectedName`, and `$expectedSubdirectory`.
 - **`RetrievesNamespaceTestCases`** — tests namespace resolution with and without trailing backslashes. Requires `$withNamespaceBackslashInput` and `$withoutNamespaceBackslashInput` properties.
+- **`CleansUpGeneratorCommands`** — automatically cleans up files generated during tests. Discovers `Reference`-typed properties on the test class via reflection, then deletes each reference's `filePath` and `test->filePath` in both `setUp` and `tearDown`. After tearDown, prunes empty directories upward to the project base path. Safe for parallel test execution.
+
+  For commands that orchestrate subcommands and generate files beyond what auto-discovery can reach, define a `$files` property with an array of glob patterns for supplemental cleanup:
+
+  ```php
+  /** @var array<array-key, string> */
+  protected array $files {
+      get => [
+          $this->reference->child->directoryPath->append('/*')->toString(),
+      ];
+  }
+  ```
 
 ## Available Commands
 

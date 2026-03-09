@@ -7,7 +7,7 @@ namespace Tooling\GeneratorCommands\References;
 use Illuminate\Support\Stringable;
 use Tooling\GeneratorCommands\References\Contracts\Reference;
 
-final class TestClass
+final class TestClass implements Reference
 {
     private readonly Reference $parent;
 
@@ -28,11 +28,21 @@ final class TestClass
         get => $this->namespace->append('\\', $this->name->toString());
     }
 
+    public Stringable $directory {
+        get => $this->parent->directory;
+    }
+
     public Stringable $directoryPath {
         get => $this->parent->directoryPath;
     }
 
+    public null|Stringable $subdirectory = null;
+
     public Stringable $filePath {
         get => $this->directoryPath->append('/', $this->name->toString(), '.php');
+    }
+
+    public TestClass $test {
+        get => $this;
     }
 }

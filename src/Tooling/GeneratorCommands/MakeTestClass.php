@@ -11,11 +11,15 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Tooling\Composer\Composer;
+use Tooling\GeneratorCommands\Concerns\GeneratorCommandCompatibility;
 use Tooling\GeneratorCommands\Concerns\SearchesClasses;
+use Tooling\GeneratorCommands\Contracts\GeneratesFile;
+use Tooling\GeneratorCommands\References\Contracts\Reference;
+use Tooling\GeneratorCommands\References\GenericClass;
 
-class MakeTestClass extends TestMakeCommand
+class MakeTestClass extends TestMakeCommand implements GeneratesFile
 {
+    use GeneratorCommandCompatibility;
     use SearchesClasses;
 
     protected $description = 'Create a co-located test.';
@@ -26,51 +30,26 @@ class MakeTestClass extends TestMakeCommand
         get => $this->classToTest ??= str($this->argument('class'));
     }
 
-    private Stringable $classNamespace {
-        get => $this->classToTest->beforeLast('\\');
+    public string $stub {
+        get => __DIR__.'/stubs/test.stub';
     }
 
-    private Stringable $className {
-        get => str(class_basename($this->classToTest->toString()));
+    public Stringable $nameInput {
+        get => $this->reference->name;
     }
 
-    private Stringable $testName {
-        get => $this->className->append('Test');
+    private GenericClass $classReference {
+        get => $this->classReference ??= new GenericClass($this->classToTest);
     }
 
-    private Stringable $directoryPath {
-        get => $this->directoryPath ??= $this->resolveDirectoryPath();
+    public Reference $reference {
+        get => $this->classReference->test;
     }
 
     public function handle()
     {
         // Does not call parent::handle() to skip base command's operations
         return GeneratorCommand::handle();
-    }
-
-    public function getStub(): string
-    {
-        return __DIR__.'/stubs/test.stub';
-    }
-
-    protected function getNameInput(): string
-    {
-        return $this->testName->toString();
-    }
-
-    protected function rootNamespace()
-    {
-        return $this->classNamespace->toString();
-    }
-
-    protected function getDefaultNamespace($rootNamespace)
-    {
-        return $this->rootNamespace();
-    }
-
-    protected function getPath($name): string
-    {
-        return $this->directoryPath->append('/', $this->testName->toString(), '.php')->toString();
     }
 
     protected function replaceClass($stub, $name)
@@ -85,9 +64,9 @@ class MakeTestClass extends TestMakeCommand
             '{{ fqcn }}',
             '{{ class }}',
         ], [
-            $this->classNamespace->toString(),
-            $this->classToTest->toString(),
-            $this->className->toString(),
+            $this->reference->namespace->toString(),
+            $this->classReference->fqcn->toString(),
+            $this->classReference->name->toString(),
         ], GeneratorCommand::buildClass($name));
     }
 
@@ -101,41 +80,6 @@ class MakeTestClass extends TestMakeCommand
                 scroll: 5,
             ),
         ];
-    }
-
-    private function resolveDirectoryPath(): Stringable
-    {
-        $composer = resolve(Composer::class);
-
-        $filePath = $composer->classMap->get($this->classToTest->toString());
-
-        if (is_string($filePath) && file_exists($filePath)) {
-            return str(dirname($filePath));
-        }
-
-        $namespace = $this->classNamespace->append('\\')->toString();
-
-        $matchedPrefix = null;
-        $matchedPath = null;
-
-        foreach ($this->availableNamespaces as $prefix => $basePath) {
-            $prefix = (string) $prefix;
-            $basePath = (string) $basePath;
-
-            if (str_starts_with($namespace, $prefix) && ($matchedPrefix === null || strlen($prefix) > strlen($matchedPrefix))) {
-                $matchedPrefix = $prefix;
-                $matchedPath = $basePath;
-            }
-        }
-
-        $relative = ltrim(str_replace('\\', '/', substr($namespace, strlen($matchedPrefix ?? ''))), '/');
-        $base = str($matchedPath ?? $this->laravel->basePath('app'));
-
-        if (! $base->startsWith('/')) {
-            $base = str($composer->baseDirectory->toString())->append('/', $base->rtrim('/')->toString());
-        }
-
-        return $relative === '' ? $base : $base->rtrim('/')->append('/', rtrim($relative, '/'));
     }
 
     /** @return array<int, InputArgument> */

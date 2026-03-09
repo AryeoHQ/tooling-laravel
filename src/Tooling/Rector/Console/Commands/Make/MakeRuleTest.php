@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tooling\Rector\Console\Commands\Make;
 
-use Orchestra\Testbench\Concerns\InteractsWithPublishedFiles;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tooling\GeneratorCommands\References\Contracts\Reference;
+use Tooling\GeneratorCommands\Testing\Concerns\CleansUpGeneratorCommands;
 use Tooling\GeneratorCommands\Testing\Concerns\GeneratesFileTestCases;
 use Tooling\GeneratorCommands\Testing\Concerns\RetrievesNamespaceTestCases;
 use Tooling\Rector\Console\Commands\Make\References\RectorRule;
@@ -16,16 +16,9 @@ use Tooling\Rector\Console\Commands\Make\References\RectorRule;
 #[CoversClass(MakeRule::class)]
 class MakeRuleTest extends TestCase
 {
+    use CleansUpGeneratorCommands;
     use GeneratesFileTestCases;
-    use InteractsWithPublishedFiles; // @phpstan-ignore-line
     use RetrievesNamespaceTestCases;
-
-    /** @var array<array-key, string> */
-    protected array $files {
-        get => [
-            $this->reference->directoryPath->append('/*')->toString(),
-        ];
-    }
 
     public Reference $reference {
         get => new RectorRule(name: 'TestRule', baseNamespace: 'App');
