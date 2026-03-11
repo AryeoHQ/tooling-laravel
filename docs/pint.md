@@ -8,6 +8,7 @@ The bundled `pint.json` uses the **Laravel preset** with the following additiona
 
 | Rule | Configuration | Purpose |
 |------|---------------|---------|
+| `fully_qualified_strict_types` | `false` | Disabled — introduced in a non-major Pint release, causing unexpected formatting changes |
 | `no_unused_imports` | — | Removes unused `use` statements |
 | `ordered_attributes` | `sort_algorithm: alpha` | Sorts PHP attributes alphabetically |
 | `nullable_type_declaration` | `syntax: union` | Uses `Type\|null` instead of `?Type` |
