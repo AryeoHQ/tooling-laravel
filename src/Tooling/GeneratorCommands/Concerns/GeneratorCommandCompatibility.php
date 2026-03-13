@@ -22,7 +22,7 @@ trait GeneratorCommandCompatibility
 
     protected function rootNamespace()
     {
-        return $this->reference->namespace->toString();
+        return $this->reference->namespace->after('\\')->toString();
     }
 
     protected function getDefaultNamespace($rootNamespace)
@@ -32,6 +32,6 @@ trait GeneratorCommandCompatibility
 
     protected function getPath($name): string
     {
-        return $this->reference->directoryPath->append('/', $this->getNameInput(), '.php')->toString();
+        return $this->reference->directory->append('/', $this->getNameInput(), '.php')->toString();
     }
 }

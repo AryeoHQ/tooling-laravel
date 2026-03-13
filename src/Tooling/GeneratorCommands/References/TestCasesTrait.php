@@ -6,9 +6,9 @@ namespace Tooling\GeneratorCommands\References;
 
 use Tooling\GeneratorCommands\References\Contracts\TestCompanion;
 
-final class TestClass extends GenericClass implements TestCompanion
+final class TestCasesTrait extends GenericTrait implements TestCompanion
 {
-    public TestClass $test {
+    public TestClass|TestCasesTrait $test {
         get => $this;
     }
 }

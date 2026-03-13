@@ -11,6 +11,4 @@ interface TestsReference
     public Reference $subject { get; }
 
     public string $expectedName { get; }
-
-    public null|string $expectedSubdirectory { get; }
 }

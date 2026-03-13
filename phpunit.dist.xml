@@ -11,5 +11,9 @@
     <include>
       <directory suffix=".php">./src</directory>
     </include>
+    <exclude>
+      <directory suffix="Test.php">./src</directory>
+      <directory suffix="TestCases.php">./src</directory>
+    </exclude>
   </source>
 </phpunit>

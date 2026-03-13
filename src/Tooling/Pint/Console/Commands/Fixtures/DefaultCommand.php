@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tooling\Pint\Console\Commands\Fixtures;
 
+use App\Actions\ElaborateSummary;
 use App\Actions\FixCode;
 use App\Factories\ConfigurationFactory;
 use Illuminate\Console\Command;
@@ -62,8 +63,8 @@ class DefaultCommand extends Command
     /**
      * Execute the console command.
      *
-     * @param  object  $fixCode
-     * @param  object  $elaborateSummary
+     * @param  FixCode  $fixCode
+     * @param  ElaborateSummary  $elaborateSummary
      * @return int
      */
     public function handle($fixCode, $elaborateSummary)

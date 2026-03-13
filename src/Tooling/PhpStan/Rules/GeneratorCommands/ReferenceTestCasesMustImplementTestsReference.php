@@ -7,7 +7,7 @@ namespace Tooling\PhpStan\Rules\GeneratorCommands;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PHPStan\Analyser\Scope;
-use Tooling\GeneratorCommands\Testing\Concerns\ReferenceTestCases;
+use Tooling\GeneratorCommands\References\ReferenceTestCases;
 use Tooling\GeneratorCommands\Testing\Contracts\TestsReference;
 use Tooling\PhpStan\Rules\Rule;
 use Tooling\Rules\Attributes\NodeType;

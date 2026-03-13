@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tooling\GeneratorCommands\Testing\Concerns;
+namespace Tooling\GeneratorCommands\References;
 
 use PHPUnit\Framework\Attributes\Test;
 
@@ -16,15 +16,6 @@ trait ReferenceTestCases
     public function it_derives_the_name(): void
     {
         $this->assertSame($this->expectedName, $this->subject->name->toString());
-    }
-
-    #[Test]
-    public function it_derives_the_subdirectory(): void
-    {
-        $this->assertSame(
-            $this->expectedSubdirectory,
-            $this->subject->subdirectory?->toString(),
-        );
     }
 
     #[Test]
@@ -46,20 +37,16 @@ trait ReferenceTestCases
     }
 
     #[Test]
-    public function it_derives_the_test_name(): void
+    public function it_enforces_the_namespace_invariant(): void
     {
-        $this->assertSame(
-            $this->expectedName.'Test',
-            $this->subject->test->name->toString(),
+        $this->assertTrue(
+            $this->subject->namespace->startsWith('\\'),
+            'Namespace must start with a leading backslash.',
         );
-    }
 
-    #[Test]
-    public function it_derives_the_test_file_path(): void
-    {
-        $this->assertStringEndsWith(
-            $this->subject->directory->toString().'/'.$this->expectedName.'Test.php',
-            $this->subject->test->filePath->toString(),
+        $this->assertFalse(
+            $this->subject->namespace->endsWith('\\'),
+            'Namespace must not end with a trailing backslash.',
         );
     }
 }

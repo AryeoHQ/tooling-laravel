@@ -39,7 +39,7 @@ class MakeTestClass extends TestMakeCommand implements GeneratesFile
     }
 
     private GenericClass $classReference {
-        get => $this->classReference ??= new GenericClass($this->classToTest);
+        get => $this->classReference ??= GenericClass::fromFqcn($this->classToTest);
     }
 
     public Reference $reference {
@@ -64,8 +64,8 @@ class MakeTestClass extends TestMakeCommand implements GeneratesFile
             '{{ fqcn }}',
             '{{ class }}',
         ], [
-            $this->reference->namespace->toString(),
-            $this->classReference->fqcn->toString(),
+            $this->reference->namespace->after('\\')->toString(),
+            $this->classReference->fqcn->after('\\')->toString(),
             $this->classReference->name->toString(),
         ], GeneratorCommand::buildClass($name));
     }
