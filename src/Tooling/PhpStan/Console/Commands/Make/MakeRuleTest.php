@@ -21,12 +21,12 @@ class MakeRuleTest extends TestCase
     use RetrievesNamespaceTestCases;
 
     public Reference $reference {
-        get => new PhpStanRule(name: 'TestRule', baseNamespace: 'App');
+        get => new PhpStanRule(name: 'TestRule', baseNamespace: 'Workbench\\App');
     }
 
     /** @var array<string, mixed> */
     public array $baselineInput {
-        get => ['name' => 'TestRule', '--namespace' => 'App\\'];
+        get => ['name' => 'TestRule', '--namespace' => 'Workbench\\App\\'];
     }
 
     /** @var array<string, mixed> */
@@ -36,7 +36,7 @@ class MakeRuleTest extends TestCase
 
     /** @var array<string, mixed> */
     public array $withoutNamespaceBackslashInput {
-        get => ['name' => 'TestRule', '--namespace' => 'App'];
+        get => ['name' => 'TestRule', '--namespace' => 'Workbench\\App'];
     }
 
     #[Test]

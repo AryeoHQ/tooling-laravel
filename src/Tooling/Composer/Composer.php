@@ -136,7 +136,7 @@ class Composer
     }
 
     /** @return Collection<int, non-empty-string> */
-    private function psr4SourceDirectories(): Collection
+    public function psr4SourceDirectories(): Collection
     {
         $package = $this->currentAsPackage;
         $basePath = $this->baseDirectory->toString();

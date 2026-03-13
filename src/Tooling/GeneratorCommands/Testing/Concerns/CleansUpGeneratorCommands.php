@@ -6,7 +6,10 @@ namespace Tooling\GeneratorCommands\Testing\Concerns;
 
 use Illuminate\Support\Collection;
 use ReflectionProperty;
+use Tooling\Composer\Composer;
 use Tooling\GeneratorCommands\References\Contracts\Reference;
+use Tooling\GeneratorCommands\References\GenericClass;
+use Tooling\GeneratorCommands\References\GenericTrait;
 
 /**
  * @mixin \Tests\TestCase
@@ -41,10 +44,10 @@ trait CleansUpGeneratorCommands
 
     private function pruneEmptyDirectories(): void
     {
-        $basePath = $this->app->basePath();
+        $sourceRoots = resolve(Composer::class)->psr4SourceDirectories();
 
         $directories = $this->referenceProperties()
-            ->map(fn (Reference $reference) => $reference->directoryPath->toString());
+            ->map(fn (Reference $reference) => $reference->directory->toString());
 
         if (property_exists($this, 'files')) {
             /** @var array<array-key, string> $files */
@@ -55,16 +58,31 @@ trait CleansUpGeneratorCommands
             );
         }
 
-        $directories
-            ->unique()
-            ->each(function (string $directory) use ($basePath) {
-                while ($directory !== $basePath && str_starts_with($directory, $basePath)) {
-                    if (! $this->app['files']->isDirectory($directory) || ! $this->app['files']->isEmptyDirectory($directory)) {
-                        break;
-                    }
+        $directories->unique()->each(function (string $directory) use ($sourceRoots) {
+            $boundary = $sourceRoots
+                ->sortByDesc(fn (string $root) => strlen($root))
+                ->first(fn (string $root) => str_starts_with($directory, $root.'/'));
 
-                    $this->app['files']->deleteDirectory($directory);
-                    $directory = dirname($directory);
+            if ($boundary !== null) {
+                $this->deleteEmptyDirectoriesUpTo(from: $directory, boundary: $boundary);
+            }
+        });
+    }
+
+    private function deleteEmptyDirectoriesUpTo(string $from, string $boundary): void
+    {
+        if (! str_starts_with($from, $boundary.'/')) {
+            return;
+        }
+
+        $files = $this->app['files'];
+        $segments = explode('/', substr($from, strlen($boundary) + 1));
+
+        collect(range(count($segments), 1))
+            ->map(fn (int $depth) => $boundary.'/'.implode('/', array_slice($segments, 0, $depth)))
+            ->each(function (string $directory) use ($files) {
+                if ($files->isDirectory($directory) && $files->isEmptyDirectory($directory)) {
+                    $files->deleteDirectory($directory);
                 }
             });
     }
@@ -73,10 +91,15 @@ trait CleansUpGeneratorCommands
     private function generatedFilePaths(): Collection
     {
         return $this->referenceProperties()
-            ->flatMap(fn (Reference $reference) => [
-                $reference->filePath->toString(),
-                $reference->test->filePath->toString(),
-            ])
+            ->flatMap(function (Reference $reference) {
+                $paths = [$reference->filePath->toString()];
+
+                if ($reference instanceof GenericClass || $reference instanceof GenericTrait) {
+                    $paths[] = $reference->test->filePath->toString();
+                }
+
+                return $paths;
+            })
             ->unique();
     }
 

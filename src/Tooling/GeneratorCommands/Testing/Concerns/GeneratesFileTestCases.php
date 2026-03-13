@@ -29,7 +29,7 @@ trait GeneratesFileTestCases
         $contents = file_get_contents($this->expectedFilePath);
 
         $this->assertStringContainsString(
-            'namespace '.$this->reference->namespace.';',
+            'namespace '.$this->reference->namespace->after('\\').';',
             $contents,
         );
     }

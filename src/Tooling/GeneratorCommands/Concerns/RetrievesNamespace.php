@@ -32,10 +32,13 @@ trait RetrievesNamespace
 
     protected function namespaceFromPrompt(): Stringable
     {
-        $result = \Laravel\Prompts\select(
+        $result = \Laravel\Prompts\suggest(
             label: "Which namespace should the {$this->type} be created in?",
-            options: $this->availableNamespaces->keys()->map(fn (string $ns) => rtrim($ns, '\\'))->all(),
+            options: $this->availableNamespaces->keys()->map(fn (string $ns) => rtrim($ns, '\\'))->values()->all(),
             required: true,
+            validate: fn (string $value) => $this->isValidNamespace(str($value))
+                ? null
+                : "Namespace [{$value}] is not configured for this project.",
         );
 
         return str($result);

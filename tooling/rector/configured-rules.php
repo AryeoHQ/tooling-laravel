@@ -3,7 +3,7 @@
 use Tooling\GeneratorCommands\Concerns\CreatesColocatedTests;
 use Tooling\GeneratorCommands\Concerns\GeneratorCommandCompatibility;
 use Tooling\GeneratorCommands\Contracts\GeneratesFile;
-use Tooling\GeneratorCommands\Testing\Concerns\ReferenceTestCases;
+use Tooling\GeneratorCommands\References\ReferenceTestCases;
 use Tooling\GeneratorCommands\Testing\Contracts\TestsReference;
 use Tooling\Rector\Rules\AddInterfaceByTrait;
 use Tooling\Rector\Rules\AddTraitByInterface;

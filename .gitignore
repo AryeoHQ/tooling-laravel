@@ -10,3 +10,7 @@ devbox.lock
 devbox.d/
 tests/coverage
 vendor/
+workbench/*
+!workbench/app
+workbench/app/*
+!workbench/app/.gitkeep

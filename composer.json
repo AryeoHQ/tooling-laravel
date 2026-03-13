@@ -38,7 +38,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "App\\": "vendor/orchestra/testbench-core/laravel/app/",
+            "Workbench\\App\\": "workbench/app/",
             "Tests\\": "tests/"
         }
     },

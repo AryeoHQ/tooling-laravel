@@ -14,6 +14,4 @@ class InvalidWithoutReferenceTestCases extends \Tests\TestCase implements TestsR
     }
 
     public string $expectedName = 'Test';
-
-    public null|string $expectedSubdirectory = null;
 }

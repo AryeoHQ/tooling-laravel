@@ -6,7 +6,7 @@ This package provides conveniences for building Laravel `make:*` generator comma
 
 ### `RetrievesNamespace`
 
-Resolves which namespace to generate into through a chain of strategies: `--namespace` option → `namespace` argument → interactive `select()` prompt. The first strategy that yields a valid namespace wins.
+Resolves which namespace to generate into through a chain of strategies: `--namespace` option → `namespace` argument → interactive `suggest()` prompt. The first strategy that yields a valid namespace wins.
 
 - `resolveNamespace()` — runs the resolution chain, setting `$baseNamespace` and `$baseDirectory` for use in the `Reference` constructor
 - `getNamespaceInputOptions()` — returns the `--namespace` `InputOption` definition (spread into `getOptions()`)
@@ -31,32 +31,13 @@ A generator command has three pieces: a `Reference` value object, a stub, and th
 
 ### 1. Create the Reference
 
-A `Reference` derives all naming, path, and namespace info from the command's input:
+A `Reference` derives all naming, path, and namespace info from the command's input. Domain-specific references override `$subNamespace` to place generated files in a sub-namespace beneath the base:
 
 ```php
-final class RectorRule implements Reference
+final class RectorRule extends GenericClass
 {
-    public Stringable $name;
-    public Stringable $baseNamespace;
-
-    public function __construct(Stringable|string $name, Stringable|string $baseNamespace)
-    {
-        $this->name = str($name);
-        $this->baseNamespace = str($baseNamespace);
-    }
-
-    public null|Stringable $subdirectory = null;
-
-    public Stringable $namespace {
-        get => $this->baseNamespace->finish('\\')->append('Rector\\Rules');
-    }
-
-    public Stringable $fqcn {
-        get => $this->namespace->append('\\', $this->name->toString());
-    }
-
-    public TestClass $test {
-        get => new TestClass($this);
+    public null|Stringable $subNamespace {
+        get => str('Rector\\Rules');
     }
 }
 ```
@@ -139,18 +120,55 @@ If you want the namespace as a positional argument instead of an option (e.g. `m
 
 ## References
 
+A `Reference` is a value object that maps a named, namespaced PHP symbol to its file path. The `Reference` interface declares:
+
+- `$name` — the short name (e.g. `Invoice`)
+- `$baseNamespace` — the root namespace from PSR-4 (e.g. `\App`)
+- `$subNamespace` — optional sub-namespace beneath the base (e.g. `Rector\Rules`), or `null`
+- `$namespace` — computed: `$baseNamespace` + `\` + `$subNamespace` (or just `$baseNamespace` when `$subNamespace` is null)
+- `$fqcn` — computed: `$namespace` + `\` + `$name`
+- `$directory` — absolute path to the directory the file lives in, resolved via PSR-4
+- `$filePath` — absolute path: `$directory` + `/` + `$name` + `.php`
+
+All namespaces follow the invariant: **leading `\`, no trailing `\`** (e.g. `\App\Models`). The `$baseNamespace` property enforces this via a set hook, so callers can pass any format.
+
+The abstract `Reference` base class has a `final` constructor — subclasses cannot override it. This guarantees that `fromFqcn()` can safely construct any subclass via `new static()`.
+
 ### `GenericClass`
 
-A `Reference` implementation for commands that operate on an existing class. Unlike domain-specific references (`RectorRule`, `PhpStanRule`) which accept a `name` and `baseNamespace`, `GenericClass` accepts a complete FQCN and resolves its base namespace via longest-prefix matching against the project's PSR-4 autoload entries in `composer.json`.
+Represents a PHP class. Accepts `name` and `baseNamespace` in the constructor. Override `$subNamespace` for domain-specific references (e.g. `PhpStanRule`, `RectorRule`).
+
+- `$test: TestClass` — a test companion Reference, derived automatically (appends `Test` to the name)
+- `GenericClass::fromFqcn($fqcn)` — static constructor that creates an instance from a fully-qualified class name, resolving the base namespace via longest-prefix matching against the project's PSR-4 autoload entries. When the subclass defines a non-null `$subNamespace`, `fromFqcn()` validates that the FQCN's namespace ends with it and strips it to derive `$baseNamespace`. Throws `\InvalidArgumentException` if the FQCN doesn't match the expected sub-namespace.
+
+### `GenericTrait`
+
+Represents a PHP trait. Same constructor as `GenericClass`. Override `$subNamespace` for domain-specific references.
+
+- `$test: TestClass|TestCasesTrait` — a test companion Reference, which by default creates a `TestCasesTrait` (appends `TestCases` to the name)
+
+### `TestCompanion`
+
+A marker interface (`extends Reference`) implemented by `TestClass` and `TestCasesTrait`. Useful for type-checking whether a Reference is a test companion without coupling to a specific concrete type.
+
+### `TestClass`
+
+A `final class` extending `GenericClass` that implements `TestCompanion`. Represents a test class companion. Self-referential `$test` (returns `$this`).
+
+### `TestCasesTrait`
+
+A `final class` extending `GenericTrait` that implements `TestCompanion`. Represents a test-cases trait companion. Self-referential `$test` (returns `$this`).
 
 ## Testing
 
 The package provides reusable test traits for generator commands:
 
 - **`GeneratesFileTestCases`** — asserts the command generates a file with the correct namespace. The test class must define `$baselineInput` (array of artisan input) and a `$reference` property.
-- **`ReferenceTestCases`** — tests each derived property on a `Reference`. The test class must implement `TestsReference`, which declares `$subject`, `$expectedName`, and `$expectedSubdirectory`.
+- **`ReferenceTestCases`** — co-located with the `Reference` base class in the `References` namespace. Tests each derived property on a `Reference` (name, fqcn, file path, namespace invariant). The test class must implement `TestsReference`, which declares `$subject` and `$expectedName`.
+- **`ManagesNamespaceTestCases`** — co-located with the `ManagesNamespace` concern in `References\Concerns`. Tests the `$baseNamespace` set hook invariant (leading `\`, no trailing `\`).
+- **`ResolvesPathsTestCases`** — co-located with the `ResolvesPaths` concern in `References\Concerns`. Tests path resolution properties (absolute directory, no trailing slash, file path within directory, `.php` extension).
 - **`RetrievesNamespaceTestCases`** — tests namespace resolution with and without trailing backslashes. Requires `$withNamespaceBackslashInput` and `$withoutNamespaceBackslashInput` properties.
-- **`CleansUpGeneratorCommands`** — automatically cleans up files generated during tests. Discovers `Reference`-typed properties on the test class via reflection, then deletes each reference's `filePath` and `test->filePath` in both `setUp` and `tearDown`. After tearDown, prunes empty directories upward to the project base path. Safe for parallel test execution.
+- **`CleansUpGeneratorCommands`** — automatically cleans up files generated during tests. Discovers `Reference`-typed properties on the test class via reflection, then deletes each reference's `filePath` (and `test->filePath` for `GenericClass`/`GenericTrait` instances) in both `setUp` and `tearDown`. After tearDown, prunes empty directories upward to the PSR-4 source directory boundary. Safe for parallel test execution.
 
   For commands that orchestrate subcommands and generate files beyond what auto-discovery can reach, define a `$files` property with an array of glob patterns for supplemental cleanup:
 
@@ -158,7 +176,7 @@ The package provides reusable test traits for generator commands:
   /** @var array<array-key, string> */
   protected array $files {
       get => [
-          $this->reference->child->directoryPath->append('/*')->toString(),
+          $this->reference->child->directory->append('/*')->toString(),
       ];
   }
   ```

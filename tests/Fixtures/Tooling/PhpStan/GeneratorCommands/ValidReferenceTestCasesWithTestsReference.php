@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Fixtures\Tooling\PhpStan\GeneratorCommands;
 
 use Tooling\GeneratorCommands\References\Contracts\Reference;
-use Tooling\GeneratorCommands\Testing\Concerns\ReferenceTestCases;
+use Tooling\GeneratorCommands\References\ReferenceTestCases;
 use Tooling\GeneratorCommands\Testing\Contracts\TestsReference;
 
 class ValidReferenceTestCasesWithTestsReference extends \Tests\TestCase implements TestsReference
@@ -17,6 +17,4 @@ class ValidReferenceTestCasesWithTestsReference extends \Tests\TestCase implemen
     }
 
     public string $expectedName = 'Test';
-
-    public null|string $expectedSubdirectory = null;
 }

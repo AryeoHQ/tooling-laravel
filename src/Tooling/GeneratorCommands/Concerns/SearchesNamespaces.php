@@ -14,9 +14,7 @@ trait SearchesNamespaces
 {
     /** @var Collection<string, string> */
     protected Collection $availableNamespaces {
-        get => $this->availableNamespaces ??= collect([
-            $this->laravel->getNamespace() => $this->laravel->basePath('app'),
-        ])->merge((array) data_get(
+        get => $this->availableNamespaces ??= collect((array) data_get(
             resolve(Composer::class)->currentAsPackage->autoload, 'psr-4', []
         ))->merge((array) data_get(
             resolve(Composer::class)->currentAsPackage->autoloadDev, 'psr-4', []

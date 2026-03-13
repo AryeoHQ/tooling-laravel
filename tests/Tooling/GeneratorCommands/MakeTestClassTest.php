@@ -17,10 +17,10 @@ class MakeTestClassTest extends TestCase
 {
     use CleansUpGeneratorCommands;
 
-    private string $testFqcn = 'App\\Services\\Billing\\Invoice';
+    private string $testFqcn = 'Workbench\\App\\Services\\Billing\\Invoice';
 
     public Reference $reference {
-        get => (new GenericClass($this->testFqcn))->test;
+        get => GenericClass::fromFqcn($this->testFqcn)->test;
     }
 
     /** @var array<string, mixed> */
@@ -37,7 +37,7 @@ class MakeTestClassTest extends TestCase
         $contents = file_get_contents($this->reference->filePath->toString());
 
         $this->assertStringContainsString(
-            'namespace '.$this->reference->namespace.';',
+            'namespace '.$this->reference->namespace->after('\\').';',
             $contents,
         );
     }
