@@ -6,6 +6,7 @@ namespace Tooling\GeneratorCommands\Concerns;
 
 use Illuminate\Support\Collection;
 use Tooling\Composer\Composer;
+use Tooling\Composer\Packages\Psr4Mapping;
 
 /**
  * @mixin \Illuminate\Console\GeneratorCommand
@@ -14,10 +15,9 @@ trait SearchesNamespaces
 {
     /** @var Collection<string, string> */
     protected Collection $availableNamespaces {
-        get => $this->availableNamespaces ??= collect((array) data_get(
-            resolve(Composer::class)->currentAsPackage->autoload, 'psr-4', []
-        ))->merge((array) data_get(
-            resolve(Composer::class)->currentAsPackage->autoloadDev, 'psr-4', []
-        ))->sortKeys();
+        get => $this->availableNamespaces ??= resolve(Composer::class)->currentAsPackage->psr4Mappings
+            ->groupBy(fn (Psr4Mapping $mapping): string => $mapping->prefix)
+            ->map(fn (Collection $mappings): string => $mappings->first()->path)
+            ->sortKeys();
     }
 }

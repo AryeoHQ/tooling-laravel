@@ -153,4 +153,80 @@ class PackageTest extends TestCase
         $this->assertIsObject($package->extra);
         $this->assertObjectHasProperty('branch-alias', $package->extra);
     }
+
+    #[Test]
+    public function it_returns_psr4_mappings_with_string_values(): void
+    {
+        $data = json_decode(json_encode([
+            'autoload' => [
+                'psr-4' => [
+                    'App\\' => 'app/',
+                    'Database\\Factories\\' => 'database/factories/',
+                ],
+            ],
+        ]));
+
+        $package = new Package($data);
+
+        $this->assertCount(2, $package->psr4Mappings);
+        $this->assertInstanceOf(Psr4Mapping::class, $package->psr4Mappings[0]);
+        $this->assertSame('App\\', $package->psr4Mappings[0]->prefix);
+        $this->assertSame('app/', $package->psr4Mappings[0]->path);
+        $this->assertSame('Database\\Factories\\', $package->psr4Mappings[1]->prefix);
+        $this->assertSame('database/factories/', $package->psr4Mappings[1]->path);
+    }
+
+    #[Test]
+    public function it_expands_array_psr4_values_into_multiple_rows(): void
+    {
+        $data = json_decode(json_encode([
+            'autoload' => [
+                'psr-4' => [
+                    'App\\' => ['app/', 'app-extra/'],
+                ],
+            ],
+        ]));
+
+        $package = new Package($data);
+
+        $this->assertCount(2, $package->psr4Mappings);
+        $this->assertSame('App\\', $package->psr4Mappings[0]->prefix);
+        $this->assertSame('app/', $package->psr4Mappings[0]->path);
+        $this->assertSame('App\\', $package->psr4Mappings[1]->prefix);
+        $this->assertSame('app-extra/', $package->psr4Mappings[1]->path);
+    }
+
+    #[Test]
+    public function it_returns_empty_psr4_mappings_when_no_psr4_section_exists(): void
+    {
+        $data = (object) ['name' => 'vendor/package'];
+        $package = new Package($data);
+
+        $this->assertCount(0, $package->psr4Mappings);
+    }
+
+    #[Test]
+    public function it_merges_autoload_and_autoload_dev_psr4_mappings(): void
+    {
+        $data = json_decode(json_encode([
+            'autoload' => [
+                'psr-4' => [
+                    'App\\' => 'app/',
+                ],
+            ],
+            'autoload-dev' => [
+                'psr-4' => [
+                    'Tests\\' => 'tests/',
+                ],
+            ],
+        ]));
+
+        $package = new Package($data);
+
+        $this->assertCount(2, $package->psr4Mappings);
+        $this->assertSame('App\\', $package->psr4Mappings[0]->prefix);
+        $this->assertSame('app/', $package->psr4Mappings[0]->path);
+        $this->assertSame('Tests\\', $package->psr4Mappings[1]->prefix);
+        $this->assertSame('tests/', $package->psr4Mappings[1]->path);
+    }
 }
