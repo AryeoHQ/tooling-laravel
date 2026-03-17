@@ -24,6 +24,10 @@ class MakeRuleTest extends TestCase
         get => new RectorRule(name: 'TestRule', baseNamespace: 'Workbench\\App');
     }
 
+    private Reference $nestedReference {
+        get => new RectorRule(name: 'TestRule', baseNamespace: 'Workbench\\App\\Nested\\Deeper');
+    }
+
     /** @var array<string, mixed> */
     public array $baselineInput {
         get => ['name' => 'TestRule', '--namespace' => 'Workbench\\App\\'];
@@ -37,6 +41,15 @@ class MakeRuleTest extends TestCase
     /** @var array<string, mixed> */
     public array $withoutNamespaceBackslashInput {
         get => ['name' => 'TestRule', '--namespace' => 'Workbench\\App'];
+    }
+
+    /** @var array<string, mixed> */
+    public array $withNestedNamespaceInput {
+        get => ['name' => 'TestRule', '--namespace' => 'Workbench\\App\\Nested\\Deeper'];
+    }
+
+    protected string $expectedNestedFilePath {
+        get => $this->nestedReference->filePath->toString();
     }
 
     #[Test]

@@ -6,51 +6,40 @@ namespace Tooling\GeneratorCommands\References\Concerns;
 
 use Illuminate\Support\Stringable;
 use Tooling\Composer\Composer;
+use Tooling\Composer\Packages\Psr4Mapping;
 
 trait ResolvesPaths
 {
-    /**
-     * @return array{prefix: string, path: string}
-     */
-    private function resolvePsr4(): array
+    private function resolvePsr4(): Psr4Mapping
     {
         $composer = resolve(Composer::class);
         $namespaceForMatching = $this->baseNamespace->after('\\')->finish('\\')->toString();
 
-        $psr4 = collect((array) data_get($composer->currentAsPackage->autoload, 'psr-4', []))
-            ->merge((array) data_get($composer->currentAsPackage->autoloadDev, 'psr-4', []))
-            ->flatMap(fn (string|array $paths, string $prefix): array => collect((array) $paths)
-                ->map(fn (string $path) => ['prefix' => $prefix, 'path' => $path])
-                ->all()
-            );
+        $matched = null;
 
-        $matchedPrefix = null;
-        $matchedPath = null;
-
-        foreach ($psr4 as ['prefix' => $prefix, 'path' => $basePath]) {
-            if (str_starts_with($namespaceForMatching, $prefix)
-                && ($matchedPrefix === null || strlen($prefix) > strlen($matchedPrefix))) {
-                $matchedPrefix = $prefix;
-                $matchedPath = $basePath;
+        foreach ($composer->currentAsPackage->psr4Mappings as $mapping) {
+            if (str_starts_with($namespaceForMatching, $mapping->prefix)
+                && ($matched === null || strlen($mapping->prefix) > strlen($matched->prefix))) {
+                $matched = $mapping;
             }
         }
 
-        if ($matchedPrefix === null || $matchedPath === null) {
+        if ($matched === null) {
             throw new \RuntimeException(
                 "Namespace \"{$namespaceForMatching}\" does not match any PSR-4 prefix in composer.json."
             );
         }
 
-        return ['prefix' => $matchedPrefix, 'path' => $matchedPath];
+        return $matched;
     }
 
     private Stringable $sourceDirectory {
-        get => str($this->resolvePsr4()['path'])->rtrim('/');
+        get => str($this->resolvePsr4()->path)->rtrim('/');
     }
 
     private Stringable $relativeDirectory {
         get {
-            $prefix = $this->resolvePsr4()['prefix'];
+            $prefix = $this->resolvePsr4()->prefix;
             $canonical = $this->namespace->after('\\')->finish('\\')->toString();
 
             return str(substr($canonical, strlen($prefix)))->rtrim('\\')->replace('\\', '/');

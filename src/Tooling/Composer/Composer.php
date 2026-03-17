@@ -138,15 +138,10 @@ class Composer
     /** @return Collection<int, non-empty-string> */
     public function psr4SourceDirectories(): Collection
     {
-        $package = $this->currentAsPackage;
         $basePath = $this->baseDirectory->toString();
 
-        return collect([
-            (array) ($package->autoload->{'psr-4'} ?? new \stdClass),
-            (array) ($package->autoloadDev->{'psr-4'} ?? new \stdClass),
-        ])
-            ->flatMap(fn (array $mapping): array => array_values($mapping))
-            ->flatten()
+        return $this->currentAsPackage->psr4Mappings
+            ->map(fn (\Tooling\Composer\Packages\Psr4Mapping $mapping): string => $mapping->path)
             ->map(fn (string $relativePath): string|false => realpath(join_paths($basePath, $relativePath)))
             ->filter(fn (string|false $path): bool => $path !== false && is_dir($path))
             ->values();

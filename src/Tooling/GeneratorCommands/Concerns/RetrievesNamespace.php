@@ -27,7 +27,16 @@ trait RetrievesNamespace
     protected function resolveNamespace(): void
     {
         $this->baseNamespace = $this->retrieveNamespace()->finish('\\');
-        $this->baseDirectory = str($this->availableNamespaces->get($this->baseNamespace->toString()));
+        $this->baseDirectory = str($this->resolveBaseDirectory($this->baseNamespace));
+    }
+
+    private function resolveBaseDirectory(Stringable $namespace): null|string
+    {
+        $normalized = $namespace->toString();
+
+        return $this->availableNamespaces
+            ->sortKeysDesc()
+            ->first(fn (string $dir, string $prefix) => str_starts_with($normalized, $prefix));
     }
 
     protected function namespaceFromPrompt(): Stringable
@@ -46,8 +55,10 @@ trait RetrievesNamespace
 
     protected function isValidNamespace(Stringable $namespace): bool
     {
+        $normalized = $namespace->finish('\\')->toString();
+
         return $this->availableNamespaces->keys()->contains(
-            $namespace->finish('\\')
+            fn (string $prefix) => str_starts_with($normalized, $prefix)
         );
     }
 }
