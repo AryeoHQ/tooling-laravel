@@ -169,11 +169,11 @@ class PackageTest extends TestCase
         $package = new Package($data);
 
         $this->assertCount(2, $package->psr4Mappings);
-        $this->assertInstanceOf(Psr4Mapping::class, $package->psr4Mappings[0]);
-        $this->assertSame('App\\', $package->psr4Mappings[0]->prefix);
-        $this->assertSame('app/', $package->psr4Mappings[0]->path);
-        $this->assertSame('Database\\Factories\\', $package->psr4Mappings[1]->prefix);
-        $this->assertSame('database/factories/', $package->psr4Mappings[1]->path);
+        $this->assertInstanceOf(Psr4Mapping::class, $package->psr4Mappings->get(0));
+        $this->assertSame('\\App\\', $package->psr4Mappings->get(0)->prefix->toString());
+        $this->assertSame('app/', $package->psr4Mappings->get(0)->path->toString());
+        $this->assertSame('\\Database\\Factories\\', $package->psr4Mappings->get(1)->prefix->toString());
+        $this->assertSame('database/factories/', $package->psr4Mappings->get(1)->path->toString());
     }
 
     #[Test]
@@ -190,10 +190,10 @@ class PackageTest extends TestCase
         $package = new Package($data);
 
         $this->assertCount(2, $package->psr4Mappings);
-        $this->assertSame('App\\', $package->psr4Mappings[0]->prefix);
-        $this->assertSame('app/', $package->psr4Mappings[0]->path);
-        $this->assertSame('App\\', $package->psr4Mappings[1]->prefix);
-        $this->assertSame('app-extra/', $package->psr4Mappings[1]->path);
+        $this->assertSame('\\App\\', $package->psr4Mappings->get(0)->prefix->toString());
+        $this->assertSame('app/', $package->psr4Mappings->get(0)->path->toString());
+        $this->assertSame('\\App\\', $package->psr4Mappings->get(1)->prefix->toString());
+        $this->assertSame('app-extra/', $package->psr4Mappings->get(1)->path->toString());
     }
 
     #[Test]
@@ -224,9 +224,9 @@ class PackageTest extends TestCase
         $package = new Package($data);
 
         $this->assertCount(2, $package->psr4Mappings);
-        $this->assertSame('App\\', $package->psr4Mappings[0]->prefix);
-        $this->assertSame('app/', $package->psr4Mappings[0]->path);
-        $this->assertSame('Tests\\', $package->psr4Mappings[1]->prefix);
-        $this->assertSame('tests/', $package->psr4Mappings[1]->path);
+        $this->assertSame('\\App\\', $package->psr4Mappings->get(0)->prefix->toString());
+        $this->assertSame('app/', $package->psr4Mappings->get(0)->path->toString());
+        $this->assertSame('\\Tests\\', $package->psr4Mappings->get(1)->prefix->toString());
+        $this->assertSame('tests/', $package->psr4Mappings->get(1)->path->toString());
     }
 }

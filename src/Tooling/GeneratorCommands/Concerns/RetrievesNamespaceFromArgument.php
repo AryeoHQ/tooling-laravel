@@ -24,6 +24,8 @@ trait RetrievesNamespaceFromArgument
             return null;
         }
 
+        $provided = $provided->start('\\')->rtrim('\\');
+
         if (! $this->isValidNamespace($provided)) {
             $this->components->warn("Namespace [{$provided}] is not configured for this project.");
 

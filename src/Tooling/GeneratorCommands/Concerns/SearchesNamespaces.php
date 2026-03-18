@@ -16,8 +16,8 @@ trait SearchesNamespaces
     /** @var Collection<string, string> */
     protected Collection $availableNamespaces {
         get => $this->availableNamespaces ??= resolve(Composer::class)->currentAsPackage->psr4Mappings
-            ->groupBy(fn (Psr4Mapping $mapping): string => $mapping->prefix)
-            ->map(fn (Collection $mappings): string => $mappings->first()->path)
+            ->groupBy(fn (Psr4Mapping $mapping): string => $mapping->prefix->toString())
+            ->map(fn (Collection $mappings): string => $mappings->first()->path->toString())
             ->sortKeys();
     }
 }

@@ -20,7 +20,9 @@ trait RetrievesNamespaceFromOption
             return null;
         }
 
-        if (! $this->isValidNamespace($provided = str($provided))) {
+        $provided = str($provided)->start('\\')->rtrim('\\');
+
+        if (! $this->isValidNamespace($provided)) {
             $this->components->warn("Namespace [{$provided}] is not configured for this project.");
 
             return null;

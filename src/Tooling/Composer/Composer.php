@@ -141,7 +141,7 @@ class Composer
         $basePath = $this->baseDirectory->toString();
 
         return $this->currentAsPackage->psr4Mappings
-            ->map(fn (\Tooling\Composer\Packages\Psr4Mapping $mapping): string => $mapping->path)
+            ->map(fn (\Tooling\Composer\Packages\Psr4Mapping $mapping): string => $mapping->path->toString())
             ->map(fn (string $relativePath): string|false => realpath(join_paths($basePath, $relativePath)))
             ->filter(fn (string|false $path): bool => $path !== false && is_dir($path))
             ->values();
