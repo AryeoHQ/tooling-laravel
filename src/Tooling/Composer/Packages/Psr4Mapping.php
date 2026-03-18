@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace Tooling\Composer\Packages;
 
+use Illuminate\Support\Stringable;
+
 final readonly class Psr4Mapping
 {
-    public string $prefix;
+    public Stringable $prefix;
 
-    public string $path;
+    public Stringable $path;
 
-    public function __construct(string $prefix, string $path)
+    public function __construct(Stringable|string $prefix, Stringable|string $path)
     {
-        $this->prefix = $prefix;
-        $this->path = $path;
+        $this->prefix = str($prefix)->start('\\')->finish('\\');
+        $this->path = str($path)->finish('/');
     }
 }

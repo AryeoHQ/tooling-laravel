@@ -13,13 +13,13 @@ trait ResolvesPaths
     private function resolvePsr4(): Psr4Mapping
     {
         $composer = resolve(Composer::class);
-        $namespaceForMatching = $this->baseNamespace->after('\\')->finish('\\')->toString();
+        $namespaceForMatching = $this->baseNamespace->finish('\\')->toString();
 
         $matched = null;
 
         foreach ($composer->currentAsPackage->psr4Mappings as $mapping) {
-            if (str_starts_with($namespaceForMatching, $mapping->prefix)
-                && ($matched === null || strlen($mapping->prefix) > strlen($matched->prefix))) {
+            if (str_starts_with($namespaceForMatching, $mapping->prefix->toString())
+                && ($matched === null || $mapping->prefix->length() > $matched->prefix->length())) {
                 $matched = $mapping;
             }
         }
@@ -34,13 +34,13 @@ trait ResolvesPaths
     }
 
     private Stringable $sourceDirectory {
-        get => str($this->resolvePsr4()->path)->rtrim('/');
+        get => $this->resolvePsr4()->path->rtrim('/');
     }
 
     private Stringable $relativeDirectory {
         get {
-            $prefix = $this->resolvePsr4()->prefix;
-            $canonical = $this->namespace->after('\\')->finish('\\')->toString();
+            $prefix = $this->resolvePsr4()->prefix->toString();
+            $canonical = $this->namespace->finish('\\')->toString();
 
             return str(substr($canonical, strlen($prefix)))->rtrim('\\')->replace('\\', '/');
         }

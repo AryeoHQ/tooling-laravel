@@ -38,7 +38,7 @@ trait SearchesClasses
         $classes = $composer->classMap
             ->keys()
             ->filter(fn (string $class) => $this->availableNamespaces->keys()->contains(
-                fn (string $namespace) => str_starts_with($class, $namespace)
+                fn (string $namespace) => str_starts_with('\\'.$class, $namespace)
             ));
 
         return method_exists($this, 'filterSearchableClasses') // @phpstan-ignore function.alreadyNarrowedType

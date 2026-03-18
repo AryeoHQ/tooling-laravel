@@ -26,13 +26,13 @@ trait RetrievesNamespace
 
     protected function resolveNamespace(): void
     {
-        $this->baseNamespace = $this->retrieveNamespace()->finish('\\');
+        $this->baseNamespace = $this->retrieveNamespace();
         $this->baseDirectory = str($this->resolveBaseDirectory($this->baseNamespace));
     }
 
     private function resolveBaseDirectory(Stringable $namespace): null|string
     {
-        $normalized = $namespace->toString();
+        $normalized = $namespace->finish('\\')->toString();
 
         return $this->availableNamespaces
             ->sortKeysDesc()
@@ -43,14 +43,14 @@ trait RetrievesNamespace
     {
         $result = \Laravel\Prompts\suggest(
             label: "Which namespace should the {$this->type} be created in?",
-            options: $this->availableNamespaces->keys()->map(fn (string $ns) => rtrim($ns, '\\'))->values()->all(),
+            options: $this->availableNamespaces->keys()->map(fn (string $ns) => trim($ns, '\\'))->values()->all(),
             required: true,
-            validate: fn (string $value) => $this->isValidNamespace(str($value))
+            validate: fn (string $value) => $this->isValidNamespace(str($value)->start('\\'))
                 ? null
                 : "Namespace [{$value}] is not configured for this project.",
         );
 
-        return str($result);
+        return str($result)->start('\\')->rtrim('\\');
     }
 
     protected function isValidNamespace(Stringable $namespace): bool
