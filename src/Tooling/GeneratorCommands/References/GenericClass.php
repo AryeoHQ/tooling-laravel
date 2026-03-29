@@ -25,7 +25,7 @@ class GenericClass extends Reference
         $name = str(class_basename($fqcn->toString()));
         $namespace = $fqcn->beforeLast('\\');
 
-        $instance = new static(name: $name, baseNamespace: $namespace); // @phpstan-ignore new.static
+        $instance = new static(name: $name, baseNamespace: $namespace);
 
         if ($instance->subNamespace !== null) {
             $suffix = '\\'.$instance->subNamespace->toString();

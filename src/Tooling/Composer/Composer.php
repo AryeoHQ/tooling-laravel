@@ -4,146 +4,155 @@ declare(strict_types=1);
 
 namespace Tooling\Composer;
 
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Process;
-use Illuminate\Support\LazyCollection;
 use Illuminate\Support\Stringable;
-use RuntimeException;
-use Symfony\Component\Finder\Finder;
-use Symfony\Component\Finder\SplFileInfo;
 use Tooling\Composer\Packages\Package;
 use Tooling\Composer\Packages\Packages;
+use Tooling\Composer\Testing\ComposerFake;
 
 use function Illuminate\Filesystem\join_paths;
 
 class Composer
 {
     /** @var array<string, mixed> */
-    private array $cache = [];
+    protected array $cache = [];
 
-    public string $vendorDirectory {
+    private Filesystem $files;
+
+    private ClassMapSource $classMapSource;
+
+    public Stringable $vendorDirectory {
         get {
-            return collect([__DIR__.'/../../../vendor', __DIR__.'/../../../../../../vendor'])->map(
-                fn (string $path): string|bool => realpath($path)
-            )->filter()->first(
-                fn (string $path): bool => is_dir($path)
-            );
+            return $this->cache[__PROPERTY__] ??= str(collect([dirname(__DIR__, 3).'/vendor', dirname(__DIR__, 6).'/vendor'])
+                ->filter(fn (string $path): bool => $this->files->isDirectory($path))
+                ->first());
         }
     }
 
-    public Stringable $baseDirectory { get => $this->baseDirectory ??= str($this->vendorDirectory)->replace('/vendor', ''); }
-
-    public SplFileInfo $composerJsonFile {
-        get => new SplFileInfo(
-            $this->baseDirectory->append('/composer.json')->toString(),
-            '',
-            $this->baseDirectory->toString()
-        );
+    public Stringable $baseDirectory {
+        get => $this->cache[__PROPERTY__] ??= $this->vendorDirectory->replace('/vendor', '');
     }
 
-    public SplFileInfo $classMapFile {
-        get => new SplFileInfo(
-            $this->vendorPath('composer', 'autoload_classmap.php'),
-            '',
-            $this->vendorPath('composer')
-        );
+    public string $composerJsonPath {
+        get => $this->cache[__PROPERTY__] ??= $this->baseDirectory->append('/composer.json')->toString();
     }
 
-    /** @var Collection<array-key, mixed> */
-    public Collection $classMap {
-        get => $this->cache[__FUNCTION__] ??= collect((array) require $this->classMapFile->getRealPath());
+    public Packages $packages {
+        get => $this->cache[__PROPERTY__] ??= Packages::make($this->vendorDirectory->toString(), $this->files);
     }
-
-    public bool $isOptimized {
-        get => $this->cache[__FUNCTION__] ??= str_contains(
-            file_get_contents($this->classMapFile->getRealPath()),
-            '$baseDir . '
-        );
-    }
-
-    public Packages $packages { get => $this->packages ??= Packages::make($this->vendorDirectory); }
 
     public Package $currentAsPackage {
-        get => $this->currentAsPackage ??= new Package(
-            json_decode($this->composerJsonFile->getContents())
+        get => $this->cache[__PROPERTY__] ??= new Package(
+            json_decode($this->files->get($this->composerJsonPath))
         );
     }
 
     public Package $selfAsPackage {
-        get => $this->selfAsPackage ??= when(
-            realpath(__DIR__.'/../../../composer.json'),
-            fn (string $path): Package => new Package(
-                json_decode(new SplFileInfo($path, '', basename($path))->getContents())
+        get => $this->cache[__PROPERTY__] ??= with(
+            dirname(__DIR__, 3).'/composer.json',
+            fn (string $path) => match ($this->files->exists($path)) {
+                true => new Package(json_decode($this->files->get($path))),
+                false => $this->currentAsPackage,
+            }
+        );
+    }
+
+    /** @var Collection<class-string, non-empty-string> */
+    public Collection $sourcePsr4ClassMap {
+        get => match ($this->hasCache(__PROPERTY__) && ! $this->hasSourcePsr4ChangedSince($this->cacheTime(__PROPERTY__))) {
+            true => $this->cache(__PROPERTY__),
+            false => with(__PROPERTY__, function (string $key) {
+                return $this->cache($key, $this->sourcePsr4Directories()
+                    ->flatMap(fn (string $dir): Collection => $this->classMapSource->createMap($dir)));
+            }),
+        };
+    }
+
+    public function __construct(null|Filesystem $files = null, null|ClassMapSource $classMapSource = null)
+    {
+        $this->files = $files ?? resolve(Filesystem::class);
+        $this->classMapSource = $classMapSource ?? resolve(ClassMapSource::class);
+    }
+
+    public function hasSourcePsr4ChangedSince(int $timestamp): bool
+    {
+        return $this->sourcePsr4Directories()->contains(
+            fn (string $path) => collect($this->files->allFiles($path))->map(
+                fn (\Symfony\Component\Finder\SplFileInfo $file): string => $this->files->dirname($file->getPathname())
+            )->unique()->push($path)->contains(
+                fn (string $dir): bool => $this->files->lastModified($dir) >= $timestamp
             )
         );
     }
 
-    public bool $isClassMapStale {
-        get {
-            $sourceDirectories = $this->psr4SourceDirectories();
-
-            if ($sourceDirectories->isEmpty()) {
-                return false;
-            }
-
-            $classMapMTime = $this->classMapFile->getMTime();
-
-            $hasNewerFiles = LazyCollection::make(Finder::create()->files()->name('*.php')->in($sourceDirectories->all()))
-                ->contains(fn (SplFileInfo $file): bool => $file->getMTime() > $classMapMTime);
-
-            if ($hasNewerFiles) {
-                return true;
-            }
-
-            $hasDeletedFiles = $this->classMap
-                ->filter(fn (mixed $filePath): bool => is_string($filePath))
-                ->filter(fn (string $filePath): bool => $sourceDirectories->contains(
-                    fn (string $directory): bool => str_starts_with($filePath, $directory)
-                ))
-                ->contains(fn (string $filePath): bool => ! file_exists($filePath));
-
-            return $hasDeletedFiles;
-        }
-    }
-
-    public function optimizeClassMap(): void
-    {
-        if ($this->isOptimized && ! $this->isClassMapStale) {
-            return;
-        }
-
-        $result = Process::path($this->baseDirectory->toString())
-            ->run('composer dump-autoload -o --no-scripts --no-interaction');
-
-        if (! $result->successful()) {
-            throw new RuntimeException('Failed to optimize classmap: '.$result->errorOutput());
-        }
-
-        $path = $this->classMapFile->getRealPath();
-
-        if (function_exists('opcache_invalidate')) {
-            opcache_invalidate($path, true);
-        }
-
-        clearstatcache(true, $path);
-
-        $this->cache = [];
-    }
-
     public function vendorPath(string ...$path): string
     {
-        return join_paths($this->vendorDirectory, ...$path);
+        return join_paths($this->vendorDirectory->toString(), ...$path);
     }
 
-    /** @return Collection<int, non-empty-string> */
-    public function psr4SourceDirectories(): Collection
+    /** @return Collection<int, string> */
+    public function sourcePsr4Directories(): Collection
     {
         $basePath = $this->baseDirectory->toString();
 
-        return $this->currentAsPackage->psr4Mappings
-            ->map(fn (\Tooling\Composer\Packages\Psr4Mapping $mapping): string => $mapping->path->toString())
-            ->map(fn (string $relativePath): string|false => realpath(join_paths($basePath, $relativePath)))
-            ->filter(fn (string|false $path): bool => $path !== false && is_dir($path))
-            ->values();
+        return $this->currentAsPackage->psr4Mappings->map(
+            fn (\Tooling\Composer\Packages\Psr4Mapping $mapping): string => $mapping->path->toString()
+        )->map(
+            fn (string $relativePath): string => rtrim(join_paths($basePath, $relativePath), '/')
+        )->filter(
+            fn (string $path): bool => $this->files->exists($path) && $this->files->isDirectory($path)
+        )->values();
+    }
+
+    public function artisan(): null|string
+    {
+        $base = $this->baseDirectory->toString();
+
+        return collect(['/artisan', '/vendor/bin/testbench'])->map(
+            fn (string $path): string => $base.$path
+        )->filter(
+            fn (string $path): bool => $this->files->exists($path)
+        )->first();
+    }
+
+    protected function hasCache(string $key): bool
+    {
+        return array_key_exists($key, $this->cache);
+    }
+
+    /**
+     * @template TValue
+     *
+     * @param  TValue  $value
+     * @return TValue
+     */
+    protected function cache(string $key, mixed $value = null, null|int $time = null): mixed
+    {
+        if (func_num_args() > 1) {
+            $this->cache[$key.'::time'] = $time ?? now()->timestamp;
+            $this->cache[$key] = $value;
+        }
+
+        return $this->cache[$key];
+    }
+
+    protected function cacheTime(string $key): int
+    {
+        return $this->cache[$key.'::time'];
+    }
+
+    /**
+     * @param  array<string, mixed>  $composerJson
+     */
+    public static function fake(array $composerJson = []): ComposerFake
+    {
+        $composer = resolve(Composer::class);
+
+        if ($composer instanceof ComposerFake) {
+            return $composer;
+        }
+
+        return ComposerFake::make($composerJson);
     }
 }

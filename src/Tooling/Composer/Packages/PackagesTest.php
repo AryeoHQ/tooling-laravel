@@ -6,69 +6,77 @@ namespace Tooling\Composer\Packages;
 
 use BadMethodCallException;
 use Illuminate\Support\Collection;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use Symfony\Component\Finder\SplFileInfo;
 use Tests\TestCase;
 use Tooling\Composer\Composer;
 
+#[CoversClass(Packages::class)]
 class PackagesTest extends TestCase
 {
     #[Test]
+    public function it_instantiates_with_make(): void
+    {
+        $composer = Composer::fake();
+
+        $packages = Packages::make($composer->vendorDirectory->toString(), app('files'));
+
+        $this->assertInstanceOf(Packages::class, $packages);
+    }
+
+    #[Test]
     public function it_resolves_vendor_directory(): void
     {
-        $packages = new Packages(app(Composer::class)->vendorDirectory);
+        $composer = Composer::fake();
 
-        $this->assertNotFalse($packages->vendorDirectory);
-        $this->assertDirectoryExists($packages->vendorDirectory);
+        $packages = Packages::make($composer->vendorDirectory->toString(), app('files'));
+
+        $this->assertSame($composer->vendorDirectory->toString(), $packages->vendorDirectory);
     }
 
     #[Test]
     public function it_returns_composer_directory(): void
     {
-        $packages = new Packages(app(Composer::class)->vendorDirectory);
+        $composer = Composer::fake();
+
+        $packages = Packages::make($composer->vendorDirectory->toString(), app('files'));
 
         $this->assertStringEndsWith('vendor/composer', $packages->composerDirectory);
-        $this->assertDirectoryExists($packages->composerDirectory);
     }
 
     #[Test]
-    public function it_returns_installed_manifest_file(): void
+    public function it_returns_installed_manifest_path(): void
     {
-        $packages = new Packages(app(Composer::class)->vendorDirectory);
+        $composer = Composer::fake();
 
-        $this->assertInstanceOf(SplFileInfo::class, $packages->installedManifestFile);
-        $this->assertSame('installed.json', $packages->installedManifestFile->getFilename());
-        $this->assertFileExists($packages->installedManifestFile->getPathname());
+        $packages = Packages::make($composer->vendorDirectory->toString(), app('files'));
+
+        $this->assertStringEndsWith('installed.json', $packages->installedManifestPath);
     }
 
     #[Test]
     public function it_parses_installed_packages(): void
     {
-        $packages = new Packages(app(Composer::class)->vendorDirectory);
+        $composer = Composer::fake();
+
+        $packages = Packages::make($composer->vendorDirectory->toString(), app('files'));
 
         $this->assertIsArray($packages->installed);
-        $this->assertNotEmpty($packages->installed);
+        $this->assertCount(1, $packages->installed);
         $this->assertIsObject($packages->installed[0]);
-    }
-
-    #[Test]
-    public function it_creates_static_instance(): void
-    {
-        $packages = Packages::make(app(Composer::class)->vendorDirectory);
-
-        $this->assertInstanceOf(Packages::class, $packages);
-        $this->assertNotFalse($packages->vendorDirectory);
     }
 
     #[Test]
     public function it_forwards_collection_methods(): void
     {
-        $packages = Packages::make(app(Composer::class)->vendorDirectory);
+        $composer = Composer::fake();
 
-        $this->assertGreaterThan(0, $packages->count());
+        $packages = Packages::make($composer->vendorDirectory->toString(), app('files'));
+
+        $this->assertSame(1, $packages->count());
         $this->assertInstanceOf(Package::class, $packages->first());
 
-        $filtered = $packages->filter(fn (Package $package) => $package->name?->contains('laravel'));
+        $filtered = $packages->filter(fn (Package $package) => $package->name?->contains('test'));
 
         $this->assertInstanceOf(Collection::class, $filtered);
         $this->assertContainsOnlyInstancesOf(Package::class, $filtered);
@@ -77,7 +85,9 @@ class PackagesTest extends TestCase
     #[Test]
     public function it_returns_collection_for_mapped_results(): void
     {
-        $packages = Packages::make(app(Composer::class)->vendorDirectory);
+        $composer = Composer::fake();
+
+        $packages = Packages::make($composer->vendorDirectory->toString(), app('files'));
 
         $names = $packages->pluck('name');
         $this->assertInstanceOf(Collection::class, $names);
@@ -87,22 +97,25 @@ class PackagesTest extends TestCase
     #[Test]
     public function it_returns_scalar_values_from_collection_methods(): void
     {
-        $packages = Packages::make(app(Composer::class)->vendorDirectory);
+        $composer = Composer::fake();
+
+        $packages = Packages::make($composer->vendorDirectory->toString(), app('files'));
 
         $this->assertIsInt($packages->count());
-
         $this->assertIsBool($packages->isEmpty());
     }
 
     #[Test]
     public function it_throws_exception_for_invalid_methods(): void
     {
-        $packages = Packages::make(app(Composer::class)->vendorDirectory);
+        $composer = Composer::fake();
+
+        $packages = Packages::make($composer->vendorDirectory->toString(), app('files'));
 
         $this->expectException(BadMethodCallException::class);
-        $this->expectExceptionMessage('Call to undefined method Tooling\Composer\Packages\Packages::nonExistentMethod()');
+        $this->expectExceptionMessage('Call to undefined method '.Packages::class.'::nonExistentMethod()');
 
-        $packages->nonExistentMethod(); // @phpstan-ignore-line
+        $packages->nonExistentMethod(); // @phpstan-ignore method.notFound
     }
 
     #[Test]
@@ -110,27 +123,29 @@ class PackagesTest extends TestCase
     {
         $packages = new Packages('/path/that/does/not/exist');
 
-        $this->assertFalse($packages->vendorDirectory);
-        $this->assertNull($packages->composerDirectory);
-        $this->assertNull($packages->installedManifestFile);
+        $this->assertSame('/path/that/does/not/exist', $packages->vendorDirectory);
         $this->assertEmpty($packages->installed);
     }
 
     #[Test]
     public function it_can_chain_collection_methods(): void
     {
-        $packages = Packages::make(app(Composer::class)->vendorDirectory);
+        $composer = Composer::fake();
 
-        $result = $packages->filter(fn (Package $package) => $package->name?->contains('symfony'))->take(5);
+        $packages = Packages::make($composer->vendorDirectory->toString(), app('files'));
+
+        $result = $packages->filter(fn (Package $package) => $package->name?->contains('test'))->take(5);
 
         $this->assertInstanceOf(Collection::class, $result);
-        $this->assertLessThanOrEqual(5, $result->count());
+        $this->assertCount(1, $result);
     }
 
     #[Test]
     public function it_contains_package_objects(): void
     {
-        $packages = Packages::make(app(Composer::class)->vendorDirectory);
+        $composer = Composer::fake();
+
+        $packages = Packages::make($composer->vendorDirectory->toString(), app('files'));
 
         $this->assertContainsOnlyInstancesOf(Package::class, $packages);
     }

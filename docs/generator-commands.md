@@ -14,10 +14,11 @@ Resolves which namespace to generate into through a chain of strategies: `--name
 
 Available namespaces are discovered automatically from the project's PSR-4 `autoload` and `autoload-dev` entries in `composer.json`.
 
-### `SearchesClasses`
+### `SearchesAutoloadCaches`
 
-Provides class search functionality using the Composer classmap:
+Provides class search functionality using the classmap `Cache` (pre-computed by `tooling:optimize`):
 
+- `collector(): string` — abstract method; return the class-string of a `Collector` (e.g. `Untested::class`, `All::class`) that determines which classes are searchable
 - `getClassSearchResults(string $search)` — fuzzy-searches classes by name
 - `filterSearchableClasses(Collection): Collection` — optional method to narrow results
 
@@ -168,18 +169,6 @@ The package provides reusable test traits for generator commands:
 - **`ManagesNamespaceTestCases`** — co-located with the `ManagesNamespace` concern in `References\Concerns`. Tests the `$baseNamespace` set hook invariant (leading `\`, no trailing `\`).
 - **`ResolvesPathsTestCases`** — co-located with the `ResolvesPaths` concern in `References\Concerns`. Tests path resolution properties (absolute directory, no trailing slash, file path within directory, `.php` extension).
 - **`RetrievesNamespaceTestCases`** — tests namespace resolution with and without trailing backslashes. Requires `$withNamespaceBackslashInput` and `$withoutNamespaceBackslashInput` properties.
-- **`CleansUpGeneratorCommands`** — automatically cleans up files generated during tests. Discovers `Reference`-typed properties on the test class via reflection, then deletes each reference's `filePath` (and `test->filePath` for `GenericClass`/`GenericTrait` instances) in both `setUp` and `tearDown`. After tearDown, prunes empty directories upward to the PSR-4 source directory boundary. Safe for parallel test execution.
-
-  For commands that orchestrate subcommands and generate files beyond what auto-discovery can reach, define a `$files` property with an array of glob patterns for supplemental cleanup:
-
-  ```php
-  /** @var array<array-key, string> */
-  protected array $files {
-      get => [
-          $this->reference->child->directory->append('/*')->toString(),
-      ];
-  }
-  ```
 
 ## Available Commands
 
@@ -193,7 +182,7 @@ php artisan make:test
 php ./vendor/bin/testbench make:test
 ```
 
-Prompts for a class via interactive fuzzy search against the Composer classmap. Generates a test file with `#[CoversClass]`, `#[Test]`, and extending `TestCase`, placed in the same directory as the source class.
+Prompts for a class via interactive fuzzy search against the classmap cache (using the `Untested` collector). Generates a test file with `#[CoversClass]`, `#[Test]`, and extending `TestCase`, placed in the same directory as the source class.
 
 ### `make:rector:rule`
 

@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace Tooling\Composer;
 
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Stringable;
 use PHPUnit\Framework\Attributes\Test;
-use RuntimeException;
-use Symfony\Component\Finder\SplFileInfo;
 use Tests\TestCase;
 use Tooling\Composer\Packages\Package;
 use Tooling\Composer\Packages\Packages;
@@ -19,64 +16,33 @@ class ComposerTest extends TestCase
     #[Test]
     public function it_is_registered_as_a_singleton(): void
     {
-        $this->assertSame(app(Composer::class), app(Composer::class));
+        $this->assertSame(resolve(Composer::class), resolve(Composer::class));
     }
 
     #[Test]
     public function it_resolves_vendor_directory(): void
     {
-        $composer = app(Composer::class);
+        $composer = Composer::fake();
 
-        $this->assertIsString($composer->vendorDirectory);
-        $this->assertDirectoryExists($composer->vendorDirectory);
-        $this->assertStringEndsWith('vendor', $composer->vendorDirectory);
+        $this->assertInstanceOf(\Illuminate\Support\Stringable::class, $composer->vendorDirectory);
+        $this->assertTrue(File::exists($composer->vendorDirectory->toString()));
+        $this->assertStringEndsWith('/vendor', $composer->vendorDirectory->toString());
     }
 
     #[Test]
-    public function it_returns_composer_json_file(): void
+    public function it_returns_composer_json_path(): void
     {
-        $composer = app(Composer::class);
+        $composer = Composer::fake();
 
-        $this->assertInstanceOf(SplFileInfo::class, $composer->composerJsonFile);
-        $this->assertSame('composer.json', $composer->composerJsonFile->getFilename());
-        $this->assertFileExists($composer->composerJsonFile->getPathname());
-    }
-
-    #[Test]
-    public function it_returns_classmap_file(): void
-    {
-        $composer = app(Composer::class);
-
-        $this->assertInstanceOf(SplFileInfo::class, $composer->classMapFile);
-        $this->assertSame('autoload_classmap.php', $composer->classMapFile->getFilename());
-        $this->assertFileExists($composer->classMapFile->getPathname());
-    }
-
-    #[Test]
-    public function it_returns_classmap(): void
-    {
-        $composer = app(Composer::class);
-
-        $this->assertInstanceOf(Collection::class, $composer->classMap);
-        $this->assertNotEmpty($composer->classMap);
-    }
-
-    #[Test]
-    public function it_classmap_contains_class_to_file_mappings(): void
-    {
-        $composer = app(Composer::class);
-
-        $composer->classMap->each(function ($filePath, $className) {
-            $this->assertIsString($className);
-            $this->assertIsString($filePath);
-            $this->assertFileExists($filePath);
-        });
+        $this->assertIsString($composer->composerJsonPath);
+        $this->assertStringEndsWith('/composer.json', $composer->composerJsonPath);
+        $this->assertTrue(File::exists($composer->composerJsonPath));
     }
 
     #[Test]
     public function it_returns_packages_instance(): void
     {
-        $composer = app(Composer::class);
+        $composer = Composer::fake();
 
         $this->assertInstanceOf(Packages::class, $composer->packages);
         $this->assertGreaterThan(0, $composer->packages->count());
@@ -86,7 +52,7 @@ class ComposerTest extends TestCase
     #[Test]
     public function it_returns_current_package(): void
     {
-        $composer = app(Composer::class);
+        $composer = Composer::fake();
 
         $this->assertInstanceOf(Package::class, $composer->currentAsPackage);
         $this->assertInstanceOf(Stringable::class, $composer->currentAsPackage->name);
@@ -96,7 +62,7 @@ class ComposerTest extends TestCase
     #[Test]
     public function it_returns_self_package(): void
     {
-        $composer = app(Composer::class);
+        $composer = Composer::fake();
 
         $this->assertInstanceOf(Package::class, $composer->selfAsPackage);
         $this->assertInstanceOf(Stringable::class, $composer->selfAsPackage->name);
@@ -106,170 +72,73 @@ class ComposerTest extends TestCase
     #[Test]
     public function it_builds_vendor_path(): void
     {
-        $composer = app(Composer::class);
+        $composer = Composer::fake();
 
-        $path = $composer->vendorPath('composer', 'installed.json');
-
-        $this->assertStringContainsString('vendor', $path);
-        $this->assertStringEndsWith('composer/installed.json', $path);
-        $this->assertFileExists($path);
+        tap($composer->vendorPath('composer', 'installed.json'), function (string $path) {
+            $this->assertStringContainsString('vendor', $path);
+            $this->assertStringEndsWith('composer/installed.json', $path);
+            $this->assertTrue(File::exists($path));
+        });
     }
 
     #[Test]
     public function it_builds_vendor_path_with_multiple_segments(): void
     {
-        $composer = app(Composer::class);
+        $composer = Composer::fake();
 
-        $path = $composer->vendorPath('laravel', 'framework', 'src');
-
-        $this->assertStringContainsString('vendor', $path);
-        $this->assertStringEndsWith('laravel/framework/src', $path);
+        tap($composer->vendorPath('laravel', 'framework', 'src'), function (string $path) {
+            $this->assertStringContainsString('vendor', $path);
+            $this->assertStringEndsWith('laravel/framework/src', $path);
+        });
     }
 
     #[Test]
     public function it_builds_vendor_path_with_single_segment(): void
     {
-        $composer = app(Composer::class);
+        $composer = Composer::fake();
 
-        $path = $composer->vendorPath('autoload.php');
-
-        $this->assertStringContainsString('vendor', $path);
-        $this->assertStringEndsWith('vendor/autoload.php', $path);
-        $this->assertFileExists($path);
+        tap($composer->vendorPath('autoload.php'), function (string $path) {
+            $this->assertStringContainsString('vendor', $path);
+            $this->assertStringEndsWith('vendor/autoload.php', $path);
+            $this->assertTrue(File::exists($path));
+        });
     }
 
     #[Test]
-    public function it_returns_false_for_is_optimized(): void
+    public function it_returns_source_psr4_class_map(): void
     {
-        Process::run('composer dump --no-scripts --no-interaction');
+        $composer = Composer::fake();
 
-        $composer = app(Composer::class);
-
-        $this->assertFalse($composer->isOptimized);
+        tap($composer->sourcePsr4ClassMap, function ($classMap) {
+            $this->assertNotEmpty($classMap);
+            $this->assertTrue($classMap->has('App\\Example'));
+            $this->assertTrue(File::exists($classMap->get('App\\Example')));
+        });
     }
 
     #[Test]
-    public function it_returns_true_for_is_optimized(): void
+    public function it_detects_source_psr4_changes_via_directory_mtimes(): void
     {
-        Process::run('composer dump -o --no-scripts --no-interaction');
+        $composer = Composer::fake();
 
-        $composer = app(Composer::class);
+        // A timestamp far in the future — no directory can be newer
+        $this->assertFalse($composer->hasSourcePsr4ChangedSince(now()->timestamp + 3600));
 
-        $this->assertTrue($composer->isOptimized);
+        // A timestamp of 0 — every directory is newer than epoch
+        $this->assertTrue($composer->hasSourcePsr4ChangedSince(0));
     }
 
     #[Test]
-    public function it_returns_false_for_is_class_map_stale_after_fresh_optimize(): void
+    public function it_automatically_detects_new_files_in_source_psr4_class_map(): void
     {
-        Process::run('composer dump -o --no-scripts --no-interaction');
+        $composer = Composer::fake();
 
-        $composer = app(Composer::class);
+        $this->assertTrue($composer->sourcePsr4ClassMap->has('App\Example'));
 
-        $this->assertFalse($composer->isClassMapStale);
-    }
+        $this->travel(1)->seconds();
 
-    #[Test]
-    public function it_returns_true_for_is_class_map_stale_when_source_file_is_newer(): void
-    {
-        Process::run('composer dump -o --no-scripts --no-interaction');
+        ClassMapSource::fake(['App\NewClass' => '/fake/src/NewClass.php']);
 
-        $composer = app(Composer::class);
-
-        // Touch a source file so its mtime is newer than the classmap
-        touch($composer->baseDirectory->toString().'/src/Tooling/Composer/Composer.php', time() + 10);
-
-        $this->assertTrue($composer->isClassMapStale);
-    }
-
-    #[Test]
-    public function it_returns_true_for_is_class_map_stale_when_classmap_references_deleted_file(): void
-    {
-        Process::run('composer dump -o --no-scripts --no-interaction');
-
-        $composer = app(Composer::class);
-
-        // Create a temporary PHP file in a PSR-4 source directory, re-dump, then delete it.
-        $tempFile = $composer->baseDirectory->toString().'/workbench/app/TemporaryStaleTestClass.php';
-        $this->app['files']->ensureDirectoryExists(dirname($tempFile));
-        $this->app['files']->put($tempFile, "<?php\n\nnamespace Workbench\\App;\n\nclass TemporaryStaleTestClass {}\n");
-
-        Process::run('composer dump -o --no-scripts --no-interaction');
-
-        // Re-resolve so classMap picks up the new file
-        $composer = app(Composer::class);
-
-        // Now delete the file — classmap still references it
-        $this->app['files']->delete($tempFile);
-
-        $this->assertTrue($composer->isClassMapStale);
-    }
-
-    #[Test]
-    public function it_optimize_class_map_produces_fresh_optimized_classmap(): void
-    {
-        Process::run('composer dump --no-scripts --no-interaction');
-
-        $composer = app(Composer::class);
-
-        $this->assertFalse($composer->isOptimized);
-
-        $composer->optimizeClassMap();
-
-        $this->assertTrue($composer->isOptimized);
-        $this->assertInstanceOf(Collection::class, $composer->classMap);
-        $this->assertNotEmpty($composer->classMap);
-    }
-
-    #[Test]
-    public function it_optimize_class_map_throws_on_failure(): void
-    {
-        Process::run('composer dump --no-scripts --no-interaction');
-
-        Process::fake([
-            'composer dump-autoload -o --no-scripts --no-interaction' => Process::result(
-                output: '',
-                errorOutput: 'Something went wrong',
-                exitCode: 1,
-            ),
-        ]);
-
-        $composer = app(Composer::class);
-
-        $this->assertFalse($composer->isOptimized);
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Failed to optimize classmap: Something went wrong');
-
-        $composer->optimizeClassMap();
-    }
-
-    #[Test]
-    public function it_optimize_class_map_optimizes_when_not_optimized(): void
-    {
-        Process::run('composer dump --no-scripts --no-interaction');
-
-        $composer = app(Composer::class);
-
-        $this->assertFalse($composer->isOptimized);
-
-        $composer->optimizeClassMap();
-
-        $this->assertTrue($composer->isOptimized);
-    }
-
-    #[Test]
-    public function it_optimize_class_map_is_noop_when_fresh(): void
-    {
-        Process::run('composer dump -o --no-scripts --no-interaction');
-
-        $composer = app(Composer::class);
-
-        $this->assertTrue($composer->isOptimized);
-        $this->assertFalse($composer->isClassMapStale);
-
-        // Should not throw or run any process
-        $composer->optimizeClassMap();
-
-        $this->assertTrue($composer->isOptimized);
+        $this->assertTrue($composer->sourcePsr4ClassMap->has('App\NewClass'));
     }
 }

@@ -8,6 +8,7 @@
 devbox.json
 devbox.lock
 devbox.d/
+sketchpad/
 tests/coverage
 vendor/
 workbench/*

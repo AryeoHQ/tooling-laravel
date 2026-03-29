@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tooling;
 
+use Illuminate\Console\Events\CommandFinished;
+use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use PHPStan\Command\AnalyseCommand;
 use Rector\Console\Command\ProcessCommand;
@@ -11,8 +14,16 @@ use Rector\Console\ConsoleApplication;
 use Rector\DependencyInjection\RectorContainerFactory;
 use Rector\ValueObject\Bootstrap\BootstrapConfigs;
 use ReflectionClass;
+use Tooling\Composer\ClassMap\Cache;
+use Tooling\Composer\ClassMap\Collectors\All;
+use Tooling\Composer\ClassMap\Collectors\Untested;
+use Tooling\Composer\ClassMap\Listeners\RebuildClassMapCache;
+use Tooling\Composer\ClassMapSource;
 use Tooling\Composer\Composer;
+use Tooling\Composer\Manifest;
 use Tooling\Console\Commands\ToolingDiscover;
+use Tooling\Console\Commands\ToolingOptimize;
+use Tooling\Filesystem\Testing\Mixins\ProvidesFaking;
 use Tooling\GeneratorCommands\MakeTestClass;
 use Tooling\Pint\Console\Commands\CloneBaseCommand;
 
@@ -26,6 +37,7 @@ class Provider extends ServiceProvider
     {
         $this->bootCommands();
         $this->bootViews();
+        $this->bootClassMapCacheListener();
     }
 
     public function register(): void
@@ -41,14 +53,29 @@ class Provider extends ServiceProvider
 
     private function registerBindings(): void
     {
+        $this->registerFilesystemFakeMacro();
         $this->registerBindingsForComposer();
+        $this->registerBindingsForClassMapCache();
         $this->registerBindingsForPhpStan();
         $this->registerBindingsForRector();
+    }
+
+    private function registerFilesystemFakeMacro(): void
+    {
+        Filesystem::mixin(new ProvidesFaking);
     }
 
     private function registerBindingsForComposer(): void
     {
         app()->singleton(Composer::class);
+        app()->singleton(ClassMapSource::class);
+        app()->singleton(Manifest::class);
+    }
+
+    private function registerBindingsForClassMapCache(): void
+    {
+        app()->singleton(Cache::class);
+        app()->tag([All::class, Untested::class], 'tooling.classmap.collectors');
     }
 
     private function registerBindingsForPhpStan(): void
@@ -101,6 +128,7 @@ class Provider extends ServiceProvider
 
         $this->commands(
             ToolingDiscover::class,
+            ToolingOptimize::class,
             CloneBaseCommand::class,
             MakeTestClass::class,
             PhpStan\Console\Commands\Make\MakeRule::class,
@@ -114,5 +142,14 @@ class Provider extends ServiceProvider
     private function bootViews(): void
     {
         $this->loadViewsFrom(__DIR__.'/../../resources/views/rector/rules', 'tooling.rector.rules.samples');
+    }
+
+    private function bootClassMapCacheListener(): void
+    {
+        if (! app()->runningInConsole()) {
+            return;
+        }
+
+        Event::listen(CommandFinished::class, RebuildClassMapCache::class);
     }
 }

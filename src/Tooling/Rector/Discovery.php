@@ -10,7 +10,7 @@ use Tooling\Composer\Manifest;
 
 final class Discovery
 {
-    protected Manifest $manifest { get => $this->manifest ??= new Manifest; }
+    protected Manifest $manifest { get => $this->manifest ??= resolve(Manifest::class); }
 
     /** @var Collection<array-key, class-string<AbstractRector>> */
     public Collection $rules { get => $this->rules ??= collect((array) $this->manifest->get('rector.rules')); }

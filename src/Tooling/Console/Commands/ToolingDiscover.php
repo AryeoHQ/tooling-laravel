@@ -20,6 +20,8 @@ class ToolingDiscover extends Command
 
         $this->components->info('Discovering tooling');
 
+        $tooling->build();
+
         collect((array) $tooling->loaded)
             ->keys()
             ->each(fn ($tool) => $this->components->task($tool))
