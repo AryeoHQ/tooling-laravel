@@ -11,8 +11,9 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Tooling\Composer\ClassMap\Collectors\Untested;
 use Tooling\GeneratorCommands\Concerns\GeneratorCommandCompatibility;
-use Tooling\GeneratorCommands\Concerns\SearchesClasses;
+use Tooling\GeneratorCommands\Concerns\SearchesAutoloadCaches;
 use Tooling\GeneratorCommands\Contracts\GeneratesFile;
 use Tooling\GeneratorCommands\References\Contracts\Reference;
 use Tooling\GeneratorCommands\References\GenericClass;
@@ -20,11 +21,16 @@ use Tooling\GeneratorCommands\References\GenericClass;
 class MakeTestClass extends TestMakeCommand implements GeneratesFile
 {
     use GeneratorCommandCompatibility;
-    use SearchesClasses;
+    use SearchesAutoloadCaches;
 
     protected $description = 'Create a co-located test.';
 
     protected $type = 'Test';
+
+    protected function collector(): string
+    {
+        return Untested::class;
+    }
 
     private Stringable $classToTest {
         get => $this->classToTest ??= str($this->argument('class'));
@@ -70,9 +76,9 @@ class MakeTestClass extends TestMakeCommand implements GeneratesFile
         ], GeneratorCommand::buildClass($name));
     }
 
-    protected function promptForMissingArgumentsUsing(): array // @phpstan-ignore method.childReturnType
+    protected function promptForMissingArgumentsUsing(): array
     {
-        return [ // @phpstan-ignore return.type
+        return [
             'class' => fn () => (string) \Laravel\Prompts\search(
                 label: 'Which class would you like to test?',
                 options: fn ($search) => $this->getClassSearchResults($search),

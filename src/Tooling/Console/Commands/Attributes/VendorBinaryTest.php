@@ -16,47 +16,47 @@ class VendorBinaryTest extends TestCase
     #[Test]
     public function it_resolves_the_binary_name(): void
     {
-        $attribute = new VendorBinary(
+        $vendorBinary = new VendorBinary(
             inspector: Pint\Console\Inspector::class,
             binary: 'pint',
         );
 
-        $this->assertSame('pint', $attribute->binary);
+        $this->assertSame('pint', $vendorBinary->binary);
     }
 
     #[Test]
     public function it_resolves_the_command(): void
     {
-        $attribute = new VendorBinary(
+        $vendorBinary = new VendorBinary(
             inspector: Pint\Console\Inspector::class,
             binary: 'phpstan',
             command: 'analyse',
         );
 
-        $this->assertSame('analyse', $attribute->command);
+        $this->assertSame('analyse', $vendorBinary->command);
     }
 
     #[Test]
     public function it_has_null_command_when_not_provided(): void
     {
-        $attribute = new VendorBinary(
+        $vendorBinary = new VendorBinary(
             inspector: Pint\Console\Inspector::class,
             binary: 'pint',
         );
 
-        $this->assertNull($attribute->command);
+        $this->assertNull($vendorBinary->command);
     }
 
     #[Test]
     public function it_resolves_the_inspector(): void
     {
-        $attribute = new VendorBinary(
+        $vendorBinary = new VendorBinary(
             inspector: Pint\Console\Inspector::class,
             binary: 'pint',
         );
 
-        $this->assertInstanceOf(Inspector::class, $attribute->inspector);
-        $this->assertInstanceOf(Pint\Console\Inspector::class, $attribute->inspector);
+        $this->assertInstanceOf(Inspector::class, $vendorBinary->inspector);
+        $this->assertInstanceOf(Pint\Console\Inspector::class, $vendorBinary->inspector);
     }
 
     #[Test]
@@ -64,7 +64,7 @@ class VendorBinaryTest extends TestCase
     {
         Process::fake();
 
-        $attribute = new VendorBinary(
+        $vendorBinary = new VendorBinary(
             inspector: Pint\Console\Inspector::class,
             binary: 'pint',
         );
@@ -72,7 +72,7 @@ class VendorBinaryTest extends TestCase
         $arguments = collect(['tooling:pint']);
         $options = collect();
 
-        $attribute->run($arguments, $options);
+        $vendorBinary->run($arguments, $options);
 
         Process::assertRan(function ($process) {
             $command = $process->command;
@@ -87,7 +87,7 @@ class VendorBinaryTest extends TestCase
     {
         Process::fake();
 
-        $attribute = new VendorBinary(
+        $vendorBinary = new VendorBinary(
             inspector: Pint\Console\Inspector::class,
             binary: 'phpstan',
             command: 'analyse',
@@ -96,7 +96,7 @@ class VendorBinaryTest extends TestCase
         $arguments = collect(['tooling:phpstan']);
         $options = collect();
 
-        $attribute->run($arguments, $options);
+        $vendorBinary->run($arguments, $options);
 
         Process::assertRan(function ($process) {
             $command = $process->command;
@@ -110,7 +110,7 @@ class VendorBinaryTest extends TestCase
     {
         Process::fake();
 
-        $attribute = new VendorBinary(
+        $vendorBinary = new VendorBinary(
             inspector: Pint\Console\Inspector::class,
             binary: 'pint',
         );
@@ -118,7 +118,7 @@ class VendorBinaryTest extends TestCase
         $arguments = collect(['tooling:pint']);
         $options = collect(['--dirty']);
 
-        $attribute->run($arguments, $options);
+        $vendorBinary->run($arguments, $options);
 
         Process::assertRan(function ($process) {
             $command = $process->command;
@@ -132,7 +132,7 @@ class VendorBinaryTest extends TestCase
     {
         Process::fake();
 
-        $attribute = new VendorBinary(
+        $vendorBinary = new VendorBinary(
             inspector: Pint\Console\Inspector::class,
             binary: 'pint',
         );
@@ -140,7 +140,7 @@ class VendorBinaryTest extends TestCase
         $arguments = collect(['tooling:pint', 'src/']);
         $options = collect();
 
-        $attribute->run($arguments, $options);
+        $vendorBinary->run($arguments, $options);
 
         Process::assertRan(function ($process) {
             $command = $process->command;
@@ -154,18 +154,18 @@ class VendorBinaryTest extends TestCase
     {
         Process::fake();
 
-        $attribute = new VendorBinary(
+        $vendorBinary = new VendorBinary(
             inspector: Pint\Console\Inspector::class,
             binary: 'pint',
         );
 
         // Force a known alias onto the inspector so the test is never skipped.
-        $attribute->inspector->aliases = collect(['lint']);
+        $vendorBinary->inspector->aliases = collect(['lint']);
 
         $arguments = collect(['tooling:pint', 'lint', 'src/']);
         $options = collect();
 
-        $attribute->run($arguments, $options);
+        $vendorBinary->run($arguments, $options);
 
         Process::assertRan(function ($process) {
             $command = $process->command;
@@ -181,7 +181,7 @@ class VendorBinaryTest extends TestCase
     {
         Process::fake();
 
-        $attribute = new VendorBinary(
+        $vendorBinary = new VendorBinary(
             inspector: Pint\Console\Inspector::class,
             binary: 'phpstan',
             command: 'analyse',
@@ -191,7 +191,7 @@ class VendorBinaryTest extends TestCase
         $arguments = collect(['tooling:phpstan', 'analyse', 'src/']);
         $options = collect();
 
-        $attribute->run($arguments, $options);
+        $vendorBinary->run($arguments, $options);
 
         Process::assertRan(function ($process) {
             $command = $process->command;
@@ -208,14 +208,14 @@ class VendorBinaryTest extends TestCase
     {
         Process::fake();
 
-        $attribute = new VendorBinary(
+        $vendorBinary = new VendorBinary(
             inspector: Pint\Console\Inspector::class,
             binary: 'pint',
         );
 
-        $baseDirectory = app(Composer::class)->baseDirectory->toString();
+        $baseDirectory = resolve(Composer::class)->baseDirectory->toString();
 
-        $attribute->run(collect(['tooling:pint']), collect());
+        $vendorBinary->run(collect(['tooling:pint']), collect());
 
         Process::assertRan(function ($process) use ($baseDirectory) {
             return $process->path === $baseDirectory;

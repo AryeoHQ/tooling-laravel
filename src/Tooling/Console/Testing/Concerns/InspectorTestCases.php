@@ -137,10 +137,7 @@ trait InspectorTestCases
                 fn (InputOption $o) => $o->getName() === $fixture['name']
             );
 
-            if ($option === null) {
-                $this->markTestSkipped("Option \"{$fixture['name']}\" not available."); // @phpstan-ignore staticMethod.dynamicCall
-            }
-
+            $this->assertNotNull($option, "Option \"{$fixture['name']}\" not found on the command definition.");
             $this->assertSame($fixture['configValue'], $option->getDefault());
         }
     }

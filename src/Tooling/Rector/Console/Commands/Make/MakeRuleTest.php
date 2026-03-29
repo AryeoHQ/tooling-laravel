@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Tooling\Rector\Console\Commands\Make;
 
+use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Tooling\Composer\Composer;
 use Tooling\GeneratorCommands\References\Contracts\Reference;
-use Tooling\GeneratorCommands\Testing\Concerns\CleansUpGeneratorCommands;
 use Tooling\GeneratorCommands\Testing\Concerns\GeneratesFileTestCases;
 use Tooling\GeneratorCommands\Testing\Concerns\RetrievesNamespaceTestCases;
 use Tooling\Rector\Console\Commands\Make\References\RectorRule;
@@ -16,21 +17,20 @@ use Tooling\Rector\Console\Commands\Make\References\RectorRule;
 #[CoversClass(MakeRule::class)]
 class MakeRuleTest extends TestCase
 {
-    use CleansUpGeneratorCommands;
     use GeneratesFileTestCases;
     use RetrievesNamespaceTestCases;
 
     public Reference $reference {
-        get => new RectorRule(name: 'TestRule', baseNamespace: 'Workbench\\App');
+        get => new RectorRule(name: 'TestRule', baseNamespace: 'App');
     }
 
     private Reference $nestedReference {
-        get => new RectorRule(name: 'TestRule', baseNamespace: 'Workbench\\App\\Nested\\Deeper');
+        get => new RectorRule(name: 'TestRule', baseNamespace: 'App\\Nested\\Deeper');
     }
 
     /** @var array<string, mixed> */
     public array $baselineInput {
-        get => ['name' => 'TestRule', '--namespace' => 'Workbench\\App\\'];
+        get => ['name' => 'TestRule', '--namespace' => 'App\\'];
     }
 
     /** @var array<string, mixed> */
@@ -40,12 +40,12 @@ class MakeRuleTest extends TestCase
 
     /** @var array<string, mixed> */
     public array $withoutNamespaceBackslashInput {
-        get => ['name' => 'TestRule', '--namespace' => 'Workbench\\App'];
+        get => ['name' => 'TestRule', '--namespace' => 'App'];
     }
 
     /** @var array<string, mixed> */
     public array $withNestedNamespaceInput {
-        get => ['name' => 'TestRule', '--namespace' => 'Workbench\\App\\Nested\\Deeper'];
+        get => ['name' => 'TestRule', '--namespace' => 'App\\Nested\\Deeper'];
     }
 
     protected string $expectedNestedFilePath {
@@ -55,9 +55,11 @@ class MakeRuleTest extends TestCase
     #[Test]
     public function it_generates_a_rector_rule(): void
     {
+        Composer::fake();
+
         $this->artisan($this->command, $this->baselineInput)->assertSuccessful();
 
-        $file = file_get_contents($this->expectedFilePath);
+        $file = File::get($this->expectedFilePath);
 
         $this->assertStringContainsString('final class TestRule extends Rule', $file);
         $this->assertStringContainsString('public function shouldHandle(Node $node): bool', $file);

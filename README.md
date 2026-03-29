@@ -35,24 +35,15 @@ The config file (`config/tooling.php`) maps these environment variables to the a
 
 ## Usage
 
-### In a Laravel Application:
 ```bash
 php artisan tooling:phpstan
 php artisan tooling:pint
 php artisan tooling:rector
+php artisan tooling:discover
+php artisan tooling:optimize
 php artisan make:test
 php artisan make:rector:rule {name}
 php artisan make:phpstan:rule {name}
-```
-
-### In a Package:
-```bash
-php ./vendor/bin/testbench tooling:phpstan
-php ./vendor/bin/testbench tooling:pint
-php ./vendor/bin/testbench tooling:rector
-php ./vendor/bin/testbench make:test
-php ./vendor/bin/testbench make:rector:rule {name}
-php ./vendor/bin/testbench make:phpstan:rule {name}
 ```
 
 All native CLI options are forwarded. For example:
@@ -63,20 +54,34 @@ php artisan tooling:phpstan --generate-baseline
 php artisan tooling:pint --test
 ```
 
+### Packages
+
+In a package context, replace `php artisan` with `php ./vendor/bin/testbench`:
+
+```bash
+php ./vendor/bin/testbench tooling:phpstan
+```
+
 ### Discovery
 
-The `tooling:discover` command rebuilds the cached tooling manifest by scanning all installed packages for tooling configurations. This runs **automatically** after `composer install` and `composer update` via a Composer plugin — you typically don't need to run it manually.
+The `tooling:discover` command rebuilds the cached tooling manifest by scanning all installed packages for tooling configurations. The `tooling:optimize` command rebuilds the classmap cache used by generator commands for interactive class search. Both run **automatically** after `composer install` and `composer update` via a Composer plugin — you typically don't need to run them manually.
 
 ```bash
 php artisan tooling:discover
+php artisan tooling:optimize
 ```
 
 #### How Discovery Works
 
 1. A Composer plugin fires on `post-autoload-dump`
-2. It runs `tooling:discover`, which scans every installed package's `extra.tooling`
-3. A manifest is cached at `vendor/aryeo/tooling-laravel/cache/configurations.php`
-4. PHPStan and Rector read from this manifest at runtime to load all registered configurations
+2. It runs `tooling:discover` and `tooling:optimize`
+3. Two caches are written to `vendor/aryeo/tooling-laravel/cache/`:
+   - `configurations.php` — PHPStan and Rector configurations from all installed packages
+   - `classmap.php` — pre-computed class lists for generator command prompts
+4. PHPStan and Rector read from the configurations manifest at runtime
+5. Generator commands read from the classmap cache for fast interactive search
+
+The classmap cache automatically detects staleness via mtime checks and rebuilds on demand. After any `make:` command, a background process refreshes the cache to pick up newly generated files.
 
 ## Extending Tooling
 

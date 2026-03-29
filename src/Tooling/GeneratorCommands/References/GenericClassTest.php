@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tooling\Composer\Composer;
-use Tooling\Composer\Packages\Package;
 use Tooling\GeneratorCommands\References\Concerns\ManagesNamespaceTestCases;
 use Tooling\GeneratorCommands\References\Concerns\ResolvesPathsTestCases;
 use Tooling\GeneratorCommands\References\Contracts\Reference;
@@ -126,17 +125,9 @@ class GenericClassTest extends TestCase implements TestsReference
     #[Test]
     public function it_resolves_psr4_when_path_is_an_array(): void
     {
-        $composer = resolve(Composer::class);
-
-        $data = json_decode(json_encode([
-            'autoload' => [
-                'psr-4' => [
-                    'Workbench\\App\\' => ['workbench/app/', 'workbench/app-extra/'],
-                ],
-            ],
-        ]));
-
-        $composer->currentAsPackage = new Package($data);
+        Composer::fake(['autoload' => ['psr-4' => [
+            'Workbench\\App\\' => ['workbench/app/', 'workbench/app-extra/'],
+        ]]]);
 
         $reference = new GenericClass(name: 'Invoice', baseNamespace: 'Workbench\\App\\Services');
 

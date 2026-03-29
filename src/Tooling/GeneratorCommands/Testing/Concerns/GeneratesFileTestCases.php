@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tooling\GeneratorCommands\Testing\Concerns;
 
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
+use Tooling\Composer\Composer;
 
 /**
  * @mixin \Tests\TestCase
@@ -24,9 +26,11 @@ trait GeneratesFileTestCases
     #[Test]
     public function it_generates_a_file_with_the_correct_namespace(): void
     {
+        Composer::fake();
+
         $this->artisan($this->command, $this->baselineInput)->assertSuccessful();
 
-        $contents = file_get_contents($this->expectedFilePath);
+        $contents = File::get($this->expectedFilePath);
 
         $this->assertStringContainsString(
             'namespace '.$this->reference->namespace->after('\\').';',

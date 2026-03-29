@@ -18,7 +18,7 @@ trait RetrievesNamespaceFromArgument
             return null;
         }
 
-        $provided = str($this->argument('namespace')); // @phpstan-ignore argument.type, larastan.console.undefinedArgument
+        $provided = str((string) $this->argument('namespace')); // @phpstan-ignore larastan.console.undefinedArgument
 
         if ($provided->isEmpty()) {
             return null;

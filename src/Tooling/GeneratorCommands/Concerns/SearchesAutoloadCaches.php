@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Tooling\GeneratorCommands\Concerns;
 
 use Illuminate\Support\Collection;
-use Tooling\Composer\Composer;
+use Tooling\Composer\ClassMap\Cache;
 
 /**
  * @mixin \Illuminate\Console\GeneratorCommand
  */
-trait SearchesClasses
+trait SearchesAutoloadCaches
 {
     use SearchesNamespaces;
 
@@ -18,6 +18,9 @@ trait SearchesClasses
     protected Collection $searchableClasses {
         get => $this->searchableClasses ??= $this->discoverSearchableClasses();
     }
+
+    /** @return class-string<\Tooling\Composer\ClassMap\Collectors\Contracts\Collector> */
+    abstract protected function collector(): string;
 
     /** @return array<array-key, string> */
     protected function getClassSearchResults(string $search = ''): array
@@ -31,18 +34,10 @@ trait SearchesClasses
     /** @return Collection<int, string> */
     protected function discoverSearchableClasses(): Collection
     {
-        $composer = resolve(Composer::class);
+        $classes = collect(resolve(Cache::class)->get($this->collector()) ?? []);
 
-        $composer->optimizeClassMap();
-
-        $classes = $composer->classMap
-            ->keys()
-            ->filter(fn (string $class) => $this->availableNamespaces->keys()->contains(
-                fn (string $namespace) => str_starts_with('\\'.$class, $namespace)
-            ));
-
-        return method_exists($this, 'filterSearchableClasses') // @phpstan-ignore function.alreadyNarrowedType
+        return method_exists($this, 'filterSearchableClasses')
             ? $this->filterSearchableClasses($classes)->values()
-            : $classes->values();
+            : $classes;
     }
 }

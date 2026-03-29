@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tooling\Composer\Packages;
 
 use BadMethodCallException;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
 use IteratorAggregate;
-use Symfony\Component\Finder\SplFileInfo;
 use Traversable;
 
 use function Illuminate\Filesystem\join_paths;
@@ -19,28 +19,24 @@ use function Illuminate\Filesystem\join_paths;
  */
 class Packages implements IteratorAggregate
 {
-    public readonly false|string $vendorDirectory;
+    public readonly string $vendorDirectory;
+
+    private Filesystem $files;
 
     public null|string $composerDirectory {
-        get => $this->composerDirectory ??= when(
-            $this->vendorDirectory,
-            fn (string $directory): string => join_paths($directory, 'composer')
-        );
+        get => $this->composerDirectory ??= join_paths($this->vendorDirectory, 'composer');
     }
 
-    public null|SplFileInfo $installedManifestFile {
-        get => $this->installedManifestFile ??= when(
-            $this->composerDirectory,
-            fn (string $directory): SplFileInfo => new SplFileInfo($path = join_paths($directory, 'installed.json'), '', basename($path)),
-        );
+    public string $installedManifestPath {
+        get => $this->installedManifestPath ??= join_paths($this->composerDirectory, 'installed.json');
     }
 
     /** @var array<array-key, mixed> */
     public array $installed {
-        get => $this->installed ??=
-            $this->installedManifestFile
-                ? data_get(json_decode($this->installedManifestFile->getContents()), 'packages', [])
-                : [];
+        get => $this->installed ??= match ($this->files->exists($this->installedManifestPath)) {
+            true => data_get(json_decode($this->files->get($this->installedManifestPath)), 'packages', []),
+            false => [],
+        };
     }
 
     /** @var Collection<array-key, Package> */
@@ -48,14 +44,15 @@ class Packages implements IteratorAggregate
         get => $this->proxy ??= collect($this->installed)->mapInto(Package::class);
     }
 
-    public function __construct(string $vendorDirectory)
+    public function __construct(string $vendorDirectory, null|Filesystem $files = null)
     {
-        $this->vendorDirectory = realpath($vendorDirectory);
+        $this->vendorDirectory = $vendorDirectory;
+        $this->files = $files ?? new Filesystem;
     }
 
-    public static function make(string $vendorDirectory): static
+    public static function make(string $vendorDirectory, null|Filesystem $files = null): static
     {
-        return resolve(static::class, ['vendorDirectory' => $vendorDirectory]);
+        return resolve(static::class, ['vendorDirectory' => $vendorDirectory, 'files' => $files]);
     }
 
     private function isForwardableCall(string $method): bool
