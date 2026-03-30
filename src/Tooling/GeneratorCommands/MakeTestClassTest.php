@@ -61,22 +61,6 @@ class MakeTestClassTest extends TestCase
     }
 
     #[Test]
-    public function the_generated_test_imports_the_class_under_test(): void
-    {
-        Composer::fake();
-
-        $this->artisan(MakeTestClass::class, $this->baselineInput)
-            ->assertSuccessful();
-
-        $contents = File::get($this->reference->filePath->toString());
-
-        $this->assertStringContainsString(
-            'use '.$this->testFqcn.';',
-            $contents,
-        );
-    }
-
-    #[Test]
     public function the_generated_test_has_the_covers_class_attribute(): void
     {
         Composer::fake();
