@@ -67,11 +67,9 @@ class MakeTestClass extends TestMakeCommand implements GeneratesFile
     {
         return str_replace([
             '{{ namespace }}',
-            '{{ fqcn }}',
             '{{ class }}',
         ], [
             $this->reference->namespace->after('\\')->toString(),
-            $this->classReference->fqcn->after('\\')->toString(),
             $this->classReference->name->toString(),
         ], GeneratorCommand::buildClass($name));
     }
