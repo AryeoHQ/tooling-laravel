@@ -32,6 +32,6 @@ trait GeneratorCommandCompatibility
 
     protected function getPath($name): string
     {
-        return $this->reference->directory->append('/', $this->getNameInput(), '.php')->toString();
+        return $this->reference->filePath->toString();
     }
 }
