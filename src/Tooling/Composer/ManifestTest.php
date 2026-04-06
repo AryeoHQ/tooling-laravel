@@ -155,6 +155,19 @@ class ManifestTest extends TestCase
     }
 
     #[Test]
+    public function it_includes_skip_in_rector_configuration(): void
+    {
+        $manifest = Manifest::fake()->withRectorConfig();
+
+        tap($manifest->get('rector'), function (array $rector) {
+            $this->assertArrayHasKey('skip', $rector);
+            $this->assertIsArray($rector['skip']);
+            $this->assertArrayHasKey('FakeSkipRule', $rector['skip']);
+            $this->assertSame(['path/to/file.php'], $rector['skip']['FakeSkipRule']);
+        });
+    }
+
+    #[Test]
     public function it_picks_up_new_config_on_rebuild(): void
     {
         $manifest = Manifest::fake();

@@ -22,16 +22,19 @@ final class ManifestFake extends Manifest
     {
         $rectorRulesPath = 'tooling/rector/rules.php';
         $rectorConfiguredRulesPath = 'tooling/rector/configured-rules.php';
+        $rectorSkipPath = 'tooling/rector/skip.php';
 
         $fake = Composer::fake()->merge(['extra' => ['tooling' => ['rector' => [
             'rules' => $rectorRulesPath,
             'configured_rules' => $rectorConfiguredRulesPath,
+            'skip' => $rectorSkipPath,
         ]]]]);
 
         $base = $fake->baseDirectory->toString();
 
         File::put(join_paths($base, $rectorRulesPath), "<?php return ['FakeRuleOne', 'FakeRuleTwo'];");
         File::put(join_paths($base, $rectorConfiguredRulesPath), "<?php return ['FakeConfiguredRule' => ['key' => 'value']];");
+        File::put(join_paths($base, $rectorSkipPath), "<?php return ['FakeSkipRule' => ['path/to/file.php']];");
 
         return $this;
     }

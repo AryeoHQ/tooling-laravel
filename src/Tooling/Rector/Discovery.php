@@ -18,7 +18,14 @@ final class Discovery
     /** @var Collection<class-string<AbstractRector>, array<array-key, mixed>> */
     public Collection $configuredRules {
         get => $this->configuredRules ??= collect((array) $this->manifest->get('rector.configured_rules'))->filter(
-            fn (mixed $result, string $rule) => is_a($rule, AbstractRector::class, true) && is_array($result)
+            fn (mixed $result, int|string $rule) => is_string($rule) && is_a($rule, AbstractRector::class, true) && is_array($result)
+        );
+    }
+
+    /** @var Collection<class-string<AbstractRector>, array<array-key, mixed>> */
+    public Collection $skip {
+        get => $this->skip ??= collect((array) $this->manifest->get('rector.skip'))->filter(
+            fn (mixed $paths, int|string $rule) => is_string($rule) && is_a($rule, AbstractRector::class, true) && is_array($paths)
         );
     }
 }
