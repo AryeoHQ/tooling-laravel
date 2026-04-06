@@ -14,7 +14,11 @@ $builder = RectorConfig::configure()->withRules(
 
 return tap(
     $builder,
-    fn (RectorConfigBuilder $builder) => $discovery->configuredRules->each(
-        fn (array $config, string $rule) => $builder->withConfiguredRule($rule, $config)
-    )
+    function (RectorConfigBuilder $builder) use ($discovery) {
+        $discovery->configuredRules->each(
+            fn (array $config, string $rule) => $builder->withConfiguredRule($rule, $config)
+        );
+
+        $builder->withSkip($discovery->skip->toArray());
+    }
 );
