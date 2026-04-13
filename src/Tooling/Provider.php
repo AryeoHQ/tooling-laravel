@@ -48,7 +48,43 @@ class Provider extends ServiceProvider
 
     private function mergeConfig(): void
     {
-        when($this->configPath, fn (string $path): null => $this->mergeConfigFrom($path, 'tooling'));
+        if ($this->app instanceof \Illuminate\Contracts\Foundation\CachesConfiguration && $this->app->configurationIsCached()) {
+            return;
+        }
+
+        when($this->configPath, function (string $path): void {
+            $packageConfig = require $path;
+            $appConfig = config('tooling', []);
+
+            config()->set('tooling', $this->deepMerge($packageConfig, $appConfig));
+        });
+    }
+
+    /**
+     * Recursively merge config arrays, treating list arrays as atomic values
+     * so that consumer overrides fully replace package defaults for paths, etc.
+     *
+     * @param  array<string, mixed>  $base
+     * @param  array<string, mixed>  $override
+     * @return array<string, mixed>
+     */
+    private function deepMerge(array $base, array $override): array
+    {
+        foreach ($override as $key => $value) {
+            if (
+                is_string($key)
+                && is_array($value)
+                && ! array_is_list($value)
+                && array_key_exists($key, $base)
+                && is_array($base[$key])
+            ) {
+                $base[$key] = $this->deepMerge($base[$key], $value);
+            } else {
+                $base[$key] = $value;
+            }
+        }
+
+        return $base;
     }
 
     private function registerBindings(): void
