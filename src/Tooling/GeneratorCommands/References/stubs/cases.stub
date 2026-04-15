@@ -1,0 +1,18 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use PHPUnit\Framework\Attributes\CoversTrait;
+use PHPUnit\Framework\Attributes\Test;
+
+#[CoversTrait({{ trait }}::class)]
+trait {{ trait }}TestCases
+{
+    #[Test]
+    public function it_works(): void
+    {
+        $this->assertTrue(true);
+    }
+}

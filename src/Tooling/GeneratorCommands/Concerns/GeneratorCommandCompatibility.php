@@ -12,7 +12,7 @@ trait GeneratorCommandCompatibility
 {
     public function getStub(): string
     {
-        return $this->stub;
+        return $this->reference->stubPath->toString();
     }
 
     protected function getNameInput(): string

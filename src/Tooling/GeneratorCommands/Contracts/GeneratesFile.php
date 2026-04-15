@@ -9,8 +9,6 @@ use Tooling\GeneratorCommands\References\Contracts\Reference;
 
 interface GeneratesFile
 {
-    public string $stub { get; }
-
     public Stringable $nameInput { get; }
 
     public Reference $reference { get; }

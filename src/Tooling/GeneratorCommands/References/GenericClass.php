@@ -13,10 +13,14 @@ class GenericClass extends Reference
     }
 
     public TestClass $test {
-        get => new TestClass(
-            name: $this->name->append('Test'),
-            baseNamespace: $this->namespace,
-        );
+        get => resolve(TestClass::class, [
+            'name' => $this->name->append('Test'),
+            'baseNamespace' => $this->namespace,
+        ]);
+    }
+
+    public Stringable $stubPath {
+        get => str(__DIR__.'/stubs/class.stub');
     }
 
     public static function fromFqcn(Stringable|string $fqcn): static

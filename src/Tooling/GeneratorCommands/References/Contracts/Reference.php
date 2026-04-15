@@ -21,4 +21,6 @@ interface Reference
     public Stringable $baseNamespace { get; }
 
     public null|Stringable $subNamespace { get; }
+
+    public Stringable $stubPath { get; }
 }

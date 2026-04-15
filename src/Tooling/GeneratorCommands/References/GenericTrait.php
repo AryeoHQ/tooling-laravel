@@ -13,9 +13,13 @@ class GenericTrait extends Reference
     }
 
     public TestClass|TestCasesTrait $test {
-        get => new TestCasesTrait(
-            name: $this->name->append('TestCases'),
-            baseNamespace: $this->namespace,
-        );
+        get => resolve(TestCasesTrait::class, [
+            'name' => $this->name->append('TestCases'),
+            'baseNamespace' => $this->namespace,
+        ]);
+    }
+
+    public Stringable $stubPath {
+        get => str(__DIR__.'/stubs/trait.stub');
     }
 }

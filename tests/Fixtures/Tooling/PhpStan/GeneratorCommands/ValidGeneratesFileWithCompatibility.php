@@ -16,13 +16,11 @@ class ValidGeneratesFileWithCompatibility extends GeneratorCommand implements Ge
 
     protected $name = 'test:valid';
 
-    public string $stub = '';
-
     public Stringable $nameInput {
         get => str('');
     }
 
     public Reference $reference {
-        get => $this->createStub(Reference::class);
+        get => throw new \RuntimeException('Not implemented');
     }
 }
