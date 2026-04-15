@@ -12,6 +12,10 @@ $builder = RectorConfig::configure()->withRules(
     $discovery->rules->toArray()
 );
 
+if (config('tooling-laravel.rector.with_import_names')) {
+    $builder->withImportNames(removeUnusedImports: true);
+}
+
 return tap(
     $builder,
     function (RectorConfigBuilder $builder) use ($discovery) {

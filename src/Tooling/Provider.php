@@ -35,6 +35,7 @@ class Provider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->bootPublishing();
         $this->bootCommands();
         $this->bootViews();
         $this->bootClassMapCacheListener();
@@ -43,6 +44,7 @@ class Provider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfig();
+        $this->mergeConfigFrom(__DIR__.'/../../config/tooling-laravel.php', 'tooling-laravel');
         $this->registerBindings();
     }
 
@@ -118,6 +120,17 @@ class Provider extends ServiceProvider
                 )
             );
         });
+    }
+
+    private function bootPublishing(): void
+    {
+        if (! app()->runningInConsole()) {
+            return;
+        }
+
+        $this->publishes([
+            __DIR__.'/../../config/tooling-laravel.php' => config_path('tooling-laravel.php'),
+        ], 'tooling-laravel');
     }
 
     private function bootCommands(): void
