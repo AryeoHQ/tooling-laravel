@@ -36,10 +36,6 @@ class MakeTestClass extends TestMakeCommand implements GeneratesFile
         get => $this->classToTest ??= str($this->argument('class'));
     }
 
-    public string $stub {
-        get => __DIR__.'/stubs/test.stub';
-    }
-
     public Stringable $nameInput {
         get => $this->reference->name;
     }

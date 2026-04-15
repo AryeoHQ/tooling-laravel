@@ -24,19 +24,15 @@ class MakeRule extends GeneratorCommand implements GeneratesFile
 
     protected $type = 'Rector Rule';
 
-    public string $stub {
-        get => __DIR__.'/stubs/rule.stub';
-    }
-
     public Stringable $nameInput {
         get => $this->nameInput ??= str($this->argument('name'));
     }
 
     public Reference $reference {
-        get => $this->reference ??= new RectorRule(
-            name: $this->nameInput,
-            baseNamespace: $this->baseNamespace,
-        );
+        get => $this->reference ??= resolve(RectorRule::class, [
+            'name' => $this->nameInput,
+            'baseNamespace' => $this->baseNamespace,
+        ]);
     }
 
     public function handle(): null|bool

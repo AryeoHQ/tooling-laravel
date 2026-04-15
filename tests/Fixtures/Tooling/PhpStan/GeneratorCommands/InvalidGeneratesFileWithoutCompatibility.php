@@ -13,13 +13,11 @@ class InvalidGeneratesFileWithoutCompatibility extends GeneratorCommand implemen
 {
     protected $name = 'test:invalid';
 
-    public string $stub = '';
-
     public Stringable $nameInput {
         get => str('');
     }
 
     public Reference $reference {
-        get => $this->createStub(Reference::class);
+        get => throw new \RuntimeException('Not implemented');
     }
 }

@@ -10,13 +10,11 @@ use Tooling\GeneratorCommands\References\Contracts\Reference;
 
 class InvalidGeneratesFileWithoutGeneratorCommand implements GeneratesFile
 {
-    public string $stub = '';
-
     public Stringable $nameInput {
         get => str('');
     }
 
     public Reference $reference {
-        get => $this->createStub(Reference::class);
+        get => throw new \RuntimeException('Not implemented');
     }
 }

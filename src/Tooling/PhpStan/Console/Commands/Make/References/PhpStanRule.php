@@ -12,4 +12,8 @@ final class PhpStanRule extends GenericClass
     public null|Stringable $subNamespace {
         get => str('PhpStan\\Rules');
     }
+
+    public Stringable $stubPath {
+        get => str(__DIR__.'/stubs/rule.stub');
+    }
 }

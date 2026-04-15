@@ -24,19 +24,15 @@ class MakeRule extends GeneratorCommand implements GeneratesFile
 
     protected $type = 'PHPStan Rule';
 
-    public string $stub {
-        get => __DIR__.'/stubs/rule.stub';
-    }
-
     public Stringable $nameInput {
         get => $this->nameInput ??= str($this->argument('name'));
     }
 
     public Reference $reference {
-        get => $this->reference ??= new PhpStanRule(
-            name: $this->nameInput,
-            baseNamespace: $this->baseNamespace,
-        );
+        get => $this->reference ??= resolve(PhpStanRule::class, [
+            'name' => $this->nameInput,
+            'baseNamespace' => $this->baseNamespace,
+        ]);
     }
 
     public function handle(): null|bool
