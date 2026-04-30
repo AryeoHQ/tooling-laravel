@@ -54,7 +54,7 @@ All native CLI options are forwarded. For example:
 
 ```bash
 php artisan tooling:rector --dry-run
-php artisan tooling:phpstan --generate-baseline
+php artisan tooling:phpstan:analyze --generate-baseline
 php artisan tooling:pint --test
 ```
 
