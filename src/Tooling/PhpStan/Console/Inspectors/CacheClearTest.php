@@ -20,9 +20,7 @@ class CacheClearTest extends TestCase implements ForInspector
 
     public string $path = '/usr/local/bin/phpstan';
 
-    public array $arguments {
-        get => [];
-    }
+    public array $arguments = [];
 
     public array $options {
         get => [
