@@ -1,45 +1,77 @@
 <?php
 
+use Tooling\PhpStan;
+use Tooling\Pint;
+use Tooling\Rector;
+
+$phpStanConfigPath = realpath(__DIR__.'/../phpstan.neon');
+
 return [
     'phpstan' => [
         'cli' => [
-            'arguments' => [
-                'paths' => when(
-                    env('PHPSTAN_PATHS'),
-                    fn (string $paths) => explode(',', $paths),
-                    []
-                ),
+            PhpStan\Console\Inspectors\Analyze::class => [
+                'arguments' => [
+                    'paths' => when(
+                        env('PHPSTAN_PATHS'),
+                        fn (string $paths) => explode(',', $paths),
+                        []
+                    ),
+                ],
+                'options' => [
+                    'configuration' => $phpStanConfigPath,
+                ],
             ],
-            'options' => [
-                'configuration' => realpath(__DIR__.'/../phpstan.neon'),
+            PhpStan\Console\Inspectors\CacheClear::class => [
+                'options' => [
+                    'configuration' => $phpStanConfigPath,
+                ],
+            ],
+            PhpStan\Console\Inspectors\ParametersDump::class => [
+                'options' => [
+                    'configuration' => $phpStanConfigPath,
+                ],
+            ],
+            PhpStan\Console\Inspectors\Diagnose::class => [
+                'options' => [
+                    'configuration' => $phpStanConfigPath,
+                ],
+            ],
+            PhpStan\Console\Inspectors\Bisect::class => [
+                'options' => [
+                    'configuration' => $phpStanConfigPath,
+                ],
             ],
         ],
     ],
     'rector' => [
         'cli' => [
-            'arguments' => [
-                'source' => when(
-                    env('RECTOR_PATHS'),
-                    fn (string $paths) => explode(',', $paths),
-                    []
-                ),
-            ],
-            'options' => [
-                'config' => realpath(__DIR__.'/../rector.php'),
+            Rector\Console\Inspector::class => [
+                'arguments' => [
+                    'source' => when(
+                        env('RECTOR_PATHS'),
+                        fn (string $paths) => explode(',', $paths),
+                        []
+                    ),
+                ],
+                'options' => [
+                    'config' => realpath(__DIR__.'/../rector.php'),
+                ],
             ],
         ],
     ],
     'pint' => [
         'cli' => [
-            'arguments' => [
-                'path' => when(
-                    env('PINT_PATHS'),
-                    fn (string $paths) => explode(',', $paths),
-                    []
-                ),
-            ],
-            'options' => [
-                'config' => realpath(__DIR__.'/../pint.json'),
+            Pint\Console\Inspector::class => [
+                'arguments' => [
+                    'path' => when(
+                        env('PINT_PATHS'),
+                        fn (string $paths) => explode(',', $paths),
+                        []
+                    ),
+                ],
+                'options' => [
+                    'config' => realpath(__DIR__.'/../pint.json'),
+                ],
             ],
         ],
     ],

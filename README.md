@@ -36,7 +36,11 @@ The config file (`config/tooling.php`) maps these environment variables to the a
 ## Usage
 
 ```bash
-php artisan tooling:phpstan
+php artisan tooling:phpstan:analyze
+php artisan tooling:phpstan:cache-clear
+php artisan tooling:phpstan:diagnose
+php artisan tooling:phpstan:parameters-dump
+php artisan tooling:phpstan:bisect
 php artisan tooling:pint
 php artisan tooling:rector
 php artisan tooling:discover

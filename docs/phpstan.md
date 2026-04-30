@@ -74,6 +74,22 @@ Five rules enforce correct trait/interface composition on [generator commands](g
 
 Rules registered by other packages via `extra.tooling.phpstan` in their `composer.json` are automatically discovered and included. See [Registering Rules](#registering-rules).
 
+## Commands
+
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `tooling:phpstan` | `tooling:phpstan:analyze` | Run static analysis |
+| `tooling:phpstan:cache-clear` | `tooling:phpstan:flush` | Clear the result cache |
+| `tooling:phpstan:diagnose` | — | Run PHPStan diagnostics |
+| `tooling:phpstan:parameters-dump` | `tooling:phpstan:parameters` | Dump resolved parameters |
+| `tooling:phpstan:bisect` | — | Bisect PHPStan releases to find a regression |
+
+The main `tooling:phpstan` command also accepts `--cache-clear` (or `--flush`) to clear the result cache before running analysis:
+
+```bash
+php artisan tooling:phpstan --cache-clear
+```
+
 ## Configuration
 
 ### Paths

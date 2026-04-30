@@ -67,7 +67,7 @@ abstract class Inspector
     protected function config(null|string $key = null, mixed $default = null): mixed
     {
         $key = collect([
-            'tooling', str($this->executable)->afterLast('/'), 'cli', $key,
+            'tooling', str($this->executable)->afterLast('/'), 'cli', static::class, $key,
         ])->filter()->implode('.');
 
         return config($key, $default);
