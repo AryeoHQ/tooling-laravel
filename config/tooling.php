@@ -45,7 +45,7 @@ return [
     ],
     'rector' => [
         'cli' => [
-            Rector\Console\Inspector::class => [
+            Rector\Console\Inspectors\Process::class => [
                 'arguments' => [
                     'source' => when(
                         env('RECTOR_PATHS'),

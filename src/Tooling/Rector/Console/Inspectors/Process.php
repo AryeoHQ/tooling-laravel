@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Tooling\Rector\Console;
+namespace Tooling\Rector\Console\Inspectors;
 
 use Rector\Console\Command\ProcessCommand;
 use Tooling\Console\Inspectors\Attributes\Conflicts;
 
 #[Conflicts\Shortcuts(list: ['n'])]
-class Inspector extends \Tooling\Console\Inspectors\Inspector
+class Process extends \Tooling\Console\Inspectors\Inspector
 {
     protected ProcessCommand $command;
 
