@@ -9,15 +9,15 @@ use Tooling\Console\Testing\Concerns\VendorBinaryTestCases;
 use Tooling\Console\Testing\Contracts\ForVendorBinary;
 use Tooling\PhpStan;
 
-class PhpStanTest extends TestCase implements ForVendorBinary
+class ParametersDumpTest extends TestCase implements ForVendorBinary
 {
     use VendorBinaryTestCases;
 
-    public string $command = PhpStan\Console\Commands\PhpStan::class;
+    public string $command = PhpStan\Console\Commands\ParametersDump::class;
 
     public string $binary = 'phpstan';
 
-    public null|string $subcommand = 'analyse';
+    public null|string $subcommand = 'dump-parameters';
 
-    public string $inspector = PhpStan\Console\Inspector::class;
+    public string $inspector = PhpStan\Console\Inspectors\ParametersDump::class;
 }

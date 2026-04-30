@@ -9,6 +9,10 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use PHPStan\Command\AnalyseCommand;
+use PHPStan\Command\BisectCommand;
+use PHPStan\Command\ClearResultCacheCommand;
+use PHPStan\Command\DiagnoseCommand;
+use PHPStan\Command\DumpParametersCommand;
 use Rector\Console\Command\ProcessCommand;
 use Rector\Console\ConsoleApplication;
 use Rector\DependencyInjection\RectorContainerFactory;
@@ -82,12 +86,64 @@ class Provider extends ServiceProvider
     {
         tap(
             AnalyseCommand::class, // @phpstan-ignore phpstanApi.classConstant
-            fn ($commandClass) => app()->when(PhpStan\Console\Inspector::class)->needs($commandClass)->give(
+            fn ($commandClass) => app()->when(PhpStan\Console\Inspectors\Analyze::class)->needs($commandClass)->give(
                 fn () => with(
                     new ReflectionClass($commandClass),
                     fn (ReflectionClass $reflection) => tap(
                         $reflection->newInstanceArgs([[], microtime(true)]),
                         fn (AnalyseCommand $command) => $reflection->getMethod('configure')->invoke($command)
+                    )
+                )
+            )
+        );
+
+        tap(
+            ClearResultCacheCommand::class, // @phpstan-ignore phpstanApi.classConstant
+            fn ($commandClass) => app()->when(PhpStan\Console\Inspectors\CacheClear::class)->needs($commandClass)->give(
+                fn () => with(
+                    new ReflectionClass($commandClass),
+                    fn (ReflectionClass $reflection) => tap(
+                        $reflection->newInstanceArgs([[]]),
+                        fn (ClearResultCacheCommand $command) => $reflection->getMethod('configure')->invoke($command)
+                    )
+                )
+            )
+        );
+
+        tap(
+            DumpParametersCommand::class, // @phpstan-ignore phpstanApi.classConstant
+            fn ($commandClass) => app()->when(PhpStan\Console\Inspectors\ParametersDump::class)->needs($commandClass)->give(
+                fn () => with(
+                    new ReflectionClass($commandClass),
+                    fn (ReflectionClass $reflection) => tap(
+                        $reflection->newInstanceArgs([[]]),
+                        fn (DumpParametersCommand $command) => $reflection->getMethod('configure')->invoke($command)
+                    )
+                )
+            )
+        );
+
+        tap(
+            DiagnoseCommand::class, // @phpstan-ignore phpstanApi.classConstant
+            fn ($commandClass) => app()->when(PhpStan\Console\Inspectors\Diagnose::class)->needs($commandClass)->give(
+                fn () => with(
+                    new ReflectionClass($commandClass),
+                    fn (ReflectionClass $reflection) => tap(
+                        $reflection->newInstanceArgs([[]]),
+                        fn (DiagnoseCommand $command) => $reflection->getMethod('configure')->invoke($command)
+                    )
+                )
+            )
+        );
+
+        tap(
+            BisectCommand::class, // @phpstan-ignore phpstanApi.classConstant
+            fn ($commandClass) => app()->when(PhpStan\Console\Inspectors\Bisect::class)->needs($commandClass)->give(
+                fn () => with(
+                    new ReflectionClass($commandClass),
+                    fn (ReflectionClass $reflection) => tap(
+                        $reflection->newInstance(),
+                        fn (BisectCommand $command) => $reflection->getMethod('configure')->invoke($command)
                     )
                 )
             )
@@ -100,7 +156,7 @@ class Provider extends ServiceProvider
             $container = with(
                 new RectorContainerFactory,
                 fn (RectorContainerFactory $factory) => with(
-                    new BootstrapConfigs(config('tooling.rector.cli.options.config') ?? base_path('rector.php'), []),
+                    new BootstrapConfigs(config('tooling.rector.cli.'.Rector\Console\Inspector::class.'.options.config') ?? base_path('rector.php'), []),
                     fn (BootstrapConfigs $configs) => $factory->createFromBootstrapConfigs($configs)
                 )
             );
@@ -132,7 +188,11 @@ class Provider extends ServiceProvider
             CloneBaseCommand::class,
             MakeTestClass::class,
             PhpStan\Console\Commands\Make\MakeRule::class,
-            PhpStan\Console\Commands\PhpStan::class,
+            PhpStan\Console\Commands\Analyze::class,
+            PhpStan\Console\Commands\Bisect::class,
+            PhpStan\Console\Commands\CacheClear::class,
+            PhpStan\Console\Commands\Diagnose::class,
+            PhpStan\Console\Commands\ParametersDump::class,
             Rector\Console\Commands\Make\MakeRule::class,
             Rector\Console\Commands\Rector::class,
             Pint\Console\Commands\Pint::class

@@ -8,11 +8,11 @@ use Illuminate\Console\Command;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Tooling\Console\Commands\Attributes\VendorBinary;
 use Tooling\Console\Commands\Provides\HandledByVendorBinary;
-use Tooling\PhpStan\Console\Inspector;
+use Tooling\PhpStan\Console\Inspectors;
 
-#[AsCommand(name: 'tooling:phpstan', description: 'Run PHPStan static analysis')]
-#[VendorBinary(inspector: Inspector::class, binary: 'phpstan', command: 'analyse')]
-class PhpStan extends Command
+#[AsCommand(name: 'tooling:phpstan:cache-clear', description: 'Clear PHPStan result cache', aliases: ['tooling:phpstan:flush'])]
+#[VendorBinary(inspector: Inspectors\CacheClear::class, binary: 'phpstan', command: 'clear-result-cache')]
+class CacheClear extends Command
 {
     use HandledByVendorBinary;
 }

@@ -2,20 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Tooling\PhpStan\Console;
+namespace Tooling\PhpStan\Console\Inspectors;
 
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Console\Input\InputOption;
 use Tests\TestCase;
+use Tooling\Console\Testing\Attributes\ExpectsArguments;
 use Tooling\Console\Testing\Concerns\InspectorTestCases;
 use Tooling\Console\Testing\Contracts\ForInspector;
-use Tooling\PhpStan\Console\Inspector as PhpStanInspector;
 
-class InspectorTest extends TestCase implements ForInspector
+#[ExpectsArguments]
+class AnalyzeTest extends TestCase implements ForInspector
 {
     use InspectorTestCases;
 
-    public string $class = PhpStanInspector::class;
+    public string $class = Analyze::class;
 
     public string $path = '/usr/local/bin/phpstan';
 

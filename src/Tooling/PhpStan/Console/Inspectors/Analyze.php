@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Tooling\PhpStan\Console;
+namespace Tooling\PhpStan\Console\Inspectors;
 
 use PHPStan\Command\AnalyseCommand;
 
-class Inspector extends \Tooling\Console\Inspectors\Inspector
+class Analyze extends \Tooling\Console\Inspectors\Inspector
 {
     protected AnalyseCommand $command;
 

@@ -7,14 +7,32 @@ namespace Tooling\Console\Testing\Concerns;
 use Illuminate\Support\Collection;
 use LogicException;
 use PHPUnit\Framework\Attributes\Test;
+use ReflectionClass;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Tooling\Console\Inspectors\Inspector;
+use Tooling\Console\Testing\Attributes\ConfirmsArguments;
+use Tooling\Console\Testing\Attributes\DoesntExpectArguments;
+use Tooling\Console\Testing\Attributes\ExpectsArguments;
 
+/**
+ * @mixin \Tests\TestCase
+ */
 trait InspectorTestCases
 {
     protected Inspector $inspector {
         get => app($this->class)->executable($this->path);
+    }
+
+    protected ConfirmsArguments $confirmsArguments {
+        get => $this->confirmsArguments ??= collect(new ReflectionClass($this)->getAttributes())->filter(
+            fn ($attribute) => is_a($attribute->getName(), ConfirmsArguments::class, true)
+        )->when(
+            fn (Collection $attributes) => $attributes->isEmpty(),
+            fn () => $this->fail(
+                class_basename(static::class).' must use a #[' . class_basename(ExpectsArguments::class) . '] or #[' . class_basename(DoesntExpectArguments::class) . '] attribute.'
+            )
+        )->first()->newInstance();
     }
 
     #[Test]
@@ -52,7 +70,14 @@ trait InspectorTestCases
     #[Test]
     public function it_resolves_arguments_from_the_underlying_command(): void
     {
+        $attribute = $this->confirmsArguments;
         $arguments = $this->inspector->arguments;
+
+        if ($attribute instanceof DoesntExpectArguments) {
+            $this->assertTrue($arguments->isEmpty());
+
+            return;
+        }
 
         $this->assertTrue($arguments->isNotEmpty());
         $this->assertContainsOnlyInstancesOf(InputArgument::class, $arguments);
@@ -85,6 +110,12 @@ trait InspectorTestCases
     #[Test]
     public function it_has_expected_array_arguments(): void
     {
+        if ($this->confirmsArguments instanceof DoesntExpectArguments) {
+            $this->assertTrue($this->inspector->arguments->isEmpty());
+
+            return;
+        }
+
         $inspector = $this->inspector;
 
         foreach ($this->arguments as $fixture) {
@@ -104,12 +135,18 @@ trait InspectorTestCases
     #[Test]
     public function it_reads_config_defaults_for_arguments(): void
     {
+        if ($this->confirmsArguments instanceof DoesntExpectArguments) {
+            $this->assertTrue($this->inspector->arguments->isEmpty());
+
+            return;
+        }
+
         foreach ($this->arguments as $fixture) {
             if (! array_key_exists('configValue', $fixture)) {
                 continue;
             }
 
-            $key = 'tooling.'.basename($this->path).'.cli.arguments.'.$fixture['name'];
+            $key = 'tooling.'.basename($this->path).'.cli.'.$this->class.'.arguments.'.$fixture['name'];
 
             config()->set($key, $fixture['configValue']);
 
@@ -129,7 +166,7 @@ trait InspectorTestCases
                 continue;
             }
 
-            $key = 'tooling.'.basename($this->path).'.cli.options.'.$fixture['name'];
+            $key = 'tooling.'.basename($this->path).'.cli.'.$this->class.'.options.'.$fixture['name'];
 
             config()->set($key, $fixture['configValue']);
 
