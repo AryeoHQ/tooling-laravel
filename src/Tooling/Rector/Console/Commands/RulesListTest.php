@@ -9,15 +9,15 @@ use Tooling\Console\Testing\Concerns\VendorBinaryTestCases;
 use Tooling\Console\Testing\Contracts\ForVendorBinary;
 use Tooling\Rector;
 
-class RectorTest extends TestCase implements ForVendorBinary
+class RulesListTest extends TestCase implements ForVendorBinary
 {
     use VendorBinaryTestCases;
 
-    public string $command = Rector\Console\Commands\Rector::class;
+    public string $command = Rector\Console\Commands\RulesList::class;
 
     public string $binary = 'rector';
 
-    public null|string $subcommand = 'process';
+    public null|string $subcommand = 'list-rules';
 
-    public string $inspector = Rector\Console\Inspector::class;
+    public string $inspector = Rector\Console\Inspectors\RulesList::class;
 }

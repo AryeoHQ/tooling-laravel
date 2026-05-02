@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tooling\Rector\Console;
+namespace Tooling\Rector\Console\Inspectors;
 
 use Tests\TestCase;
 use Tooling\Console\Testing\Attributes\ExpectsArguments;
@@ -11,11 +11,11 @@ use Tooling\Console\Testing\Contracts\ForInspector;
 use Tooling\Rector;
 
 #[ExpectsArguments]
-class InspectorTest extends TestCase implements ForInspector
+class ProcessTest extends TestCase implements ForInspector
 {
     use InspectorTestCases;
 
-    public string $class = Rector\Console\Inspector::class;
+    public string $class = Rector\Console\Inspectors\Process::class;
 
     public string $path = '/usr/local/bin/rector';
 

@@ -1,6 +1,6 @@
 # Rector
 
-This package ships a preconfigured Rector setup that dynamically loads rules from all installed packages. When you run `tooling:rector`, rules from this package and any downstream package that registers them are automatically applied.
+This package ships a preconfigured Rector setup that dynamically loads rules from all installed packages. When you run `tooling:rector:process`, rules from this package and any downstream package that registers them are automatically applied.
 
 ## What's Included
 
@@ -187,8 +187,8 @@ By default, the bundled `rector.php` is used. This is set via `tooling.rector.cl
 All native Rector CLI options work through the Artisan command:
 
 ```bash
-php artisan tooling:rector --dry-run
-php artisan tooling:rector --clear-cache
+php artisan tooling:rector:process --dry-run
+php artisan tooling:rector:process --clear-cache
 ```
 
 ## Scaffolding a Rule

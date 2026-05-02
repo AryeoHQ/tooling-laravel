@@ -42,7 +42,8 @@ php artisan tooling:phpstan:diagnose
 php artisan tooling:phpstan:parameters-dump
 php artisan tooling:phpstan:bisect
 php artisan tooling:pint
-php artisan tooling:rector
+php artisan tooling:rector:process
+php artisan tooling:rector:rules-list
 php artisan tooling:discover
 php artisan tooling:optimize
 php artisan make:test
@@ -53,7 +54,7 @@ php artisan make:phpstan:rule {name}
 All native CLI options are forwarded. For example:
 
 ```bash
-php artisan tooling:rector --dry-run
+php artisan tooling:rector:process --dry-run
 php artisan tooling:phpstan:analyze --generate-baseline
 php artisan tooling:pint --test
 ```
