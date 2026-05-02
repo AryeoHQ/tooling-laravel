@@ -11,6 +11,7 @@
         "ergebnis/phpstan-rules": "^2.12",
         "larastan/larastan": "^3.8",
         "laravel/framework": "^12.36",
+        "laravel/mcp": "*",
         "laravel/pint": "^1.25",
         "laravel/prompts": "^0.3.13",
         "nesbot/carbon": "^3.11",
@@ -33,7 +34,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Tooling\\": "src/Tooling/"
+            "Tooling\\": "src/Tooling/",
+            "Mcp\\": "src/Mcp/"
         }
     },
     "autoload-dev": {
@@ -59,7 +61,8 @@
         "class": "Tooling\\Composer\\Plugins\\PublishConfigurations",
         "laravel": {
             "providers": [
-                "Tooling\\Provider"
+                "Tooling\\Provider",
+                "Mcp\\Provider"
             ]
         },
         "tooling": {

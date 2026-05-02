@@ -8,6 +8,7 @@ use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Mcp\Servers\Development;
 use PHPStan\Command\AnalyseCommand;
 use Rector\Console\Command\ProcessCommand;
 use Rector\Console\ConsoleApplication;
@@ -37,6 +38,7 @@ class Provider extends ServiceProvider
     {
         $this->bootCommands();
         $this->bootViews();
+        $this->bootMcp();
         $this->bootClassMapCacheListener();
     }
 
@@ -151,5 +153,16 @@ class Provider extends ServiceProvider
         }
 
         Event::listen(CommandFinished::class, RebuildClassMapCache::class);
+    }
+
+    private function bootMcp(): void
+    {
+        Development::add(Mcp\Resources\Readme::class);
+
+        Development::add(PHPStan\Mcp\Tools\PhpStan::class);
+        Development::add(PHPStan\Mcp\Prompts\Analyze::class);
+
+        Development::add(Pint\Mcp\Tools\Pint::class);
+        Development::add(Rector\Mcp\Tools\Rector::class);
     }
 }
