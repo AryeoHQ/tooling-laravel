@@ -9,18 +9,18 @@ use Illuminate\Support\Facades\Artisan;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
+use Laravel\Mcp\Server\Attributes\Name;
+use Laravel\Mcp\Server\Attributes\Title;
 use Laravel\Mcp\Server\Tool;
 
+#[Name('tooling_pint')]
+#[Title('Run Pint code styler fixer')]
 class Pint extends Tool
 {
-    protected string $name = 'tooling_pint';
-
-    protected string $title = 'Run Pint code styler fixer';
-
     public function handle(Request $request): Response|ResponseFactory
     {
         $exitCode = \Illuminate\Support\Facades\Artisan::call(
-            'tooling:pint', ['--format' => 'json', '--test' => $request->boolean('test', true)]
+            'tooling:pint', ['--format' => 'json', '--test' => $request->boolean('test', false)]
         );
 
         $output = Artisan::output();

@@ -9,14 +9,14 @@ use Illuminate\Support\Facades\Artisan;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
+use Laravel\Mcp\Server\Attributes\Name;
+use Laravel\Mcp\Server\Attributes\Title;
 use Laravel\Mcp\Server\Tool;
 
+#[Name('tooling_rector')]
+#[Title('Run Rector code styler fixer')]
 class Rector extends Tool
 {
-    protected string $name = 'tooling_rector';
-
-    protected string $title = 'Run Rector code styler fixer';
-
     public function handle(Request $request): Response|ResponseFactory
     {
         $exitCode = Artisan::call(

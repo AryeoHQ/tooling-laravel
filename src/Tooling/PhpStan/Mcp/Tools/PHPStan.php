@@ -8,14 +8,14 @@ use Illuminate\Support\Facades\Artisan;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
+use Laravel\Mcp\Server\Attributes\Name;
+use Laravel\Mcp\Server\Attributes\Title;
 use Laravel\Mcp\Server\Tool;
 
+#[Name('tooling_phpstan')]
+#[Title('Run PHPStan Static Analysis')]
 class PhpStan extends Tool
 {
-    protected string $name = 'tooling_phpstan';
-
-    protected string $title = 'Run PHPStan Static Analysis';
-
     public function handle(Request $request): Response|ResponseFactory
     {
         $exitCode = Artisan::call(
