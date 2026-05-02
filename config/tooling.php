@@ -6,6 +6,10 @@ use Tooling\Rector;
 
 $phpStanConfigPath = realpath(__DIR__.'/../phpstan.neon');
 $phpStanScanPaths = array_filter(explode(',', env('PHPSTAN_PATHS', '')));
+$rectorConfigPath = realpath(__DIR__.'/../rector.php');
+$rectorScanPaths = array_filter(explode(',', env('RECTOR_PATHS', '')));
+$pintConfigPath = realpath(__DIR__.'/../pint.json');
+$pintScanPaths = array_filter(explode(',', env('PINT_PATHS', '')));
 
 return [
     'phpstan' => [
@@ -45,12 +49,17 @@ return [
     ],
     'rector' => [
         'cli' => [
-            Rector\Console\Inspector::class => [
+            Rector\Console\Inspectors\Process::class => [
                 'arguments' => [
-                    'source' => array_filter(explode(',', env('RECTOR_PATHS', ''))),
+                    'source' => $rectorScanPaths,
                 ],
                 'options' => [
-                    'config' => realpath(__DIR__.'/../rector.php'),
+                    'config' => $rectorConfigPath,
+                ],
+            ],
+            Rector\Console\Inspectors\RulesList::class => [
+                'options' => [
+                    'config' => $rectorConfigPath,
                 ],
             ],
         ],
@@ -59,10 +68,10 @@ return [
         'cli' => [
             Pint\Console\Inspector::class => [
                 'arguments' => [
-                    'path' => array_filter(explode(',', env('PINT_PATHS', ''))),
+                    'path' => $pintScanPaths,
                 ],
                 'options' => [
-                    'config' => realpath(__DIR__.'/../pint.json'),
+                    'config' => $pintConfigPath,
                 ],
             ],
         ],

@@ -13,6 +13,7 @@ use PHPStan\Command\BisectCommand;
 use PHPStan\Command\ClearResultCacheCommand;
 use PHPStan\Command\DiagnoseCommand;
 use PHPStan\Command\DumpParametersCommand;
+use Rector\Console\Command\ListRulesCommand;
 use Rector\Console\Command\ProcessCommand;
 use Rector\Console\ConsoleApplication;
 use Rector\DependencyInjection\RectorContainerFactory;
@@ -152,11 +153,11 @@ class Provider extends ServiceProvider
 
     private function registerBindingsForRector(): void
     {
-        app()->when(Rector\Console\Inspector::class)->needs(ProcessCommand::class)->give(function () {
+        app()->when(Rector\Console\Inspectors\Process::class)->needs(ProcessCommand::class)->give(function () {
             $container = with(
                 new RectorContainerFactory,
                 fn (RectorContainerFactory $factory) => with(
-                    new BootstrapConfigs(config('tooling.rector.cli.'.Rector\Console\Inspector::class.'.options.config') ?? base_path('rector.php'), []),
+                    new BootstrapConfigs(config('tooling.rector.cli.'.Rector\Console\Inspectors\Process::class.'.options.config') ?? base_path('rector.php'), []),
                     fn (BootstrapConfigs $configs) => $factory->createFromBootstrapConfigs($configs)
                 )
             );
@@ -164,6 +165,29 @@ class Provider extends ServiceProvider
             return tap(
                 $container->make(ProcessCommand::class),
                 fn (ProcessCommand $command) => with(
+                    $container->make(ConsoleApplication::class),
+                    fn (ConsoleApplication $application) => with(
+                        new ReflectionClass($application),
+                        fn (ReflectionClass $reflection) => $reflection
+                            ->getMethod('addCustomOptions')
+                            ->invoke($application, $command->getDefinition())
+                    )
+                )
+            );
+        });
+
+        app()->when(Rector\Console\Inspectors\RulesList::class)->needs(ListRulesCommand::class)->give(function () {
+            $container = with(
+                new RectorContainerFactory,
+                fn (RectorContainerFactory $factory) => with(
+                    new BootstrapConfigs(config('tooling.rector.cli.'.Rector\Console\Inspectors\RulesList::class.'.options.config') ?? base_path('rector.php'), []),
+                    fn (BootstrapConfigs $configs) => $factory->createFromBootstrapConfigs($configs)
+                )
+            );
+
+            return tap(
+                $container->make(ListRulesCommand::class),
+                fn (ListRulesCommand $command) => with(
                     $container->make(ConsoleApplication::class),
                     fn (ConsoleApplication $application) => with(
                         new ReflectionClass($application),
@@ -194,7 +218,8 @@ class Provider extends ServiceProvider
             PhpStan\Console\Commands\Diagnose::class,
             PhpStan\Console\Commands\ParametersDump::class,
             Rector\Console\Commands\Make\MakeRule::class,
-            Rector\Console\Commands\Rector::class,
+            Rector\Console\Commands\RulesList::class,
+            Rector\Console\Commands\Process::class,
             Pint\Console\Commands\Pint::class
         );
     }
