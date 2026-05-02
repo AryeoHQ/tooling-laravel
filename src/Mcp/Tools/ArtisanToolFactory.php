@@ -20,6 +20,21 @@ class ArtisanToolFactory
         'help', 'quiet', 'verbose', 'version', 'ansi', 'no-ansi', 'no-interaction', 'env',
     ];
 
+    /** @var array<string, bool|string> */
+    private const array DEFAULT_OVERRIDES = [
+        'json' => true,
+        'error-format' => 'json',
+        'format' => 'json',
+        'output-format' => 'json',
+        'no-progress' => true,
+        'no-progress-bar' => true,
+    ];
+
+    /** @var list<string> */
+    private const array HIDDEN_OPTIONS = [
+        'output-to-file',
+    ];
+
     public static function make(Command $command): Tool
     {
         $commandName = $command->getName();
@@ -29,14 +44,17 @@ class ArtisanToolFactory
 
         $arguments = collect($definition->getArguments())->all();
         $options = collect($definition->getOptions())
-            ->reject(fn (InputOption $option) => in_array($option->getName(), self::SKIP_OPTIONS))
+            ->reject(fn (InputOption $option) => in_array($option->getName(), [...self::SKIP_OPTIONS, ...self::HIDDEN_OPTIONS]))
             ->all();
 
-        return new class ($toolName, $description, $commandName, $arguments, $options) extends Tool
+        $defaultOverrides = self::DEFAULT_OVERRIDES;
+
+        return new class ($toolName, $description, $commandName, $arguments, $options, $defaultOverrides) extends Tool
         {
             /**
              * @param  array<string, \Symfony\Component\Console\Input\InputArgument>  $commandArguments
              * @param  array<string, \Symfony\Component\Console\Input\InputOption>  $commandOptions
+             * @param  array<string, bool|string>  $defaultOverrides
              */
             public function __construct(
                 private string $toolName,
@@ -44,6 +62,7 @@ class ArtisanToolFactory
                 private string $commandName,
                 private array $commandArguments,
                 private array $commandOptions,
+                private array $defaultOverrides,
             ) {}
 
             public function name(): string
@@ -84,11 +103,15 @@ class ArtisanToolFactory
                 }
 
                 foreach ($this->commandOptions as $option) {
+                    $override = $this->defaultOverrides[$option->getName()] ?? null;
+
                     $type = match (true) {
-                        ! $option->acceptValue() => $schema->boolean()->default(false),
+                        ! $option->acceptValue() => $schema->boolean()->default($override ?? false),
                         $option->isArray() => $schema->array()->items($schema->string())->default($option->getDefault() ?? []),
-                        $option->isValueRequired() => $schema->string(),
-                        default => $schema->string()->default((string) ($option->getDefault() ?? '')),
+                        $option->isValueRequired() => $override !== null
+                            ? $schema->string()->default((string) $override)
+                            : $schema->string(),
+                        default => $schema->string()->default((string) ($override ?? $option->getDefault() ?? '')),
                     };
 
                     $type = $type->description($option->getDescription());
@@ -111,7 +134,8 @@ class ArtisanToolFactory
                 }
 
                 foreach ($this->commandOptions as $option) {
-                    $value = $request->get($option->getName());
+                    $value = $request->get($option->getName())
+                        ?? ($this->defaultOverrides[$option->getName()] ?? null);
                     if ($value !== null) {
                         $params['--'.$option->getName()] = $value;
                     }
