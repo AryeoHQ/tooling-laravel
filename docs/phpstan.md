@@ -1,6 +1,6 @@
 # PHPStan
 
-This package ships a preconfigured PHPStan setup at level 6 with multiple bundled rule sets. When you run `tooling:phpstan`, all of this is loaded automatically.
+This package ships a preconfigured PHPStan setup at level 6 with multiple bundled rule sets. When you run `tooling:phpstan:analyze`, all of this is loaded automatically.
 
 ## What's Included
 
@@ -74,6 +74,22 @@ Five rules enforce correct trait/interface composition on [generator commands](g
 
 Rules registered by other packages via `extra.tooling.phpstan` in their `composer.json` are automatically discovered and included. See [Registering Rules](#registering-rules).
 
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `tooling:phpstan:analyze` | Run static analysis |
+| `tooling:phpstan:cache-clear` | Clear the result cache |
+| `tooling:phpstan:diagnose` | Run PHPStan diagnostics |
+| `tooling:phpstan:parameters-dump` | Dump resolved parameters |
+| `tooling:phpstan:bisect` | Bisect PHPStan releases to find a regression |
+
+The `tooling:phpstan:analyze` command also accepts `--cache-clear` to clear the result cache before running analysis:
+
+```bash
+php artisan tooling:phpstan:analyze --cache-clear
+```
+
 ## Configuration
 
 ### Paths
@@ -84,20 +100,20 @@ Set `PHPSTAN_PATHS` in your `.env` or `testbench.yaml`:
 PHPSTAN_PATHS=app,tests
 ```
 
-This maps to the `tooling.phpstan.cli.arguments.paths` config key.
+This maps to the `tooling.phpstan.cli.{Inspector}.arguments.paths` config key in `config/tooling.php`, where `{Inspector}` is the fully-qualified inspector class name (e.g. `Tooling\PhpStan\Console\Inspectors\Analyze`).
 
 ### Configuration File
 
-By default, the bundled `phpstan.neon` is used. This is set via `tooling.phpstan.cli.options.configuration` in `config/tooling.php`.
+By default, the bundled `phpstan.neon` is used. This is set via `tooling.phpstan.cli.{Inspector}.options.configuration` in `config/tooling.php`.
 
 ### CLI Passthrough
 
 All native PHPStan CLI options work through the Artisan command:
 
 ```bash
-php artisan tooling:phpstan --generate-baseline
-php artisan tooling:phpstan --level=8
-php artisan tooling:phpstan --memory-limit=512M
+php artisan tooling:phpstan:analyze --generate-baseline
+php artisan tooling:phpstan:analyze --level=8
+php artisan tooling:phpstan:analyze --memory-limit=512M
 ```
 
 ## Scaffolding a Rule
