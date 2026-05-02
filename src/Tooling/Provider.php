@@ -158,11 +158,10 @@ class Provider extends ServiceProvider
     private function bootMcp(): void
     {
         Development::add(Mcp\Resources\Readme::class);
-
-        Development::add(PHPStan\Mcp\Tools\PhpStan::class);
         Development::add(PHPStan\Mcp\Prompts\Analyze::class);
 
-        Development::add(Pint\Mcp\Tools\Pint::class);
-        Development::add(Rector\Mcp\Tools\Rector::class);
+        collect(\Illuminate\Support\Facades\Artisan::all())
+            ->filter(fn ($command, string $name) => $command instanceof \Illuminate\Console\Command && ! $command->isHidden())
+            ->each(fn (\Illuminate\Console\Command $command) => Development::add(\Mcp\Tools\ArtisanToolFactory::make($command)));
     }
 }
