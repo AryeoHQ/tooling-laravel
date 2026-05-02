@@ -36,7 +36,7 @@ trait HandledByVendorBinary
         get => collect($this->options())->filter()->reject(
             fn ($value, $name): bool => $this->notForwardable->contains($name)
         )->map(
-            fn ($value, $name): string => $value === true ? "--{$name}" : "--{$name}={$value}"
+            fn ($value, $name): string => $value === true ? "--{$name}" : "--{$name}={$value}" // @phpstan-ignore identical.alwaysFalse
         );
     }
 

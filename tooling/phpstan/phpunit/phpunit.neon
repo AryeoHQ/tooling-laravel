@@ -9,10 +9,11 @@ parameters:
                 - PHPStan\Testing\RuleTestCase
     ignoreErrors:
         -
-            message: '#Dynamic call to static method PHPUnit\\Framework\\Assert::assert.*\(\)#'
+            message: '#Dynamic call to static method PHPUnit\\Framework\\Assert::(assert|fail|markTest).*\(\)#'
             paths:
                 - %rootDir%/../../../**/*Test.php
                 - %rootDir%/../../../**/*TestCase.php
+                - %rootDir%/../../../**/*TestCases.php
         -
             message: '#Call to method PHPUnit\\Framework\\Assert::assert.*\(\) .* will always evaluate to true#'
             paths:

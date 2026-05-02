@@ -6,6 +6,7 @@ namespace Tooling\Console\Inspectors;
 
 use AllowDynamicProperties;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Stringable;
 use LogicException;
 use ReflectionAttribute;
 use ReflectionObject;
@@ -23,6 +24,12 @@ abstract class Inspector
     protected readonly string $executable;
 
     protected ReflectionObject $reflection { get => $this->reflection ??= new ReflectionObject($this); }
+
+    public private(set) Stringable $configRoot {
+        get => $this->configRoot ??= str(collect([
+            'tooling', str($this->executable)->afterLast('/'), 'cli', static::class,
+        ])->filter()->implode('.'));
+    }
 
     /** @var Collection<array-key, string> */
     public Collection $aliases { get => $this->aliases ??= collect($this->command->getAliases()); }
@@ -64,13 +71,17 @@ abstract class Inspector
         return $this;
     }
 
-    protected function config(null|string $key = null, mixed $default = null): mixed
+    public function config(null|string $key = null, mixed $default = null): mixed
     {
-        $key = collect([
-            'tooling', str($this->executable)->afterLast('/'), 'cli', $key,
-        ])->filter()->implode('.');
+        return config(
+            $this->configKey($key)->toString(),
+            $default
+        );
+    }
 
-        return config($key, $default);
+    public function configKey(string $key): Stringable
+    {
+        return $this->configRoot->append($key ? '.'.$key : '');
     }
 
     protected function makeArgument(mixed $argument): InputArgument

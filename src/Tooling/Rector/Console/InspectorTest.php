@@ -2,32 +2,33 @@
 
 declare(strict_types=1);
 
-namespace Tooling\Pint\Console;
+namespace Tooling\Rector\Console;
 
 use Tests\TestCase;
 use Tooling\Console\Testing\Attributes\ExpectsArguments;
 use Tooling\Console\Testing\Concerns\InspectorTestCases;
 use Tooling\Console\Testing\Contracts\ForInspector;
-use Tooling\Pint;
+use Tooling\Rector;
 
 #[ExpectsArguments]
 class InspectorTest extends TestCase implements ForInspector
 {
     use InspectorTestCases;
 
-    public string $class = Pint\Console\Inspector::class;
+    public string $class = Rector\Console\Inspector::class;
 
-    public string $path = '/usr/local/bin/pint';
+    public string $path = '/usr/local/bin/rector';
 
     public array $arguments {
         get => [
-            ['name' => 'path', 'isArray' => true, 'configValue' => ['/custom/path']],
+            ['name' => 'source', 'isArray' => true, 'configValue' => ['/custom/path']],
         ];
     }
 
     public array $options {
         get => [
-            ['name' => 'preset', 'configValue' => 'laravel'],
+            ['name' => 'config', 'configValue' => 'rector.php'],
+            ['name' => 'dry-run'],
         ];
     }
 }
