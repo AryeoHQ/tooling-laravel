@@ -13,7 +13,7 @@ final class Discovery
 
     /** @var Collection<int, string> */
     public Collection $includes {
-        get => $this->includes ??= collect((array) $this->manifest->phpstan)->filter(
+        get => $this->includes ??= collect((array) $this->manifest->get('phpstan.rules'))->filter(
             fn (string $path) => is_file($path)
         );
     }

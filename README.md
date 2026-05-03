@@ -14,24 +14,21 @@ composer require aryeo/tooling-laravel
 
 ## Configuration
 
-Instruct each tool which paths to analyse using environment variables:
+Instruct each tool which paths to analyse via `extra.tooling` in your `composer.json`:
 
-### In a Laravel Application `.env`:
-```env
-PHPSTAN_PATHS=app,tests
-RECTOR_PATHS=app,tests
-PINT_PATHS=app,tests
+```json
+{
+    "extra": {
+        "tooling": {
+            "phpstan": { "config": { "paths": ["app", "tests"] } },
+            "rector": { "config": { "paths": ["app", "tests"] } },
+            "pint": { "config": { "paths": ["app", "tests"] } }
+        }
+    }
+}
 ```
 
-### In a Package `testbench.yaml`:
-```yaml
-env:
-  - PHPSTAN_PATHS=src,tests
-  - RECTOR_PATHS=src,tests
-  - PINT_PATHS=src,tests
-```
-
-The config file (`config/tooling.php`) maps these environment variables to the appropriate CLI arguments for each tool and sets the default configuration file paths. You generally don't need to modify it.
+The config file (`config/tooling.php`) maps these to the appropriate CLI arguments for each tool and sets the default configuration file paths. You generally don't need to modify it.
 
 ## Usage
 

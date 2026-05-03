@@ -88,7 +88,7 @@ class Manifest
     {
         $configuration = (array) data_get($package, 'extra.tooling.rector');
 
-        return collect($configuration)->map(
+        return collect($configuration)->filter(fn ($value): bool => is_string($value))->map(
             fn (string $path): string => match ($package->name === $this->composer->currentAsPackage->name) {
                 true => join_paths($this->composer->baseDirectory->toString(), $path),
                 false => join_paths($this->composer->baseDirectory->toString(), 'vendor', $package->name->toString(), $path)
@@ -99,29 +99,39 @@ class Manifest
     }
 
     /**
-     * @return Collection<array-key, null|string>
+     * @return Collection<string, array<array-key, string>>
      */
     private function collectPhpStan(): Collection
     {
         return $this->packages->map(
-            fn (Package $package): null|string => $this->extractPhpStan($package)
-        )->flatten()->filter()->unique()->values();
+            fn (Package $package) => $this->extractPhpStan($package)->toArray()
+        )->filter()->reduce(function ($carry, $row) {
+            foreach ($row as $key => $value) {
+                $carry->put(
+                    $key,
+                    array_merge($carry->get($key, []), [$value])
+                );
+            }
+
+            return $carry->unique();
+        }, collect());
     }
 
-    private function extractPhpStan(Package $package): null|string
+    /**
+     * @return Collection<array-key, string>
+     */
+    private function extractPhpStan(Package $package): Collection
     {
-        $configuration = data_get($package, 'extra.tooling.phpstan');
+        $configuration = (array) data_get($package, 'extra.tooling.phpstan');
 
-        if (! $configuration) {
-            return null;
-        }
-
-        $path = match ($package->name === $this->composer->currentAsPackage->name) {
-            true => join_paths($this->composer->baseDirectory->toString(), $configuration),
-            false => join_paths($this->composer->baseDirectory->toString(), 'vendor', $package->name->toString(), $configuration)
-        };
-
-        return $this->files->isFile($path) ? $path : null;
+        return collect($configuration)->filter(fn ($value): bool => is_string($value))->map(
+            fn (string $path): string => match ($package->name === $this->composer->currentAsPackage->name) {
+                true => join_paths($this->composer->baseDirectory->toString(), $path),
+                false => join_paths($this->composer->baseDirectory->toString(), 'vendor', $package->name->toString(), $path)
+            }
+        )->filter(
+            fn ($path) => $this->files->isFile($path)
+        );
     }
 
     /**

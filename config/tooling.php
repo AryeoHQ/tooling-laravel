@@ -1,15 +1,18 @@
 <?php
 
+use Tooling\Composer\Composer;
 use Tooling\PhpStan;
 use Tooling\Pint;
 use Tooling\Rector;
 
+$tooling = data_get(resolve(Composer::class)->currentAsPackage, 'extra.tooling');
+
 $phpStanConfigPath = realpath(__DIR__.'/../phpstan.neon');
-$phpStanScanPaths = array_filter(explode(',', env('PHPSTAN_PATHS', '')));
+$phpStanScanPaths = data_get($tooling, 'phpstan.config.paths', []);
 $rectorConfigPath = realpath(__DIR__.'/../rector.php');
-$rectorScanPaths = array_filter(explode(',', env('RECTOR_PATHS', '')));
+$rectorScanPaths = data_get($tooling, 'rector.config.paths', []);
 $pintConfigPath = realpath(__DIR__.'/../pint.json');
-$pintScanPaths = array_filter(explode(',', env('PINT_PATHS', '')));
+$pintScanPaths = data_get($tooling, 'pint.config.paths', []);
 
 return [
     'phpstan' => [

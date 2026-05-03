@@ -170,10 +170,16 @@ Rules registered by other packages via `extra.tooling.rector` in their `composer
 
 ### Paths
 
-Set `RECTOR_PATHS` in your `.env` or `testbench.yaml`:
+Set paths via `extra.tooling.rector.config.paths` in your `composer.json`:
 
-```env
-RECTOR_PATHS=app,tests
+```json
+{
+    "extra": {
+        "tooling": {
+            "rector": { "config": { "paths": ["app", "tests"] } }
+        }
+    }
+}
 ```
 
 This maps to the `tooling.rector.cli.arguments.source` config key.

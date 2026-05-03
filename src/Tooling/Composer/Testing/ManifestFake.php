@@ -41,9 +41,9 @@ final class ManifestFake extends Manifest
 
     public function withPhpStanConfig(): static
     {
-        $phpstanPath = 'tooling/phpstan/parameters.neon';
+        $phpstanPath = 'tooling/phpstan/rules.neon';
 
-        $fake = Composer::fake()->merge(['extra' => ['tooling' => ['phpstan' => $phpstanPath]]]);
+        $fake = Composer::fake()->merge(['extra' => ['tooling' => ['phpstan' => ['rules' => $phpstanPath]]]]);
 
         $files = resolve(Filesystem::class);
         $base = $fake->baseDirectory->toString();
