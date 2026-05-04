@@ -74,6 +74,9 @@ class CloneBaseCommand extends Command
         )->replace(
             '* @param  \App\Actions\ElaborateSummary  $elaborateSummary',
             '* @param  object  $elaborateSummary'
+        )->replace(
+            'protected function configure()',
+            'protected function configure(): void'
         );
     }
 }
