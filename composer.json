@@ -15,7 +15,7 @@
         "laravel/prompts": "^0.3.13",
         "nesbot/carbon": "^3.11",
         "nikic/php-parser": "^5.6",
-        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan": "^2.1.47",
         "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
