@@ -63,7 +63,20 @@
             ]
         },
         "tooling": {
+            "phpstan": {
+                "config": {
+                    "paths": ["src", "tests/Tooling"]
+                }
+            },
+            "pint": {
+                "config": {
+                    "paths": ["src", "tests"]
+                }
+            },
             "rector": {
+                "config": {
+                    "paths": ["src", "tests/Tooling"]
+                },
                 "rules": "tooling/rector/rules.php",
                 "configured_rules": "tooling/rector/configured-rules.php"
             }

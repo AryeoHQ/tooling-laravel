@@ -72,7 +72,7 @@ Five rules enforce correct trait/interface composition on [generator commands](g
 
 ### Downstream Package Rules
 
-Rules registered by other packages via `extra.tooling.phpstan` in their `composer.json` are automatically discovered and included. See [Registering Rules](#registering-rules).
+Rules registered by other packages via `extra.tooling.phpstan.rules` in their `composer.json` are automatically discovered and included. See [Registering Rules](#registering-rules).
 
 ## Commands
 
@@ -94,10 +94,16 @@ php artisan tooling:phpstan:analyze --cache-clear
 
 ### Paths
 
-Set `PHPSTAN_PATHS` in your `.env` or `testbench.yaml`:
+Set paths via `extra.tooling.phpstan.config.paths` in your `composer.json`:
 
-```env
-PHPSTAN_PATHS=app,tests
+```json
+{
+    "extra": {
+        "tooling": {
+            "phpstan": { "config": { "paths": ["app", "tests"] } }
+        }
+    }
+}
 ```
 
 This maps to the `tooling.phpstan.cli.{Inspector}.arguments.paths` config key in `config/tooling.php`, where `{Inspector}` is the fully-qualified inspector class name (e.g. `Tooling\PhpStan\Console\Inspectors\Analyze`).
@@ -235,7 +241,9 @@ To make your rules available to all consumers of your package, register them in 
 {
     "extra": {
         "tooling": {
-            "phpstan": "tooling/phpstan/rules.neon"
+            "phpstan": {
+                "rules": "tooling/phpstan/rules.neon"
+            }
         }
     }
 }

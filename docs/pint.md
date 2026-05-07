@@ -20,10 +20,16 @@ The bundled `pint.json` uses the **Laravel preset** with the following additiona
 
 ### Paths
 
-Set `PINT_PATHS` in your `.env` or `testbench.yaml`:
+Set paths via `extra.tooling.pint.config.paths` in your `composer.json`:
 
-```env
-PINT_PATHS=app,tests
+```json
+{
+    "extra": {
+        "tooling": {
+            "pint": { "config": { "paths": ["app", "tests"] } }
+        }
+    }
+}
 ```
 
 This maps to the `tooling.pint.cli.arguments.path` config key.
