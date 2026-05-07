@@ -28,12 +28,7 @@ class DefaultCommand extends Command
      */
     protected $description = 'Fix the coding style of the given path';
 
-    /**
-     * The configuration of the command.
-     *
-     * @return void
-     */
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
 
