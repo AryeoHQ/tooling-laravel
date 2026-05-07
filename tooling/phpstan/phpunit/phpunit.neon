@@ -7,6 +7,7 @@ parameters:
             testCaseClass:
                 - Tests\TestCase
                 - PHPStan\Testing\RuleTestCase
+                - PHPStan\Testing\PHPStanTestCase
     ignoreErrors:
         -
             message: '#Dynamic call to static method PHPUnit\\Framework\\Assert::(assert|fail|markTest).*\(\)#'
