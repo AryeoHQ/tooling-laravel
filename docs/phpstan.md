@@ -233,6 +233,49 @@ Check for PHP attributes on any node type that supports them (classes, methods, 
 $this->hasAttribute($node, 'App\Attributes\SomeAttribute');
 ```
 
+## Mixin Reflection Helpers
+
+When writing PHPStan extensions (e.g. a `MethodsClassReflectionExtension`), you often need to resolve dynamic methods from a mixin class whose methods return closures. The `Mixin` and `Macro` classes handle this.
+
+### `Mixin`
+
+`Tooling\PhpStan\Reflection\Classes\Mixin` looks up methods on a mixin class and resolves them into `Macro` reflections. It only considers methods whose return type is a `Closure` — anything else is ignored.
+
+```php
+use PHPStan\Reflection\ReflectionProvider;
+use Tooling\PhpStan\Reflection\Classes\Mixin;
+
+$mixin = new Mixin($reflectionProvider, MixesIn::class);
+
+// Check if a method exists and returns a Closure
+$mixin->hasMethod($classReflection, 'someMethod');
+
+// Get the Macro reflection (or null)
+$macro = $mixin->getMethod($classReflection, 'someMethod');
+
+// Static methods
+$macro = $mixin->getMethod($classReflection, 'someMethod', static: true);
+```
+
+Resolved macros are cached internally — repeated lookups for the same class and method return the same `Macro` instance.
+
+The mixin class should have methods that return typed closures:
+
+```php
+final class MixesIn
+{
+    /** @return Closure(string $name): string */
+    public function greet(): Closure
+    {
+        return fn (string $name): string => "Hello, {$name}!";
+    }
+}
+```
+
+### `Macro`
+
+`Tooling\PhpStan\Reflection\Methods\Macro` implements `PHPStan\Reflection\MethodReflection`. It wraps a `ClosureType` and exposes its parameters and return type as a method on the target class. You typically won't construct these directly — `Mixin::getMethod()` creates them for you.
+
 ## Registering Rules
 
 To make your rules available to all consumers of your package, register them in `composer.json`:
