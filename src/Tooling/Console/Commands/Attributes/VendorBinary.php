@@ -9,6 +9,7 @@ use Closure;
 use Illuminate\Contracts\Process\ProcessResult;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Process;
+use Symfony\Component\Console\Output\OutputInterface;
 use Tooling\Composer\Composer;
 use Tooling\Console\Inspectors\Inspector;
 
@@ -36,7 +37,7 @@ class VendorBinary
      * @param  Collection<array-key, mixed>  $arguments
      * @param  Collection<array-key, mixed>  $options
      */
-    public function run(Collection $arguments, Collection $options, bool $tty = false): ProcessResult
+    public function run(Collection $arguments, Collection $options, null|OutputInterface $output = null): ProcessResult
     {
         $command = collect([$this->executable, $this->command])->filter()->merge(
             $arguments->skip(1)->flatten()->values()->reject(
@@ -47,18 +48,22 @@ class VendorBinary
         )->concat($options);
 
         return Process::path($this->composer->baseDirectory->toString())
-            ->tty($tty)
+            ->tty($output ? $output->isDecorated() : false)
             ->forever()
             ->run(
                 $command->toArray(),
-                $this->ttyFallback()
+                $this->ttyFallback($output)
             );
     }
 
-    public function ttyFallback(): Closure
+    public function ttyFallback(null|\Symfony\Component\Console\Output\OutputInterface $output = null): Closure
     {
-        return function (string $type, string $output) {
-            echo $output;
+        return function (string $type, string $data) use ($output) {
+            if ($output) {
+                $output->write($data);
+            } else {
+                echo $data;
+            }
         };
     }
 }

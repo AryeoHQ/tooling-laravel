@@ -28,7 +28,9 @@ trait HandledByVendorBinary
 
     /** @var Collection<array-key, mixed> */
     protected Collection $arguments {
-        get => $this->arguments ??= collect($this->arguments());
+        get => $this->arguments ??= collect($this->arguments())
+            // ->except('command');
+            ->filter(fn ($value, $key) => ! is_numeric($key)); // Filter out numeric keys added by Artisan::call()
     }
 
     /** @var Collection<array-key, string> */
@@ -47,7 +49,7 @@ trait HandledByVendorBinary
 
     public function handle(): int
     {
-        $result = $this->vendorBinary->run($this->arguments, $this->options, tty: $this->output->isDecorated());
+        $result = $this->vendorBinary->run($this->arguments, $this->options, $this->output);
 
         return $result->successful() ? Command::SUCCESS : Command::FAILURE;
     }
