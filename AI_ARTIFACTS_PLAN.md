@@ -45,10 +45,18 @@ so we own the model and aren't coupled to Boost's cadence.
 - **Canonical artifacts**: author once as value objects in a canonical directory (optional
   Blade templating like Boost's `SKILL.blade.php`), then translate per provider via per-kind
   writers.
-- **Discovery by convention**: scan installed composer packages for
-  `resources/<vendor>/{skills,agents}` directories, feeding the catalog. This is the artifact
-  version of the russian doll — packages contribute by shipping files, not by registering PHP
-  objects.
+- **Discovery by composer `extra` declaration**: a package announces its artifacts in its own
+  `composer.json` under `extra.tooling.ai` — `extra.tooling.ai.agents` is an array of file
+  paths (an agent is a single file), `extra.tooling.ai.skills` is an array of directory paths
+  (a skill is a directory of `SKILL.md` plus supporting files). tooling reads each installed
+  package's `extra.tooling.ai` from the composer metadata (`installed.json`), so discovery is a
+  cheap metadata read, not a filesystem crawl. This is the explicit-opt-in analog of the
+  russian doll: packages declare what they ship, tooling pulls it. Chosen over magic-path
+  scanning because it's explicit, author-controlled, and mirrors Laravel's own
+  `extra.laravel.providers` auto-discovery. It lives under `extra.tooling` (alongside the
+  existing `phpstan`/`pint`/`rector` blocks) because discovery/publishing is a
+  tooling-laravel-provided feature — a package declaring artifacts for tooling to publish is a
+  tooling participant by definition.
 - **Config-driven selection + sync**: a project declares which discovered skills/agents and
   which exposed MCP servers it wants (config), and an on-demand sync command materializes that
   selection into each provider's paths. A manifest (`{source, version, hash}`) detects
@@ -155,8 +163,9 @@ has primitives but was never exposed via `local()`/`web()`.
    definitions into each selected provider's path. _Depends on 3, 4._
 
 ### Phase 4 — Discovery
-6. A `Catalog` plus a discovery scan of installed composer packages for
-   `resources/<vendor>/{skills,agents}` directories, feeding the sync command. _Depends on 4._
+6. A `Catalog` fed by reading each installed composer package's `extra.tooling.ai` declaration
+   (`extra.tooling.ai.agents` = file paths, `extra.tooling.ai.skills` = directory paths) from
+   the composer metadata, feeding the sync command. _Depends on 4._
 
 ### Phase 5 — Selection + sync/drift
 7. Config-driven selection: a project declares which discovered skills/agents and which
