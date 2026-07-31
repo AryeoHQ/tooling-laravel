@@ -1,29 +1,22 @@
 # AI Artifacts Plan
 
-Build our own cross-provider publishing system modeled on Laravel Boost's patterns —
-interface-per-capability providers, config-overridable paths, canonical-author-once,
-filesystem discovery — without depending on Boost. Scope is skills and agents (with a hooks
-seam); guidelines and plugins are deferred. The MCP story stays in the `mcp` package;
-artifacts live in `tooling-laravel`.
+Build our own cross-provider publishing system for skills and agents, modeled on Laravel
+Boost's patterns — interface-per-capability providers, config-overridable paths,
+canonical-author-once, discovery via composer metadata — without depending on Boost. Includes
+a hooks seam; guidelines and plugins are deferred. This lives in `tooling-laravel`.
 
 ## Background
 
-There are two participation stories in scope, plus one deferred:
+Skills and agents are provider-specific filesystem artifacts: each AI client (Copilot, Claude
+Code, …) reads them from its own conventional directory. A package can ship canonical
+definitions once, and tooling publishes them into every provider's expected location.
 
-1. **MCP** — the existing russian doll in the `mcp` package. Packages register
-   Tool/Resource/Prompt into a named server (e.g. `Development`) via `Server::add()`; the
-   registrar drains them into the server at boot. Served live over JSON-RPC. This stays as
-   is; the only addition is making it enumerable.
-2. **Agents / Skills / Hooks** — these are not MCP-servable. MCP only has three server
-   primitives (tools, resources, prompts), and neither the protocol nor `laravel/mcp` has any
-   concept of skills/agents/hooks. They are provider-specific filesystem artifacts that each
-   AI client reads from conventional directories.
-3. **Plugins (deferred)** — a bundle composing selected features from stories 1 and 2. Cut
-   from this project's scope; see "Future considerations" for why and what seam to preserve.
+Boost already solves this for guidelines + skills, with third-party package discovery. We are
+borrowing its conventions but building our own system so we own the model and aren't coupled
+to Boost's cadence.
 
-Boost already solves cross-provider publishing for guidelines + skills + MCP config, with
-third-party package discovery. We are borrowing its conventions but building our own system
-so we own the model and aren't coupled to Boost's cadence.
+Plugins — a distributable bundle composing selected artifacts — are deferred; see
+"Future considerations" for why and what seam to preserve.
 
 ## Key constraints
 
@@ -38,17 +31,62 @@ so we own the model and aren't coupled to Boost's cadence.
 
 - **Providers** (Boost-style, ours): one object per AI assistant (start with Copilot and
   Claude Code). Capabilities are opt-in via segregated interfaces — `SupportsSkills`,
-  `SupportsAgents`, `SupportsMcp` (and a `SupportsHooks` seam we design but likely defer).
-  Each declares where its artifacts land, config-overridable with sensible defaults
-  (Copilot skills `.github/skills`, mcp `.vscode/mcp.json`; Claude skills `.claude/skills`,
-  mcp `.mcp.json`).
-- **Canonical artifacts**: author once as value objects in a canonical directory (optional
-  Blade templating like Boost's `SKILL.blade.php`), then translate per provider via per-kind
-  writers.
+  `SupportsAgents` (and a `SupportsHooks` seam we design but likely defer). Each declares where
+  its artifacts land, config-overridable with sensible defaults (Copilot skills
+  `.github/skills`; Claude skills `.claude/skills`).
+- **Canonical artifacts are always Blade**: every skill/agent is authored as a `.blade.php`
+  file — there is no plain `.md` variant. Blade is a strict superset of Markdown, so a static
+  artifact is just a `.blade.php` with no directives (`Blade::render()` returns it unchanged).
+  Forcing Blade removes the ceremony of the static→dynamic transition: when a currently-static
+  artifact needs a config value (e.g. a resource-generation skill emitting the project's
+  actual configured namespace via `{{ config('api-first.namespace') }}`), the author just adds
+  the interpolation — no file rename, no updating the `extra.tooling.ai` path reference, no
+  manifest/history churn that a `.md` → `.blade.php` switch would force. This diverges from
+  Boost (which supports both) deliberately: the authoring model prioritizes seamless
+  static→dynamic evolution over matching Boost's extension handling. Rendering rules:
+  - Render with `Blade::render($contents, $data)`, **not** `Blade::markdown()`. `markdown()`
+    runs the compiled output through a CommonMark→HTML converter and would emit HTML; we want
+    Markdown out. `render()` returns the raw rendered text.
+  - One render pass over the **whole file** (frontmatter + body together) — no need to split
+    frontmatter from body at render time. Blade treats frontmatter lines as plain text and
+    interpolates `{{ }}` wherever they appear.
+  - **Then** parse frontmatter from the rendered string (render-before-parse ordering).
+  - Escaping caveat: `{{ }}` HTML-escapes (`'` → `&#039;`, `&` → `&amp;`), which corrupts YAML
+    frontmatter values. Authors must use `{!! !!}` (raw) for anything interpolated into
+    frontmatter. Static prose that contains literal `@` or `{{` uses Blade's normal escapes
+    (`@@`, `@{{`). Documented authoring rules, not architecture concerns.
+- **Artifact shapes differ — agent = single file, skill = directory**: an agent is one
+  `.blade.php` file (per Claude Code's spec, a subagent is a single Markdown file with YAML
+  frontmatter; agents are never a directory of supporting materials — they compose other
+  artifacts by *reference* via `skills:`/`hooks:`/`mcpServers:` frontmatter, not co-located
+  files). A skill is a **directory**: a required `SKILL.blade.php` entry plus optional
+  supporting material in subdirectories like `references/`, `scripts/`, `assets/`. So the
+  supporting-materials handling below applies to **skills only**:
+  - The whole skill directory is materialized **recursively** into each provider's skills path
+    (`.github/skills/<name>/`, `.claude/skills/<name>/`), preserving `references/`, `scripts/`,
+    etc.
+  - Rendering is decided **per file by extension**: any `.blade.php` in the tree renders via
+    `Blade::render()` and drops the `.blade.php` extension on output (`SKILL.blade.php` →
+    `SKILL.md`, `references/usage.blade.php` → `references/usage.md`); every other file
+    (`.sh`, `.png`, already-`.md`, …) is copied verbatim, never rendered. This lets reference
+    docs be templated too (e.g. a reference pulling `{{ config(...) }}`) while binaries and
+    scripts pass through untouched.
+  - Internal links are authored against the **source** filename (`references/usage.blade.php`)
+    so links resolve in the package's own repo (click-through works, link validators pass),
+    and the writer **rewrites them to the output name** (`references/usage.md`) at publish. The
+    rewrite is **link-target-scoped**, not a blanket string replace: only the target of a
+    Markdown link/image (`[...](target)` / `![...](target)`) is rewritten, and only when the
+    target resolves to a sibling `.blade.php` that actually exists in the skill tree and was
+    rendered. A bare `.blade.php` occurring in prose (e.g. "author your skill as
+    `SKILL.blade.php`") is left untouched — this is why it must be link-scoped, not
+    `str_replace('.blade.php', '.md')`.
+  - The drift manifest hashes the **whole rendered directory tree**, not just `SKILL.md` — a
+    change to any file under the skill (e.g. `references/*`) counts as a change.
 - **Discovery by composer `extra` declaration**: a package announces its artifacts in its own
   `composer.json` under `extra.tooling.ai` — `extra.tooling.ai.agents` is an array of file
   paths (an agent is a single file), `extra.tooling.ai.skills` is an array of directory paths
-  (a skill is a directory of `SKILL.md` plus supporting files). tooling reads each installed
+  (a skill is a directory of `SKILL.blade.php` plus supporting files, rendered to `SKILL.md`
+  at publish). tooling reads each installed
   package's `extra.tooling.ai` from the composer metadata (`installed.json`), so discovery is a
   cheap metadata read, not a filesystem crawl. This is the explicit-opt-in analog of the
   russian doll: packages declare what they ship, tooling pulls it. Chosen over magic-path
@@ -57,137 +95,92 @@ so we own the model and aren't coupled to Boost's cadence.
   existing `phpstan`/`pint`/`rector` blocks) because discovery/publishing is a
   tooling-laravel-provided feature — a package declaring artifacts for tooling to publish is a
   tooling participant by definition.
-- **Config-driven selection + sync**: a project declares which discovered skills/agents and
-  which exposed MCP servers it wants (config), and an on-demand sync command materializes that
-  selection into each provider's paths. A manifest (`{source, version, hash}`) detects
-  staleness, with optional composer-lifecycle auto-republish via tooling-laravel's existing
-  composer plugin. There is no interactive picker and no bundling in this scope.
+- **Config-driven selection + sync**: a project declares which discovered skills/agents it
+  wants (config), and an on-demand sync command materializes that selection into each
+  provider's paths. A manifest (`{source, version, hash}`) detects staleness, with optional
+  composer-lifecycle auto-republish via tooling-laravel's existing composer plugin. There is
+  no interactive picker and no bundling in this scope.
+- **Authoring via bespoke MCP tools**: creating a new skill/agent is exposed as two
+  hand-written `Laravel\Mcp\Server\Tool` subclasses (like the existing
+  `Tooling\*\Mcp\Tools\{Pint,PHPStan,Rector}`), **not** artisan generator commands. This
+  sidesteps the CLI-argument problem entirely — a Blade document (line breaks, YAML frontmatter
+  colons, `{{ }}`) can't survive shell quoting as a command argument, but a bespoke tool's
+  `schema()` declares a plain `content` string property that MCP passes as a JSON string value,
+  which handles multi-line content fine. Flow: the user and LLM iterate on the body in
+  conversation, then call the tool once to *commit* it. The tool's value is enforcement:
+  standardized location, naming, and wiring the `extra.tooling.ai` composer key — the parts
+  that are easy to get wrong — are done deterministically in `handle()`, while the creative
+  body stays with the model. Two separate tools (not one with a `type` discriminator) so each
+  has a clean, self-describing schema:
+  - `MakeSkill` — schema `name` + `content` (+ optional supporting files); writes
+    `resources/ai/skills/<name>/SKILL.blade.php`; wires `extra.tooling.ai.skills` (dir path).
+  - `MakeAgent` — schema `name` + `content`; writes `resources/ai/agents/<name>.blade.php`;
+    wires `extra.tooling.ai.agents` (file path).
+  Both are registered on the `Development` server alongside the existing MCP tools. The tool
+  edits `composer.json` itself (deterministic wiring is the point) and returns a `Response`
+  confirming the path and the composer key it updated.
 
 ## Steps
 
-### Phase 1 — `mcp`: enumeration only
+### Phase 1 — Provider model
+1. In a new `Tooling\Ai\*` module, define a `Provider` abstraction and per-kind capability
+   interfaces: `SupportsSkills` (`skillsPath()`) and `SupportsAgents` (`agentsPath()`). Paths
+   config-overridable with defaults. _Depends on nothing._
+2. Implement a starting subset of concrete providers — Copilot and Claude Code first.
+   _Depends on 1._
 
-The sync command needs to answer "what MCP features exist?" so it can materialize client
-config for them. Today the `mcp` package's `Registrar` can only look up primitives for a
-server it already knows the class name of (`for($server)`); it can't tell you which servers
-exist or give you a full picture. Everything else in `mcp` stays untouched — this is purely
-additive read access.
+### Phase 2 — Canonical artifacts + writers
+3. Canonical value objects `Skill` (a directory) and `Agent` (a single file), authored as
+   `.blade.php` (always Blade, no `.md` variant). A renderer compiles each `.blade.php` via
+   `Blade::render()` (whole file, one pass), then parses frontmatter from the rendered result.
+   _Depends on 1._
+4. Per-kind writers (`SkillWriter`, `AgentWriter`) that translate canonical definitions into
+   each selected provider's path. `AgentWriter` renders the single file; `SkillWriter` walks
+   the skill directory recursively, rendering each `.blade.php` (dropping the extension),
+   copying every other file verbatim, and rewriting Markdown link/image targets that point at a
+   sibling rendered `.blade.php` to their `.md` output name (link-target-scoped, not a blanket
+   string replace). _Depends on 2, 3._
 
-**Current shape** (`mcp/src/Servers/Registrar/Registrar.php`):
-
-- `public private(set) array $registrations` keyed by server class, each holding an array of
-  `class-string<Tool>|Primitive`.
-- `register(string $server, string|Primitive $primitive): static` — write path, called by
-  `Server::add()`.
-- `for(string $server): array` — read primitives for one known server.
-
-**What to add:**
-
-1. `servers(): array` — return the list of registered server class-strings
-   (`array_keys($this->registrations)`). This is what lets the sync command enumerate servers
-   without being told their names up front.
-2. `all(): array` — return the full `server => primitives` map. Convenience for enumerating
-   the whole tree in one pass, and for the sync manifest to hash what's registered.
-3. Keep `for()` as the single-server accessor; `servers()` + `for()` compose, and `all()` is
-   sugar over both.
-
-**Notes and edge cases:**
-
-- **Read-only, no behavior change.** `boot()` still drains via `for(static::class)`; adding
-  enumeration does not alter registration or draining order. The existing lifecycle
-  (`add()` anytime → `boot()` drains → `createContext()` snapshots) is unchanged.
-- **Registration must have happened first.** The sync command reads the registrar at command
-   runtime, which is after all providers' `boot()` have run, so `add()` calls have already
-   populated it. This is the same ordering guarantee the server relies on, so no new timing
-   risk — but sync must run in a booted application, not mid-provider-registration.
-- **Primitives may be class-strings or instances.** `registrations` holds
-  `class-string<Tool>|Primitive`, so any consumer (sync command, manifest) must handle both:
-  resolve/normalize to a stable identity (e.g. the primitive's `name()` or the class name)
-  when displaying or hashing. Worth a small helper so the sync command and the manifest agree
-  on identity.
-- **Enumeration is not kind-aware yet.** `registrations` mixes tools/resources/prompts in one
-  list per server. If a consumer wants to group by kind, it derives the kind the same way
-  `Server::registerPrimitive()` does (`is_subclass_of` against `Tool`/`Resource`/`Prompt`).
-  Consider exposing a tiny read-only kind resolver from `mcp` so consumers don't re-implement
-  that `match`, keeping the classification logic in one place.
-- **Facade/consumption.** tooling-laravel resolves the `Registrar` singleton (already bound
-  in `mcp`'s provider) to call `servers()`/`all()`. No new binding needed in `mcp`; the
-  dependency stays one-way (tooling-laravel → `mcp`).
-
-**Decision — the offerable set is the intersection of "has primitives" and "is exposed".** An
-MCP server is worth syncing into a project only if it satisfies both:
-
-1. **Has at least one primitive** — from our custom registrar. A primitive-less server
-   exposes nothing over the wire (`tools/list`/`resources/list`/`prompts/list` all empty), so
-   there is nothing to offer. This filter is registration-derived by construction:
-   `servers()` returns only keys of `registrations`, so empty servers are excluded
-   automatically, not overlooked.
-2. **Is actually exposed via `Mcp::local(...)` / `Mcp::web(...)`** — from the vendor
-   `Laravel\Mcp\Server\Registrar`. This matters because a project's MCP contribution is not the
-   server object; it is *client config* (`.vscode/mcp.json`, `.mcp.json`, …) telling the AI
-   client how to reach the server — a command for local/stdio, or a URL for web. That
-   reachability data lives only in the vendor registrar (keyed by handle/route). If a package
-   called `Server::add(...)` but nobody wired the server via `local()`/`web()`, there is no
-   handle/route and therefore no valid client-config entry to emit. Such a server must be
-   excluded.
-
-So, revising an earlier assumption: we *do* need the vendor registrar after all — not to pad
-the list with empty servers, but to (a) confirm the server is reachable and (b) obtain the
-handle/route to write into the client config. The offerable set is the intersection of the
-two registrars' knowledge.
-
-**Correlation caveat:** our custom registrar keys by **server class**, the vendor registrar
-keys by **handle/route** (`servers()`, `getLocalServer($handle)`, `getWebServer($route)`). The
-sync command must correlate class ↔ handle/route to both filter and emit config. This
-correlation is unavoidable because the client config needs the handle/route regardless.
-
-**Verification for this phase:** register a couple of primitives against the `Development`
-server in a test, then assert `servers()` contains `Development::class` and `all()` returns
-the expected `server => [primitives]` shape, with both a class-string and an instance
-primitive normalized to the same identity. Also assert that (a) a server with no registered
-primitives does not appear in `servers()`, and (b) the offerable set excludes a server that
-has primitives but was never exposed via `local()`/`web()`.
-
-### Phase 2 — Provider model
-2. In a new `Tooling\Ai\*` module, define a `Provider` abstraction and per-kind capability
-   interfaces: `SupportsSkills` (`skillsPath()`), `SupportsAgents` (`agentsPath()`),
-   `SupportsMcp` (`mcpConfigPath()`, `mcpConfigKey()`, `mcpServerConfig()`,
-   `httpMcpServerConfig()`). Paths config-overridable with defaults. _Depends on nothing._
-3. Implement a starting subset of concrete providers — Copilot and Claude Code first.
-   _Depends on 2._
-
-### Phase 3 — Canonical artifacts + writers
-4. Canonical value objects `Skill` and `Agent`, authored once in a canonical directory with
-   optional Blade templating. _Depends on 2._
-5. Per-kind writers (`SkillWriter`, `AgentWriter`, `McpWriter`) that translate canonical
-   definitions into each selected provider's path. _Depends on 3, 4._
-
-### Phase 4 — Discovery
-6. A `Catalog` fed by reading each installed composer package's `extra.tooling.ai` declaration
+### Phase 3 — Discovery
+5. A `Catalog` fed by reading each installed composer package's `extra.tooling.ai` declaration
    (`extra.tooling.ai.agents` = file paths, `extra.tooling.ai.skills` = directory paths) from
-   the composer metadata, feeding the sync command. _Depends on 4._
+   the composer metadata, feeding the sync command. _Depends on 3._
 
-### Phase 5 — Selection + sync/drift
-7. Config-driven selection: a project declares which discovered skills/agents and which
-   exposed MCP servers it wants. Absent config, sync everything discovered/offerable.
-   _Depends on 4, 6._
-8. An on-demand `sync` artisan command that reads the config selection, the MCP enumeration
-   (Phase 1), and the catalog (Phase 4), then drives the writers to materialize the selection
-   into each selected provider's paths. _Depends on 1, 5, 6, 7._
-9. A manifest (`{source, version, hash}`) for staleness detection, plus optional
-   composer-lifecycle auto-republish via the existing composer plugin. _Depends on 8._
+### Phase 4 — Selection + sync/drift
+6. Config-driven selection: a project declares which discovered skills/agents it wants. Absent
+   config, sync everything discovered. _Depends on 3, 5._
+7. An on-demand `sync` artisan command that reads the config selection and the catalog
+   (Phase 3), then drives the writers to materialize the selection into each selected
+   provider's paths. _Depends on 4, 5, 6._
+8. A manifest (`{source, version, hash}`) for staleness detection — for a skill the `hash`
+   covers the whole rendered directory tree, not just `SKILL.md`, so a change to any supporting
+   file is detected. Plus optional composer-lifecycle auto-republish via the existing composer
+   plugin. _Depends on 7._
+
+### Phase 5 — Authoring tools + dogfood
+9. Two bespoke MCP tools `MakeSkill` and `MakeAgent` (hand-written `Tool` subclasses) that
+   accept `name` + `content`, enforce the standardized `resources/ai/{skills,agents}` location
+   and naming, write the `.blade.php`, edit the `extra.tooling.ai.*` composer key, and return a
+   confirmation. Registered on the `Development` server. _Depends on 3._
+10. Ship tooling-laravel's own `authoring-ai-artifacts` skill (declared via its own
+    `extra.tooling.ai.skills`) documenting the conventions — `.blade.php`-only, skill-is-a-
+    directory, `{!! !!}` in frontmatter, link authoring, the `extra.tooling.ai` wiring — so an
+    AI consults it before drafting a body. Doubles as the first real discovery/publish
+    integration fixture (tooling-laravel dogfoods its own system). _Depends on 3, 5._
 
 ## Relevant files
 
-- `mcp/src/Servers/Registrar/Registrar.php` — add enumeration (only `mcp` change).
 - New in tooling-laravel:
   - `src/Tooling/Ai/Providers/{Provider,Copilot,ClaudeCode}.php`
-  - `src/Tooling/Ai/Contracts/{SupportsSkills,SupportsAgents,SupportsMcp}.php`
+  - `src/Tooling/Ai/Contracts/{SupportsSkills,SupportsAgents}.php`
   - `src/Tooling/Ai/{Skill,Agent}.php`
-  - `src/Tooling/Ai/Writers/{SkillWriter,AgentWriter,McpWriter}.php`
+  - `src/Tooling/Ai/Writers/{SkillWriter,AgentWriter}.php`
   - `src/Tooling/Ai/Catalog.php`
   - `src/Tooling/Ai/Console/Commands/Sync.php`
-- `src/Tooling/Provider.php` — bind the new singletons and register the command.
+  - `src/Tooling/Mcp/Tools/{MakeSkill,MakeAgent}.php` — bespoke authoring tools.
+  - `resources/ai/skills/authoring-ai-artifacts/SKILL.blade.php` — dogfood authoring skill.
+- `src/Tooling/Provider.php` — bind the new singletons, register the sync command, register the
+  authoring tools on the `Development` server, declare the authoring skill in `extra.tooling.ai`.
 - `src/Tooling/Composer/Plugins/PublishConfigurations.php` — optional auto-republish hook.
 
 ## Decisions
@@ -197,13 +190,15 @@ has primitives but was never exposed via `local()`/`web()`.
   cross-provider hook standards are weak.
 - Providers are interface-per-capability objects with config-overridable paths.
 - Artifacts are author-once canonical, translated by per-provider writers; discovery is by
-  filesystem convention.
-- MCP stays in the `mcp` package; the dependency direction is one-way
-  (tooling-laravel depends on `mcp`, never the reverse).
+  `extra.tooling.ai` composer declaration.
 - Materialized output is a gitignored, reproducible build artifact; drift is handled by
   on-demand re-sync plus an optional composer-lifecycle hook.
 - Selection is config-driven, not an interactive picker; the sync command only reads the
   registries, it never registers.
+- Authoring is exposed as bespoke MCP `Tool` subclasses (`MakeSkill`/`MakeAgent`), not artisan
+  generators — a `content` string in the tool schema handles multi-line Blade that a CLI
+  argument can't. The tool enforces location/naming and edits the `extra.tooling.ai` key; the
+  model supplies the body.
 - Plugins (bundling/composition) are out of scope for this project; the seam is preserved so
   they can be added later without rework.
 
@@ -213,10 +208,14 @@ has primitives but was never exposed via `local()`/`web()`.
    `./vendor/bin/phpunit` all green.
 2. Register a sample skill in a fake package fixture, confirm discovery finds it, and the
    sync command materializes the correct files at both the Copilot and Claude paths.
-3. Confirm the MCP enumeration surfaces the `Development` server (and excludes empty or
-   unexposed servers) and that sync writes correct client config for it.
-4. Confirm the sync command rewrites drifted artifacts and the manifest flags a
+3. Confirm the sync command rewrites drifted artifacts and the manifest flags a
    bumped-version fixture as stale.
+4. Call `MakeSkill` with a multi-line `content` (frontmatter + body) and assert it writes
+   `resources/ai/skills/<name>/SKILL.blade.php` verbatim (line breaks intact) and adds the path
+   to `extra.tooling.ai.skills` in composer.json; same for `MakeAgent` → single file +
+   `extra.tooling.ai.agents`.
+5. Confirm tooling-laravel's own `authoring-ai-artifacts` skill is discovered and syncs
+   (end-to-end dogfood).
 
 ## Out of scope
 
@@ -224,25 +223,20 @@ has primitives but was never exposed via `local()`/`web()`.
 - Plugins (bundling/composition, interactive builder, archives).
 - The full provider matrix (start with Copilot and Claude Code).
 - Exact hook file formats.
-- Wiring `mcp` into tooling-laravel's composer require.
 
 ## Future considerations — plugins
 
-Plugins (a distributable bundle composing selected skills/agents/MCP servers) are cut from
-this project because they are the least-settled, highest-risk piece and nothing else depends
-on them. Every plugin question spawned an unresolved sub-problem — transport portability
-(bundling `local()` vs `web()` servers), URL parameterization, recording each MCP server's
-providing composer package, distribution scope, and archive-vs-local rendering — none of
-which affect the artifact layer. The provider/writer/catalog/enumeration work here is a
-strict prerequisite for plugins, so building it first loses nothing. Claude Code plugins and
-marketplaces are also young and shifting, so waiting avoids reinventing a format the
-providers may standardize.
+Plugins (a distributable bundle composing selected skills/agents) are cut from this project
+because they are the least-settled, highest-risk piece and nothing else depends on them. Every
+plugin question spawned an unresolved sub-problem — distribution scope, archive-vs-local
+rendering, and how a bundle references its providing packages — none of which affect the
+artifact layer. The provider/writer/catalog work here is a strict prerequisite for plugins, so
+building it first loses nothing. Claude Code plugins and marketplaces are also young and
+shifting, so waiting avoids reinventing a format the providers may standardize.
 
-To keep the seam clean for a later plugin layer: the sync command consumes selection +
-registries but does not assume the selection came from config, so a future picker or plugin
-manifest can supply the same selection shape; the MCP offerable-set logic (intersection of
-primitives + exposure, with class ↔ handle/route correlation) already produces exactly the
-data a plugin's MCP client config would need.
+To keep the seam clean for a later plugin layer: the sync command consumes a selection but
+does not assume it came from config, so a future picker or plugin manifest can supply the same
+selection shape.
 
 ## Open questions
 
