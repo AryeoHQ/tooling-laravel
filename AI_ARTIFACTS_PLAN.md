@@ -33,7 +33,29 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
   Claude Code). Capabilities are opt-in via segregated interfaces — `SupportsSkills`,
   `SupportsAgents` (and a `SupportsHooks` seam we design but likely defer). Each declares where
   its artifacts land, config-overridable with sensible defaults (Copilot skills
-  `.github/skills`; Claude skills `.claude/skills`).
+  `.github/skills`; Claude skills `.claude/skills`). The interfaces are deliberately asymmetric
+  because the two artifact kinds differ in how much a provider actually varies:
+  - `SupportsSkills` is essentially **path-only**. Skills are a cross-provider open standard
+    (agentskills.io — `SKILL.md` with `name`/`description` frontmatter, same everywhere), so
+    the rendered skill is byte-identical across providers and only the destination directory
+    changes. `skillsPath()` is the whole per-provider surface.
+  - `SupportsAgents` is **path + a frontmatter projection**. Agents have no open standard: the
+    body (system prompt) and the common fields (`name`, `description`) are provider-agnostic,
+    but `tools`, `model`, the file extension, and the location diverge (see the agent-shape
+    bullet). So it exposes `agentsPath()` **and** a transform that projects the canonical
+    superset frontmatter into the provider's native syntax.
+  - We build the provider plumbing now even though today's two providers overlap (VS Code reads
+    Claude-format agents/skills, so a naive impl could target just `.claude/`). The seam is the
+    point: adding a third provider, or emitting native Copilot artifacts, is then additive.
+- **Author toward the superset**: canonical artifacts carry the **union** of what any provider
+  understands, expressed in a neutral shape, and each provider projects *down* to its native
+  output — never the reverse. Concretely for agents: the canonical frontmatter names `tools` as
+  a logical list and `model` as a logical alias (or omits `model` to inherit); the ClaudeCode
+  provider emits a comma-separated `tools` string + Claude model vocab into `.claude/agents/`,
+  and the Copilot provider emits a YAML-array `tools` + qualified model names (and may carry
+  Copilot-only fields like `handoffs`) into `.github/agents/*.agent.md`. Authoring once against
+  the superset is the only thing that makes "write once, publish natively to every provider"
+  true rather than "write in one provider's dialect and hope the others tolerate it."
 - **Canonical artifacts are always Blade**: every skill/agent is authored as a `.blade.php`
   file — there is no plain `.md` variant. Blade is a strict superset of Markdown, so a static
   artifact is just a `.blade.php` with no directives (`Blade::render()` returns it unchanged).
@@ -56,12 +78,26 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
     frontmatter. Static prose that contains literal `@` or `{{` uses Blade's normal escapes
     (`@@`, `@{{`). Documented authoring rules, not architecture concerns.
 - **Artifact shapes differ — agent = single file, skill = directory**: an agent is one
-  `.blade.php` file (per Claude Code's spec, a subagent is a single Markdown file with YAML
-  frontmatter; agents are never a directory of supporting materials — they compose other
-  artifacts by *reference* via `skills:`/`hooks:`/`mcpServers:` frontmatter, not co-located
-  files). A skill is a **directory**: a required `SKILL.blade.php` entry plus optional
-  supporting material in subdirectories like `references/`, `scripts/`, `assets/`. So the
-  supporting-materials handling below applies to **skills only**:
+  `.blade.php` file (both Claude Code sub-agents and Copilot custom agents are a single
+  Markdown file with YAML frontmatter — never a directory of supporting materials; they compose
+  other artifacts by *reference* via `skills:`/`mcpServers:` frontmatter, not co-located files).
+  A skill is a **directory**: a required `SKILL.blade.php` entry plus optional supporting
+  material in subdirectories like `references/`, `scripts/`, `assets/`.
+  - **Skill naming invariant**: the Agent Skills spec (and Copilot) require the `name`
+    frontmatter value to equal the skill's directory name, and restrict it to 1–64 chars,
+    lowercase alphanumeric + single hyphens (no leading/trailing/consecutive hyphens). A
+    mismatch or invalid character makes the skill silently fail to load. So the canonical skill
+    directory name is the source of truth and `MakeSkill` must validate it and keep the
+    `name` frontmatter in sync. Required skill frontmatter is just `name` + `description`;
+    `license`, `compatibility`, `metadata`, `allowed-tools` are optional passthrough.
+  - **Agent frontmatter is a projected superset, not passthrough**: because `tools`/`model`
+    diverge across providers (comma-string vs YAML array; `inherit`/`sonnet` vs
+    `"GPT-5.2 (copilot)"`), the canonical agent frontmatter is neutral and each provider's
+    `SupportsAgents` transform renders it natively. Required canonical fields are `name` +
+    `description`; `tools`/`model` are optional and, when omitted, agents stay trivially
+    portable (Claude `model` defaults to `inherit`).
+
+  The supporting-materials handling below applies to **skills only**:
   - The whole skill directory is materialized **recursively** into each provider's skills path
     (`.github/skills/<name>/`, `.claude/skills/<name>/`), preserving `references/`, `scripts/`,
     etc.
@@ -124,10 +160,13 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
 
 ### Phase 1 — Provider model
 1. In a new `Tooling\Ai\*` module, define a `Provider` abstraction and per-kind capability
-   interfaces: `SupportsSkills` (`skillsPath()`) and `SupportsAgents` (`agentsPath()`). Paths
-   config-overridable with defaults. _Depends on nothing._
-2. Implement a starting subset of concrete providers — Copilot and Claude Code first.
-   _Depends on 1._
+   interfaces: `SupportsSkills` (`skillsPath()`) and `SupportsAgents` (`agentsPath()` **plus a
+   frontmatter-projection method** that maps the canonical superset frontmatter to the
+   provider's native syntax). Paths config-overridable with defaults. _Depends on nothing._
+2. Implement a starting subset of concrete providers — Copilot and Claude Code first. Their
+   `SupportsSkills` differ only by path; their `SupportsAgents` differ by path **and**
+   projection (Claude: comma-string `tools` + `.claude/agents/<name>.md`; Copilot: YAML-array
+   `tools` + `.github/agents/<name>.agent.md`). _Depends on 1._
 
 ### Phase 2 — Canonical artifacts + writers
 3. Canonical value objects `Skill` (a directory) and `Agent` (a single file), authored as
@@ -135,11 +174,13 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
    `Blade::render()` (whole file, one pass), then parses frontmatter from the rendered result.
    _Depends on 1._
 4. Per-kind writers (`SkillWriter`, `AgentWriter`) that translate canonical definitions into
-   each selected provider's path. `AgentWriter` renders the single file; `SkillWriter` walks
-   the skill directory recursively, rendering each `.blade.php` (dropping the extension),
-   copying every other file verbatim, and rewriting Markdown link/image targets that point at a
-   sibling rendered `.blade.php` to their `.md` output name (link-target-scoped, not a blanket
-   string replace). _Depends on 2, 3._
+   each selected provider's path. `AgentWriter` renders the single file, then applies the
+   provider's `SupportsAgents` frontmatter projection (canonical superset → native `tools`/
+   `model`/extension) before writing. `SkillWriter` walks the skill directory recursively,
+   rendering each `.blade.php` (dropping the extension), copying every other file verbatim, and
+   rewriting Markdown link/image targets that point at a sibling rendered `.blade.php` to their
+   `.md` output name (link-target-scoped, not a blanket string replace); the skill body is
+   provider-agnostic, so no frontmatter projection is needed for skills. _Depends on 2, 3._
 
 ### Phase 3 — Discovery
 5. A `Catalog` fed by reading each installed composer package's `extra.tooling.ai` declaration
@@ -188,9 +229,16 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
 - Own system, Boost conventions borrowed, no Boost dependency.
 - Guidelines deferred. Skills and agents first. Hooks seam designed but likely deferred, since
   cross-provider hook standards are weak.
-- Providers are interface-per-capability objects with config-overridable paths.
-- Artifacts are author-once canonical, translated by per-provider writers; discovery is by
-  `extra.tooling.ai` composer declaration.
+- Providers are interface-per-capability objects with config-overridable paths. `SupportsSkills`
+  is path-only (skills are a cross-provider standard); `SupportsAgents` is path + a frontmatter
+  projection (agents have no standard, so `tools`/`model`/extension are projected per provider).
+- Artifacts are author-once against the **superset**: canonical frontmatter carries the union
+  of provider capabilities in a neutral shape, and each provider projects down to its native
+  output. We never author in one provider's dialect. Discovery is by `extra.tooling.ai`
+  composer declaration.
+- Build the provider plumbing now even though ClaudeCode and Copilot overlap today (VS Code
+  reads Claude-format files). The seam exists so a third provider or native Copilot output is
+  additive, not a rewrite.
 - Materialized output is a gitignored, reproducible build artifact; drift is handled by
   on-demand re-sync plus an optional composer-lifecycle hook.
 - Selection is config-driven, not an interactive picker; the sync command only reads the
