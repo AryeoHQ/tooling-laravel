@@ -4,7 +4,7 @@
     "type": "composer-plugin",
     "require": {
         "php": "^8.4",
-        "aryeo/mcp": "dev-initial-release",
+        "aryeo/mcp": "0.0.1",
         "composer-plugin-api": "^2.0",
         "canvural/larastan-strict-rules": "^3.0",
         "composer/class-map-generator": "^1.4",
