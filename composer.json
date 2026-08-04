@@ -64,7 +64,7 @@
         "sort-packages": true
     },
     "extra": {
-        "class": "Tooling\\Composer\\Plugins\\PublishConfigurations",
+        "class": "Tooling\\Composer\\Plugins\\CacheConfigurations",
         "laravel": {
             "providers": [
                 "Tooling\\Provider"

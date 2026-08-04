@@ -12,7 +12,7 @@ use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
 use Tooling\Composer\Plugins\Features\DiscoverTooling;
 
-class PublishConfigurations implements EventSubscriberInterface, PluginInterface
+class CacheConfigurations implements EventSubscriberInterface, PluginInterface
 {
     public static function getSubscribedEvents(): array
     {
