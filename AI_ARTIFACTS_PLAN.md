@@ -323,7 +323,20 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
     Doubles as the first real discovery/publish integration fixture (tooling-laravel dogfoods
     its own system). _Depends on 3, 5._
 
-## Relevant files
+### Phase 6 — Documentation
+12. Add `docs/ai-artifacts.md` in the same style as `docs/{phpstan,rector,pint}.md` — what
+    skills/agents are, the `extra.tooling.ai` declaration, the `tooling/ai/` (committed) vs
+    `tooling/ai/local/` (personal, gitignored) authoring homes, the `.blade.php`-renders-to-`.md`
+    rule, `tooling:publish`, and the publish-on-`composer`-dump behavior. _Depends on 7, 10._
+13. Update `README.md` to match reality: add `tooling:publish` to the Usage command list; add
+    `docs/ai-artifacts.md` to the intro feature links; add `extra.tooling.ai` to the "Extending
+    Tooling" section (which already documents `extra.tooling.rector`/`phpstan` pointing at
+    `tooling/rector/`, `tooling/phpstan/` — so `tooling/ai/` slots right in); and extend "How
+    Discovery Works" step 2 (currently "runs `tooling:discover` and `tooling:optimize`") to
+    include `tooling:publish` on the same `post-autoload-dump` hook, noting it materializes
+    skills/agents into `.claude/` rather than a `vendor/` cache. The README references the plugin
+    generically (not by class name), so the `CacheConfigurations` rename needs no README fix.
+    _Depends on 12._
 
 - New in tooling-laravel:
   - `src/Tooling/Ai/Providers/{Provider,Copilot,ClaudeCode}.php` — `Copilot` carries its own
@@ -347,6 +360,9 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
   `tooling/phpstan/`, `tooling/rector/`); `tooling/ai/local/` is the gitignored personal inbox.
 - project `.gitignore` — the three managed lines `.claude/skills/`, `.claude/agents/`,
   `tooling/ai/local/` (owned output + personal inbox), added idempotently on publish.
+- `docs/ai-artifacts.md` — new feature doc in the `docs/{phpstan,rector,pint}.md` style.
+- `README.md` — Usage list, intro links, `extra.tooling.ai` under "Extending Tooling", and the
+  "How Discovery Works" steps updated for `tooling:publish`.
 
 ## Decisions
 
@@ -441,6 +457,9 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
    `name:`; assert a fully-successful run is quiet (one-line count only) while the skipped one is
    warned with its reason, and that the skip surfaces identically with and without `-q` (the
    command's policy, not the flag, decides).
+10. **Docs**: `docs/ai-artifacts.md` exists and covers the model; `README.md` lists
+    `tooling:publish`, documents `extra.tooling.ai`, and its "How Discovery Works" mentions AI
+    publishing on `post-autoload-dump`. Run the repo's own doc/link checks if any.
 
 ## Out of scope
 
