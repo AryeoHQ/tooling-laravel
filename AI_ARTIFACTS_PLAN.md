@@ -51,9 +51,15 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
     single ignored `local/` subdir covers them all. This is the escape hatch for "my own scratch
     skill" that must never force gitignore churn or leak into the team repo. `local` names the
     intent the same way `settings.local.json` / `CLAUDE.local.md` do.
-  - So the entire gitignore surface is three fixed lines added once: `.claude/skills/`,
-    `.claude/agents/`, `tooling/ai/local/`. Note `tooling/ai/` itself is committed — only its
-    `local/` subdir is ignored.
+  - Ignoring is done **per-directory**, Laravel-style (like `storage/framework/*/.gitignore`):
+    each managed dir carries its own `.gitignore` containing `*` + `!.gitignore`, so the dir
+    self-ignores its contents while the ignore file stays tracked. We ship one into each of
+    `.claude/skills/`, `.claude/agents/`, and `tooling/ai/local/` — **the root `.gitignore` is
+    never touched**. For the two owned output dirs, publish wipes the dir fully and then rewrites
+    the `.gitignore` as the first step of the rebuild — no preserve-across-wipe special case, the
+    file is just another artifact emitted every run. For `tooling/ai/local/` (a source dir we
+    don't wipe) it's scaffolded once if absent. Note `tooling/ai/` itself is committed — only its
+    `local/` subdir self-ignores.
 - **Name-collision precedence**: when two sources resolve to the same output name (a vendor
   package ships `testing` and local `tooling/ai/local/skills/testing/` also exists), **local
   overrides vendor** — your own project beats a dependency — and the shadowed vendor copy is
@@ -239,6 +245,18 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
   Both are registered on the `Development` server alongside the existing MCP tools. The tool
   edits `composer.json` itself (deterministic wiring is the point) and returns a `Response`
   confirming the path and the composer key it updated.
+- **Baseline templates as an MCP `ResourceTemplate`**: the canonical starting skeleton for each
+  artifact kind is exposed as a single `ResourceTemplate` with the kind as the variable slot —
+  `tooling-ai://artifact-template/{kind}`, `kind ∈ {skill, agent}`. Reading `.../skill` returns
+  the baseline `SKILL.blade.php` skeleton (valid frontmatter keys, `name:`/`description:`
+  scaffolded, body headings); `.../agent` returns the baseline agent `.blade.php`. The point is a
+  *coherent, usable baseline* for the `.blade.php` files we create, not a way to read existing
+  artifacts back — the variable is `{kind}`, not an artifact name. **Single source of truth**:
+  the same baseline the `ResourceTemplate` serves is the scaffold `MakeSkill`/`MakeAgent` write
+  from, so the model can read the skeleton *before* it drafts and the resulting `content` already
+  conforms, with the tool's deterministic enforcement as a backstop rather than the only guard.
+  This is the literal skeleton; the `authoring-ai-artifacts` skill is the prose about how/why —
+  complementary, not duplicative. Registered on the `Development` server alongside the tools.
 
 ## Steps
 
@@ -291,7 +309,9 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
 7. A `tooling:publish` command that **empties its owned output subtrees (`.claude/skills/`,
    `.claude/agents/`) then rebuilds them** from the config selection + catalog (Phase 3),
    driving the writers. Wipe is scoped to exactly those two subtrees, never `.claude/` itself.
-   Full-ownership rebuild means no orphans and no manifest. As it runs it collects a **result
+   The rebuild's first step is (re)writing each dir's own `.gitignore`, so the wipe can be a
+   plain full clear — no preserve-across-wipe special case. Full-ownership rebuild means no
+   orphans and no manifest. As it runs it collects a **result
    per artifact** — published (name + source origin) or skipped (name/path + reason, e.g.
    "missing `name:`", "invalid `name:`", "shadowed by local `<name>`") — rendered with the same
    `$this->components->*` vocabulary the other `tooling:*` commands use (`twoColumnDetail` rows
@@ -302,33 +322,46 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
    composer dump, and success stays quiet even on a manual run. `-q` is left to do only what it
    does for `discover`/`optimize` — mute framework-level chatter — not to decide whether our own
    important output appears. _Depends on 4, 5, 6._
-8. Ensure the three ignored lines (`.claude/skills/`, `.claude/agents/`, `tooling/ai/local/`)
-   are present in the project `.gitignore` — add them idempotently on publish (or scaffold
-   once), so the owned output and the personal inbox never get committed (`tooling/ai/` itself
-   stays committed). _Depends on 7._
+8. Ship a self-ignoring `.gitignore` (`*` + `!.gitignore`, Laravel `storage/`-style) **into each
+   managed dir** rather than editing the root `.gitignore`: `.claude/skills/` and
+   `.claude/agents/` get theirs rewritten as the first rebuild step of every publish (so the
+   wipe is a plain full clear); `tooling/ai/local/` gets one scaffolded once if absent (it's a
+   source dir we don't wipe). `tooling/ai/` itself stays committed. The root `.gitignore` is
+   never touched. _Depends on 7._
 9. Wire `tooling:publish` into the existing composer plugin's `POST_AUTOLOAD_DUMP` step
    (alongside `tooling:discover`/`tooling:optimize` in `DiscoverTooling`) so every `composer
    install`/`update`/`dump-autoload` republishes, and check the shelled command's exit code so a
    publish failure surfaces instead of failing silently. _Depends on 7._
 
 ### Phase 5 — Authoring tools + dogfood
-10. Two bespoke MCP tools `MakeSkill` and `MakeAgent` (hand-written `Tool` subclasses) that
+10. A baseline template per artifact kind exposed as a single MCP `ResourceTemplate`
+    (`tooling-ai://artifact-template/{kind}`, `kind ∈ {skill, agent}`), serving the canonical
+    `SKILL.blade.php` / agent `.blade.php` skeleton. Same bytes the make-tools scaffold from
+    (single source of truth). Registered on the `Development` server. _Depends on nothing._
+11. Two bespoke MCP tools `MakeSkill` and `MakeAgent` (hand-written `Tool` subclasses) that
     accept `name` + `content`, enforce the standardized `tooling/ai/{skills,agents}` location
-    and naming, write the `.blade.php`, edit the `extra.tooling.ai.*` composer key, and return a
-    confirmation. Registered on the `Development` server. _Depends on 3._
-11. Ship tooling-laravel's own `authoring-ai-artifacts` skill (declared via its own
-    `extra.tooling.ai.skills`) documenting the conventions — opt-in Blade rendering to `.md`,
-    skill-is-a-directory, `{!! !!}` in frontmatter, link authoring, the `extra.tooling.ai`
-    wiring, the `tooling/ai/local/` personal inbox — so an AI consults it before drafting a body.
-    Doubles as the first real discovery/publish integration fixture (tooling-laravel dogfoods
-    its own system). _Depends on 3, 5._
+    and naming, scaffold from the Phase-5 baseline template, write the `.blade.php`, edit the
+    `extra.tooling.ai.*` composer key, and return a confirmation. Registered on the `Development`
+    server. _Depends on 3, 10._
+12. Ship tooling-laravel's own `authoring-ai-artifacts` skill (declared via its own
+    `extra.tooling.ai.skills`). It's a **procedural walkthrough**, not passive reference docs: it
+    drives the agent step-by-step through authoring an artifact — clarify what the skill/agent
+    does → draft `description` → **collect the tools it needs and pare to least privilege**
+    (`tools` for an agent, `allowed-tools` for a skill) → write the body → read the
+    `ArtifactTemplate` baseline for the kind → call `MakeSkill`/`MakeAgent` to commit. Collecting
+    tools is the *skill's* job (a conversational step with reasoning), which is why the make-tools
+    don't need `tools` schema fields and the template only scaffolds the keys. It also carries the
+    conventions the walkthrough relies on — opt-in Blade→`.md`, skill-is-a-directory, `{!! !!}` in
+    frontmatter, link authoring, `extra.tooling.ai` wiring, the `tooling/ai/local/` inbox. Doubles
+    as the first real discovery/publish integration fixture (tooling-laravel dogfoods its own
+    system). _Depends on 3, 5, 10, 11._
 
 ### Phase 6 — Documentation
-12. Add `docs/ai-artifacts.md` in the same style as `docs/{phpstan,rector,pint}.md` — what
+13. Add `docs/ai-artifacts.md` in the same style as `docs/{phpstan,rector,pint}.md` — what
     skills/agents are, the `extra.tooling.ai` declaration, the `tooling/ai/` (committed) vs
     `tooling/ai/local/` (personal, gitignored) authoring homes, the `.blade.php`-renders-to-`.md`
-    rule, `tooling:publish`, and the publish-on-`composer`-dump behavior. _Depends on 7, 10._
-13. Update `README.md` to match reality: add `tooling:publish` to the Usage command list; add
+    rule, `tooling:publish`, and the publish-on-`composer`-dump behavior. _Depends on 7, 11._
+14. Update `README.md` to match reality: add `tooling:publish` to the Usage command list; add
     `docs/ai-artifacts.md` to the intro feature links; add `extra.tooling.ai` to the "Extending
     Tooling" section (which already documents `extra.tooling.rector`/`phpstan` pointing at
     `tooling/rector/`, `tooling/phpstan/` — so `tooling/ai/` slots right in); and extend "How
@@ -336,7 +369,9 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
     include `tooling:publish` on the same `post-autoload-dump` hook, noting it materializes
     skills/agents into `.claude/` rather than a `vendor/` cache. The README references the plugin
     generically (not by class name), so the `CacheConfigurations` rename needs no README fix.
-    _Depends on 12._
+    _Depends on 13._
+
+## Relevant files
 
 - New in tooling-laravel:
   - `src/Tooling/Ai/Providers/{Provider,Copilot,ClaudeCode}.php` — `Copilot` carries its own
@@ -348,6 +383,8 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
   - `src/Tooling/Ai/Catalog.php`
   - `src/Tooling/Ai/Console/Commands/Publish.php` — the `tooling:publish` command.
   - `src/Tooling/Mcp/Tools/{MakeSkill,MakeAgent}.php` — bespoke authoring tools.
+  - `src/Tooling/Mcp/Resources/ArtifactTemplate.php` — the `ResourceTemplate` serving the
+    baseline skill/agent skeleton the make-tools scaffold from (single source of truth).
   - `tooling/ai/skills/authoring-ai-artifacts/SKILL.blade.php` — dogfood authoring skill.
 - `src/Tooling/Provider.php` — bind the new singletons, register the `tooling:publish` command, register the
   authoring tools on the `Development` server, declare the authoring skill in `extra.tooling.ai`.
@@ -358,8 +395,9 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
   `phpstan`/`pint`/`rector`).
 - `tooling/ai/{skills,agents}/` — committed shared-artifact sources (alongside the existing
   `tooling/phpstan/`, `tooling/rector/`); `tooling/ai/local/` is the gitignored personal inbox.
-- project `.gitignore` — the three managed lines `.claude/skills/`, `.claude/agents/`,
-  `tooling/ai/local/` (owned output + personal inbox), added idempotently on publish.
+- per-directory `.gitignore` files (`*` + `!.gitignore`) shipped into `.claude/skills/`,
+  `.claude/agents/`, and `tooling/ai/local/` — Laravel `storage/`-style; the root `.gitignore`
+  is not touched.
 - `docs/ai-artifacts.md` — new feature doc in the `docs/{phpstan,rector,pint}.md` style.
 - `README.md` — Usage list, intro links, `extra.tooling.ai` under "Extending Tooling", and the
   "How Discovery Works" steps updated for `tooling:publish`.
@@ -392,8 +430,10 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
   `tooling/ai/` (the project is a self-discovered package; `tooling/ai/` matches the existing
   `tooling/phpstan`, `tooling/rector` source dirs); personal/machine-local artifacts go in the
   standardized gitignored inbox `tooling/ai/local/{skills,agents}/`, discovered with zero
-  `composer.json`/`.gitignore` churn. Whole gitignore surface = three fixed lines
-  (`.claude/skills/`, `.claude/agents/`, `tooling/ai/local/`); `tooling/ai/` itself is committed.
+  `composer.json`/`.gitignore` churn. Ignoring is per-directory, Laravel `storage/`-style: a
+  self-ignoring `.gitignore` (`*` + `!.gitignore`) shipped into each of `.claude/skills/`,
+  `.claude/agents/`, `tooling/ai/local/`; the root `.gitignore` is never edited and
+  `tooling/ai/` itself stays committed.
 - Name-collision precedence: local `tooling/ai/local/` overrides a vendor package of the same
   name (your project beats a dependency); shadowed vendor entry skipped with a logged notice.
 - `name:` frontmatter is the source of truth for a skill's identity: `SkillWriter` derives the
@@ -423,6 +463,13 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
   generators — a `content` string in the tool schema handles multi-line Blade that a CLI
   argument can't. The tool enforces location/naming and edits the `extra.tooling.ai` key; the
   model supplies the body.
+- Authoring is a **three-way division of labor**: the `authoring-ai-artifacts` **skill** is the
+  procedural walkthrough that *collects* everything (name, description, tools/allowed-tools with
+  least-privilege reasoning, body); the `ArtifactTemplate` **ResourceTemplate** is the baseline
+  skeleton it fills in; the **make-tools** do the deterministic commit (path, naming, composer
+  wiring). So `tools`/`allowed-tools` are NOT tool-schema fields — collection is the skill's job,
+  and hoisting them would force frontmatter re-serialization for no structural gain. Structured
+  tool data is only worth it when native Copilot agent projection (deferred) needs it.
 - Plugins (bundling/composition) are out of scope for this project; the seam is preserved so
   they can be added later without rework.
 
@@ -441,12 +488,16 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
    assert the wipe never touches sibling `.claude/settings.json` / `CLAUDE.md`.
 5. **Personal inbox + precedence**: drop a skill in `tooling/ai/local/skills/<name>/`, confirm
    it publishes with no `composer.json` edit; add a vendor package skill of the same name and
-   confirm the local one wins with a logged notice. Confirm the three `.gitignore` lines are
-   present after publish.
+   confirm the local one wins with a logged notice. Confirm each managed dir
+   (`.claude/skills/`, `.claude/agents/`, `tooling/ai/local/`) has its own self-ignoring
+   `.gitignore` after publish (rewritten every run for the owned dirs), and that the root
+   `.gitignore` is untouched.
 6. Call `MakeSkill` with a multi-line `content` (frontmatter + body) and assert it writes
    `tooling/ai/skills/<name>/SKILL.blade.php` verbatim (line breaks intact) and adds the path
    to `extra.tooling.ai.skills` in composer.json; same for `MakeAgent` → single file +
-   `extra.tooling.ai.agents`.
+   `extra.tooling.ai.agents`. Assert the `ArtifactTemplate` `ResourceTemplate` returns the
+   baseline skeleton for `{kind}` = `skill`/`agent`, and that it's the same skeleton the tools
+   scaffold from (single source of truth).
 7. Confirm tooling-laravel's own `authoring-ai-artifacts` skill is discovered and published
    (end-to-end dogfood) — this exercises root/self-package discovery via the `Manifest`
    participation mechanism, not just vendor packages.
