@@ -223,40 +223,42 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
   record. "Publish" (not "sync") is deliberate: the operation is one-way wholesale
   materialization, not bidirectional reconciliation. There is no interactive picker and no
   bundling in this scope.
-- **Authoring via bespoke MCP tools**: creating a new skill/agent is exposed as two
-  hand-written `Laravel\Mcp\Server\Tool` subclasses (like the existing
-  `Tooling\*\Mcp\Tools\{Pint,PHPStan,Rector}`), **not** artisan generator commands. This
-  sidesteps the CLI-argument problem entirely — a Blade document (line breaks, YAML frontmatter
-  colons, `{{ }}`) can't survive shell quoting as a command argument, but a bespoke tool's
-  `schema()` declares a plain `content` string property that MCP passes as a JSON string value,
-  which handles multi-line content fine. Flow: the user and LLM iterate on the body in
-  conversation, then call the tool once to *commit* it. The tool's value is enforcement:
-  standardized location, naming, and wiring the `extra.tooling.ai` composer key — the parts
-  that are easy to get wrong — are done deterministically in `handle()`, while the creative
-  body stays with the model. Two separate tools (not one with a `type` discriminator) so each
-  has a clean, self-describing schema:
-  - `MakeSkill` — schema `name` + `content` (+ optional supporting files); writes
-    `tooling/ai/skills/<name>/SKILL.blade.php`; wires `extra.tooling.ai.skills` (dir path).
-  - `MakeAgent` — schema `name` + `content`; writes `tooling/ai/agents/<name>.blade.php`;
-    wires `extra.tooling.ai.agents` (file path).
+- **Authoring via bespoke MCP tools with structured, self-describing schemas**: creating a new
+  skill/agent is exposed as two hand-written `Laravel\Mcp\Server\Tool` subclasses (like the
+  existing `Tooling\*\Mcp\Tools\{Pint,PHPStan,Rector}`), **not** artisan generator commands
+  (a Blade document with line breaks and YAML colons can't survive shell quoting as a CLI
+  argument; MCP passes structured JSON fine). The **schema is the elicitation mechanism**: rather
+  than one opaque `content` blob, each tool declares a typed property *per artifact field* —
+  `name`, `description`, `body`, and kind-specific fields (`allowed-tools` for a skill; `tools`,
+  `model` for an agent) — each carrying its own description/instructions that tell the LLM what
+  to gather and how (e.g. least-privilege guidance on `tools`, the `name==dir` kebab rule on
+  `name`). The model fills the fields; the tool **assembles the frontmatter + body
+  deterministically** from them and owns the mechanical parts — standardized location, naming,
+  frontmatter serialization, and wiring the `extra.tooling.ai` composer key. (This is a
+  deliberate shift from an earlier "single `content` blob" idea: structured fields let the schema
+  itself guide collection, and make the tool responsible for correct frontmatter rather than
+  trusting a hand-written blob.) Two separate tools (not one with a `type` discriminator) so each
+  schema is clean and self-describing:
+  - `MakeSkill` — `name`, `description`, `body` (+ optional supporting files), `allowed-tools`;
+    writes `tooling/ai/skills/<name>/SKILL.blade.php`; wires `extra.tooling.ai.skills` (dir path).
+  - `MakeAgent` — `name`, `description`, `body`, `tools`, `model`; writes
+    `tooling/ai/agents/<name>.blade.php`; wires `extra.tooling.ai.agents` (file path).
   The tools default to a `.blade.php` extension (not because Blade is required, but because it's
   the zero-cost default that never needs a later rename to add interpolation); a purely static
-  artifact is equally valid as `.md`.
-  Both are registered on the `Development` server alongside the existing MCP tools. The tool
-  edits `composer.json` itself (deterministic wiring is the point) and returns a `Response`
+  artifact is equally valid as `.md`. The `body` field is passed through verbatim (multi-line
+  Blade intact); only frontmatter is assembled from the structured fields. Both are registered on
+  the `Development` server; each tool edits `composer.json` itself and returns a `Response`
   confirming the path and the composer key it updated.
-- **Baseline templates as an MCP `ResourceTemplate`**: the canonical starting skeleton for each
-  artifact kind is exposed as a single `ResourceTemplate` with the kind as the variable slot —
-  `tooling-ai://artifact-template/{kind}`, `kind ∈ {skill, agent}`. Reading `.../skill` returns
-  the baseline `SKILL.blade.php` skeleton (valid frontmatter keys, `name:`/`description:`
-  scaffolded, body headings); `.../agent` returns the baseline agent `.blade.php`. The point is a
-  *coherent, usable baseline* for the `.blade.php` files we create, not a way to read existing
-  artifacts back — the variable is `{kind}`, not an artifact name. **Single source of truth**:
-  the same baseline the `ResourceTemplate` serves is the scaffold `MakeSkill`/`MakeAgent` write
-  from, so the model can read the skeleton *before* it drafts and the resulting `content` already
-  conforms, with the tool's deterministic enforcement as a backstop rather than the only guard.
-  This is the literal skeleton; the `authoring-ai-artifacts` skill is the prose about how/why —
-  complementary, not duplicative. Registered on the `Development` server alongside the tools.
+- **Assembly via a blade stub per tool (not an MCP resource)**: each make-tool renders the final
+  artifact from a plain **blade stub** — frontmatter keys interpolated from the structured schema
+  fields, `body` passed through raw — e.g. `--- \n name: {{ $name }} \n description:
+  {{ $description }} \n @isset($allowedTools)allowed-tools: {{ $allowedTools }}@endisset \n --- \n
+  {!! $body !!}`. This is an internal implementation detail owned by the tool, in the repo's
+  existing `.stub` tradition (`rule.stub`, `class.stub`, …), keeping frontmatter serialization
+  declarative rather than string-concatenated in PHP. There is **no** `ResourceTemplate` exposing
+  a skeleton over MCP — it's unnecessary now that frontmatter comes from structured fields and
+  body-structure guidance lives in the `body` field's schema description (and the skill). One
+  fewer primitive, zero capability lost.
 
 ## Steps
 
@@ -334,34 +336,33 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
    publish failure surfaces instead of failing silently. _Depends on 7._
 
 ### Phase 5 — Authoring tools + dogfood
-10. A baseline template per artifact kind exposed as a single MCP `ResourceTemplate`
-    (`tooling-ai://artifact-template/{kind}`, `kind ∈ {skill, agent}`), serving the canonical
-    `SKILL.blade.php` / agent `.blade.php` skeleton. Same bytes the make-tools scaffold from
-    (single source of truth). Registered on the `Development` server. _Depends on nothing._
-11. Two bespoke MCP tools `MakeSkill` and `MakeAgent` (hand-written `Tool` subclasses) that
-    accept `name` + `content`, enforce the standardized `tooling/ai/{skills,agents}` location
-    and naming, scaffold from the Phase-5 baseline template, write the `.blade.php`, edit the
-    `extra.tooling.ai.*` composer key, and return a confirmation. Registered on the `Development`
-    server. _Depends on 3, 10._
-12. Ship tooling-laravel's own `authoring-ai-artifacts` skill (declared via its own
-    `extra.tooling.ai.skills`). It's a **procedural walkthrough**, not passive reference docs: it
-    drives the agent step-by-step through authoring an artifact — clarify what the skill/agent
-    does → draft `description` → **collect the tools it needs and pare to least privilege**
-    (`tools` for an agent, `allowed-tools` for a skill) → write the body → read the
-    `ArtifactTemplate` baseline for the kind → call `MakeSkill`/`MakeAgent` to commit. Collecting
-    tools is the *skill's* job (a conversational step with reasoning), which is why the make-tools
-    don't need `tools` schema fields and the template only scaffolds the keys. It also carries the
-    conventions the walkthrough relies on — opt-in Blade→`.md`, skill-is-a-directory, `{!! !!}` in
-    frontmatter, link authoring, `extra.tooling.ai` wiring, the `tooling/ai/local/` inbox. Doubles
+10. Two bespoke MCP tools `MakeSkill` and `MakeAgent` (hand-written `Tool` subclasses) with
+    **structured, self-describing schemas** — a typed property per artifact field, each with a
+    description that guides the LLM on what to collect: `MakeSkill` = `name`, `description`,
+    `body`, `allowed-tools` (+ optional supporting files); `MakeAgent` = `name`, `description`,
+    `body`, `tools`, `model`. Each tool validates `name` and renders the artifact from a plain
+    **blade assembly stub** (frontmatter interpolated from the fields, `body` raw), writes to the
+    standardized `tooling/ai/{skills,agents}` location, edits the `extra.tooling.ai.*` composer
+    key, and returns a confirmation. Registered on the `Development` server. _Depends on 3._
+11. Ship tooling-laravel's own `authoring-ai-artifacts` skill (declared via its own
+    `extra.tooling.ai.skills`). It is **project-specific knowledge, not a scripted walkthrough** —
+    the agent already elicits requirements conversationally far better than a hand-coded
+    step list could; re-implementing that in a skill would be worse than what the model does
+    natively. It carries what neither the agent nor the schema conveys, most importantly **where
+    files go so there's no path hallucination**: `tooling/ai/` (committed) vs `tooling/ai/local/`
+    (personal), that authoring goes through `MakeSkill`/`MakeAgent` (never hand-place into
+    `.claude/`), plus the surrounding facts — `name==dir` + kebab/≤64, opt-in Blade→`.md`,
+    `{!! !!}` in frontmatter, link authoring, and `extra.tooling.ai` wiring. One skill covers both
+    kinds — the skill/agent differences are just facts it states, not a forked procedure. Doubles
     as the first real discovery/publish integration fixture (tooling-laravel dogfoods its own
-    system). _Depends on 3, 5, 10, 11._
+    system). _Depends on 3, 5, 10._
 
 ### Phase 6 — Documentation
-13. Add `docs/ai-artifacts.md` in the same style as `docs/{phpstan,rector,pint}.md` — what
+12. Add `docs/ai-artifacts.md` in the same style as `docs/{phpstan,rector,pint}.md` — what
     skills/agents are, the `extra.tooling.ai` declaration, the `tooling/ai/` (committed) vs
     `tooling/ai/local/` (personal, gitignored) authoring homes, the `.blade.php`-renders-to-`.md`
-    rule, `tooling:publish`, and the publish-on-`composer`-dump behavior. _Depends on 7, 11._
-14. Update `README.md` to match reality: add `tooling:publish` to the Usage command list; add
+    rule, `tooling:publish`, and the publish-on-`composer`-dump behavior. _Depends on 7, 10._
+13. Update `README.md` to match reality: add `tooling:publish` to the Usage command list; add
     `docs/ai-artifacts.md` to the intro feature links; add `extra.tooling.ai` to the "Extending
     Tooling" section (which already documents `extra.tooling.rector`/`phpstan` pointing at
     `tooling/rector/`, `tooling/phpstan/` — so `tooling/ai/` slots right in); and extend "How
@@ -369,7 +370,7 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
     include `tooling:publish` on the same `post-autoload-dump` hook, noting it materializes
     skills/agents into `.claude/` rather than a `vendor/` cache. The README references the plugin
     generically (not by class name), so the `CacheConfigurations` rename needs no README fix.
-    _Depends on 13._
+    _Depends on 12._
 
 ## Relevant files
 
@@ -383,8 +384,8 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
   - `src/Tooling/Ai/Catalog.php`
   - `src/Tooling/Ai/Console/Commands/Publish.php` — the `tooling:publish` command.
   - `src/Tooling/Mcp/Tools/{MakeSkill,MakeAgent}.php` — bespoke authoring tools.
-  - `src/Tooling/Mcp/Resources/ArtifactTemplate.php` — the `ResourceTemplate` serving the
-    baseline skill/agent skeleton the make-tools scaffold from (single source of truth).
+  - `src/Tooling/Mcp/Tools/References/stubs/{skill,agent}.blade.php` — blade assembly stubs each
+    tool renders the artifact from (repo's `.stub` tradition, kept internal — no MCP resource).
   - `tooling/ai/skills/authoring-ai-artifacts/SKILL.blade.php` — dogfood authoring skill.
 - `src/Tooling/Provider.php` — bind the new singletons, register the `tooling:publish` command, register the
   authoring tools on the `Development` server, declare the authoring skill in `extra.tooling.ai`.
@@ -460,16 +461,22 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
 - Selection is config-driven, not an interactive picker; publishing only reads the catalog, it
   never registers.
 - Authoring is exposed as bespoke MCP `Tool` subclasses (`MakeSkill`/`MakeAgent`), not artisan
-  generators — a `content` string in the tool schema handles multi-line Blade that a CLI
-  argument can't. The tool enforces location/naming and edits the `extra.tooling.ai` key; the
-  model supplies the body.
-- Authoring is a **three-way division of labor**: the `authoring-ai-artifacts` **skill** is the
-  procedural walkthrough that *collects* everything (name, description, tools/allowed-tools with
-  least-privilege reasoning, body); the `ArtifactTemplate` **ResourceTemplate** is the baseline
-  skeleton it fills in; the **make-tools** do the deterministic commit (path, naming, composer
-  wiring). So `tools`/`allowed-tools` are NOT tool-schema fields — collection is the skill's job,
-  and hoisting them would force frontmatter re-serialization for no structural gain. Structured
-  tool data is only worth it when native Copilot agent projection (deferred) needs it.
+  generators (Blade with line breaks/YAML colons can't survive CLI quoting; MCP JSON can). Each
+  tool's **schema is structured and self-describing** — a typed property per artifact field
+  (`name`, `description`, `body`, `allowed-tools` / `tools`, `model`), each with descriptions
+  that guide the LLM on what to collect. The tool assembles frontmatter+body deterministically
+  from those fields and owns location/naming/serialization/`extra.tooling.ai` wiring.
+- Authoring is a **three-way division of labor**: the **agent** drives the conversation and
+  gathers requirements (better than any hand-coded step list, so we don't script a walkthrough);
+  the **make-tool schemas** shape *what* to gather via per-field descriptions/instructions and
+  the tool assembles the file from a blade stub; the `authoring-ai-artifacts` **skill** supplies
+  project-specific knowledge the agent can't infer, crucially **where** files go (no path
+  hallucination) plus naming/Blade/wiring rules and least-privilege framing. `tools`/`allowed-tools`
+  ARE structured schema fields (reversing an earlier "keep them in the freeform blob" idea) so the
+  schema itself elicits them and the tool assembles correct frontmatter; this also front-loads the
+  structured tool data that native Copilot agent projection (deferred) will later need. No MCP
+  `ResourceTemplate` — a blade assembly stub per tool (internal) replaces it, since structured
+  fields + the `body` field description cover what a skeleton resource would have.
 - Plugins (bundling/composition) are out of scope for this project; the seam is preserved so
   they can be added later without rework.
 
@@ -492,12 +499,11 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
    (`.claude/skills/`, `.claude/agents/`, `tooling/ai/local/`) has its own self-ignoring
    `.gitignore` after publish (rewritten every run for the owned dirs), and that the root
    `.gitignore` is untouched.
-6. Call `MakeSkill` with a multi-line `content` (frontmatter + body) and assert it writes
-   `tooling/ai/skills/<name>/SKILL.blade.php` verbatim (line breaks intact) and adds the path
-   to `extra.tooling.ai.skills` in composer.json; same for `MakeAgent` → single file +
-   `extra.tooling.ai.agents`. Assert the `ArtifactTemplate` `ResourceTemplate` returns the
-   baseline skeleton for `{kind}` = `skill`/`agent`, and that it's the same skeleton the tools
-   scaffold from (single source of truth).
+6. Call `MakeSkill` with structured fields (`name`, `description`, multi-line `body`,
+   `allowed-tools`) and assert it renders via the blade stub to
+   `tooling/ai/skills/<name>/SKILL.blade.php` — frontmatter assembled from the fields, `body`
+   verbatim (line breaks intact) — and adds the path to `extra.tooling.ai.skills` in
+   composer.json; same for `MakeAgent` (`tools`/`model`) → single file + `extra.tooling.ai.agents`.
 7. Confirm tooling-laravel's own `authoring-ai-artifacts` skill is discovered and published
    (end-to-end dogfood) — this exercises root/self-package discovery via the `Manifest`
    participation mechanism, not just vendor packages.
