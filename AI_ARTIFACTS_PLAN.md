@@ -42,9 +42,9 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
 - **Two authoring homes, split by whether the artifact is shared or personal:**
   - **Shared/team artifacts** are declared like any package: a project lists its own artifacts
     under `extra.tooling.ai` pointing at committed `tooling/ai/` sources (the consuming project
-    is just another discovered package — self-package discovery, same path the dogfood skill
-    uses). Committed, versioned, code-reviewed. `tooling/ai/` sits alongside the existing
-    `tooling/phpstan/` and `tooling/rector/` source dirs, so it matches the repo convention.
+    is just another discovered package — self-package discovery). Committed, versioned,
+    code-reviewed. `tooling/ai/` sits alongside the existing `tooling/phpstan/` and
+    `tooling/rector/` source dirs, so it matches the repo convention.
   - **Personal/machine-local artifacts** get one standardized, gitignored inbox: `tooling/ai/local/`
     (`tooling/ai/local/skills/`, `tooling/ai/local/agents/`). A dev drops an artifact there and
     discovery picks it up with zero ceremony and **zero per-skill `.gitignore` edits** — the
@@ -147,8 +147,8 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
     frontmatter value to equal the skill's directory name, and restrict it to 1–64 chars,
     lowercase alphanumeric + single hyphens (no leading/trailing/consecutive hyphens). A
     mismatch or invalid character makes the skill silently fail to load. **`name:` is the source
-    of truth**: `SkillWriter` derives the published directory name *from* the (validated) `name:`
-    value, so the two can't disagree by construction — this holds for every source, including
+    of truth**: `Skill::publishTo()` derives the published directory name *from* the (validated)
+    `name:` value, so the two can't disagree by construction — this holds for every source, including
     third-party skills we didn't author (their frontmatter is trusted for `name`, but the output
     dir is named from it, not from their on-disk folder). Validate `name:` against the spec rules
     at publish and normalize/fix it if malformed; `MakeSkill` validates the same rule at
@@ -175,7 +175,8 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
     scripts pass through untouched.
   - Internal links are authored against the **source** filename (`references/usage.blade.php`)
     so links resolve in the package's own repo (click-through works, link validators pass),
-    and the writer **rewrites them to the output name** (`references/usage.md`) at publish. The
+    and `Skill::publishTo()` **rewrites them to the output name** (`references/usage.md`) at
+    publish. The
     rewrite is **link-target-scoped**, not a blanket string replace: only the target of a
     Markdown link/image (`[...](target)` / `![...](target)`) is rewritten, and only when the
     target resolves to a sibling `.blade.php` that actually exists in the skill tree and was
@@ -196,7 +197,7 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
   tooling-laravel-provided feature — a package declaring artifacts for tooling to publish is a
   tooling participant by definition. The consuming project is itself a discovered package (its
   own `extra.tooling.ai` pointing at committed `tooling/ai/` sources), which is how a team
-  ships shared, version-controlled artifacts — same path the dogfood skill uses.
+  ships shared, version-controlled artifacts.
 - **Personal inbox for zero-ceremony local artifacts**: alongside `extra.tooling.ai` discovery,
   the publisher also scans a single standardized directory in the project, `tooling/ai/local/`
   (`tooling/ai/local/skills/`, `tooling/ai/local/agents/`), and treats anything found there as a
@@ -274,23 +275,23 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
    (`.github/agents/*.agent.md` with mapped `tools`/`model`) is deferred to when it's needed.
    _Depends on 1._
 
-### Phase 2 — Canonical artifacts + writers
-3. Canonical value objects `Skill` (a directory) and `Agent` (a single file). A renderer
-   compiles any `.blade.php` source via `Blade::render()` (whole file, one pass) and emits it
-   as `.md`, copying every non-`.blade.php` file verbatim, then parses frontmatter from the
-   rendered result. Blade is opt-in per file, not required. _Depends on 1._
-4. Per-kind writers (`SkillWriter`, `AgentWriter`) that translate canonical definitions into
-   each selected provider's path. `AgentWriter` renders the single file, then applies the
-   provider's `SupportsAgents` projection before writing — which is identity in v1, so it writes
-   the Claude-format file straight to `.claude/agents/`. `SkillWriter` walks the skill directory
-   recursively,
-   rendering each `.blade.php` (dropping the extension), copying every other file verbatim, and
-   rewriting Markdown link/image targets that point at a sibling rendered `.blade.php` to their
-   `.md` output name (link-target-scoped, not a blanket string replace); the skill body is
-   provider-agnostic, so no frontmatter projection is needed for skills. `SkillWriter` also
-   **derives the output directory name from the validated `name:` frontmatter** (normalizing a
-   malformed value), so `name` and dir can't disagree and third-party skills can't silently fail
-   to load. _Depends on 2, 3._
+### Phase 2 — Canonical artifacts that publish themselves
+3. Canonical value objects `Skill` (a directory) and `Agent` (a single file) that **know how to
+   publish themselves** to a provider — `publishTo(Provider): Result` — rather than delegating to
+   separate writer classes (this is a Laravel codebase; rich objects that act, like
+   `$model->save()`, are the house style). A shared `RendersBlade` helper/trait does the one
+   genuinely-common bit — compile a single `.blade.php` string via `Blade::render()` (whole file,
+   one pass) and emit it as `.md` — used by both. _Depends on 1._
+4. `Agent::publishTo()` renders its single file, applies the provider's `SupportsAgents`
+   projection (identity in v1 → writes the Claude-format file straight to `.claude/agents/`).
+   `Skill::publishTo()` walks its own directory recursively, rendering each `.blade.php`
+   (dropping the extension), copying every other file verbatim, rewriting Markdown link/image
+   targets that point at a sibling rendered `.blade.php` to their `.md` output name
+   (link-target-scoped, not a blanket string replace — this is skill-only; agents are single
+   files with no sibling links), and **deriving the output directory name from its own validated
+   `name:`** (normalizing a malformed value) so `name` and dir can't disagree and third-party
+   skills can't silently fail to load. Each returns a `Result` (published/skipped-with-reason).
+   _Depends on 2, 3._
 
 ### Phase 3 — Discovery
 5. A `Catalog` fed by two sources: (a) `extra.tooling.ai` declarations, discovered using the
@@ -298,8 +299,8 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
    `Composer::packages->concat([currentAsPackage])` so the root project is included alongside
    vendor packages, with the same base-dir-vs-`vendor/<name>/` path resolution keyed on
    `currentAsPackage` (see `Manifest::extractRector`/`extractPhpStan`). This is what makes the
-   consuming project's own shared artifacts (and the dogfood skill) discoverable, not just
-   dependencies'. (b) the project's personal `tooling/ai/local/` inbox
+   consuming project's own shared artifacts discoverable, not just dependencies'. (b) the
+   project's personal `tooling/ai/local/` inbox
    (`tooling/ai/local/{skills,agents}/`) scanned directly from disk. On a name clash between the
    two, the local inbox wins and the shadowed vendor entry is skipped with a logged notice.
    _Depends on 3._
@@ -308,12 +309,15 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
 6. Config-driven selection: a project declares which discovered skills/agents it wants (a new
    `ai` key in `config/tooling.php`). Absent config, publish everything discovered. _Depends on
    3, 5._
-7. A `tooling:publish` command that **empties its owned output subtrees (`.claude/skills/`,
-   `.claude/agents/`) then rebuilds them** from the config selection + catalog (Phase 3),
-   driving the writers. Wipe is scoped to exactly those two subtrees, never `.claude/` itself.
-   The rebuild's first step is (re)writing each dir's own `.gitignore`, so the wipe can be a
-   plain full clear — no preserve-across-wipe special case. Full-ownership rebuild means no
-   orphans and no manifest. As it runs it collects a **result
+7. A `tooling:publish` command (delegating to a thin `Publisher`) that owns the **set-level
+   orchestration** the individual artifacts can't: it **empties its owned output subtrees
+   (`.claude/skills/`, `.claude/agents/`) then rebuilds them** by asking each selected
+   `Skill`/`Agent` to `publishTo()` each provider. Wipe is scoped to exactly those two subtrees,
+   never `.claude/` itself. The rebuild's first step is (re)writing each dir's own `.gitignore`,
+   so the wipe can be a plain full clear — no preserve-across-wipe special case. Full-ownership
+   rebuild means no orphans and no manifest. The `Publisher` also owns cross-artifact concerns —
+   the local-overrides-vendor precedence (a decision *between* artifacts) and aggregating each
+   artifact's returned `Result`. As it runs it collects a **result
    per artifact** — published (name + source origin) or skipped (name/path + reason, e.g.
    "missing `name:`", "invalid `name:`", "shadowed by local `<name>`") — rendered with the same
    `$this->components->*` vocabulary the other `tooling:*` commands use (`twoColumnDetail` rows
@@ -335,7 +339,7 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
    install`/`update`/`dump-autoload` republishes, and check the shelled command's exit code so a
    publish failure surfaces instead of failing silently. _Depends on 7._
 
-### Phase 5 — Authoring tools + dogfood
+### Phase 5 — Authoring tools
 10. Two bespoke MCP tools `MakeSkill` and `MakeAgent` (hand-written `Tool` subclasses) with
     **structured, self-describing schemas** — a typed property per artifact field, each with a
     description that guides the LLM on what to collect: `MakeSkill` = `name`, `description`,
@@ -343,26 +347,17 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
     `body`, `tools`, `model`. Each tool validates `name` and renders the artifact from a plain
     **blade assembly stub** (frontmatter interpolated from the fields, `body` raw), writes to the
     standardized `tooling/ai/{skills,agents}` location, edits the `extra.tooling.ai.*` composer
-    key, and returns a confirmation. Registered on the `Development` server. _Depends on 3._
-11. Ship tooling-laravel's own `authoring-ai-artifacts` skill (declared via its own
-    `extra.tooling.ai.skills`). It is **project-specific knowledge, not a scripted walkthrough** —
-    the agent already elicits requirements conversationally far better than a hand-coded
-    step list could; re-implementing that in a skill would be worse than what the model does
-    natively. It carries what neither the agent nor the schema conveys, most importantly **where
-    files go so there's no path hallucination**: `tooling/ai/` (committed) vs `tooling/ai/local/`
-    (personal), that authoring goes through `MakeSkill`/`MakeAgent` (never hand-place into
-    `.claude/`), plus the surrounding facts — `name==dir` + kebab/≤64, opt-in Blade→`.md`,
-    `{!! !!}` in frontmatter, link authoring, and `extra.tooling.ai` wiring. One skill covers both
-    kinds — the skill/agent differences are just facts it states, not a forked procedure. Doubles
-    as the first real discovery/publish integration fixture (tooling-laravel dogfoods its own
-    system). _Depends on 3, 5, 10._
+    key, and returns a confirmation. Each tool's **description carries the anti-footgun steer** —
+    "use this to author skills/agents; don't hand-create files under `.claude/`, which are
+    generated and wiped on publish" — so the guidance loads exactly when relevant, with no
+    separate shipped skill. Registered on the `Development` server. _Depends on 3._
 
 ### Phase 6 — Documentation
-12. Add `docs/ai-artifacts.md` in the same style as `docs/{phpstan,rector,pint}.md` — what
+11. Add `docs/ai-artifacts.md` in the same style as `docs/{phpstan,rector,pint}.md` — what
     skills/agents are, the `extra.tooling.ai` declaration, the `tooling/ai/` (committed) vs
     `tooling/ai/local/` (personal, gitignored) authoring homes, the `.blade.php`-renders-to-`.md`
     rule, `tooling:publish`, and the publish-on-`composer`-dump behavior. _Depends on 7, 10._
-13. Update `README.md` to match reality: add `tooling:publish` to the Usage command list; add
+12. Update `README.md` to match reality: add `tooling:publish` to the Usage command list; add
     `docs/ai-artifacts.md` to the intro feature links; add `extra.tooling.ai` to the "Extending
     Tooling" section (which already documents `extra.tooling.rector`/`phpstan` pointing at
     `tooling/rector/`, `tooling/phpstan/` — so `tooling/ai/` slots right in); and extend "How
@@ -370,7 +365,7 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
     include `tooling:publish` on the same `post-autoload-dump` hook, noting it materializes
     skills/agents into `.claude/` rather than a `vendor/` cache. The README references the plugin
     generically (not by class name), so the `CacheConfigurations` rename needs no README fix.
-    _Depends on 12._
+    _Depends on 11._
 
 ## Relevant files
 
@@ -379,16 +374,18 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
     `.github/skills` path for `SupportsSkills`; for agents its projection is identity (agents
     publish to `.claude/agents/`, which Copilot reads). Native Copilot agent output is deferred.
   - `src/Tooling/Ai/Contracts/{SupportsSkills,SupportsAgents}.php`
-  - `src/Tooling/Ai/{Skill,Agent}.php`
-  - `src/Tooling/Ai/Writers/{SkillWriter,AgentWriter}.php`
+  - `src/Tooling/Ai/{Skill,Agent}.php` — value objects that publish themselves
+    (`publishTo(Provider): Result`); no separate writer classes.
+  - `src/Tooling/Ai/Concerns/RendersBlade.php` — shared `.blade.php`→`.md` render helper.
   - `src/Tooling/Ai/Catalog.php`
-  - `src/Tooling/Ai/Console/Commands/Publish.php` — the `tooling:publish` command.
+  - `src/Tooling/Ai/Publisher.php` — set-level orchestration (wipe/rebuild, precedence, results).
+  - `src/Tooling/Ai/Console/Commands/Publish.php` — the `tooling:publish` command (delegates to
+    `Publisher`).
   - `src/Tooling/Mcp/Tools/{MakeSkill,MakeAgent}.php` — bespoke authoring tools.
   - `src/Tooling/Mcp/Tools/References/stubs/{skill,agent}.blade.php` — blade assembly stubs each
     tool renders the artifact from (repo's `.stub` tradition, kept internal — no MCP resource).
-  - `tooling/ai/skills/authoring-ai-artifacts/SKILL.blade.php` — dogfood authoring skill.
-- `src/Tooling/Provider.php` — bind the new singletons, register the `tooling:publish` command, register the
-  authoring tools on the `Development` server, declare the authoring skill in `extra.tooling.ai`.
+- `src/Tooling/Provider.php` — bind the new singletons, register the `tooling:publish` command and
+  the authoring tools on the `Development` server.
 - `src/Tooling/Composer/Plugins/Features/DiscoverTooling.php` — add the AI publish step to the
   `POST_AUTOLOAD_DUMP` run (and check its exit code) so every composer dump republishes
   (primary trigger).
@@ -437,8 +434,15 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
   `tooling/ai/` itself stays committed.
 - Name-collision precedence: local `tooling/ai/local/` overrides a vendor package of the same
   name (your project beats a dependency); shadowed vendor entry skipped with a logged notice.
-- `name:` frontmatter is the source of truth for a skill's identity: `SkillWriter` derives the
-  published directory name from the validated `name:` (fixing a malformed value), so
+- Artifacts publish themselves (`Skill`/`Agent` have `publishTo(Provider): Result`) rather than
+  via separate `SkillWriter`/`AgentWriter` classes — behavior lives with the thing it's behavior
+  *of* (Laravel `$model->save()` ethos). The set-level orchestration that no single artifact can
+  own — wipe/rebuild the owned dirs, local-overrides-vendor precedence, looping selection ×
+  providers, aggregating results — lives in a thin `Publisher` behind `tooling:publish`. The one
+  shared scrap (render a `.blade.php` string to `.md`) is a `RendersBlade` helper, not a class
+  hierarchy; link-rewriting stays on `Skill` (agents have no sibling links).
+- `name:` frontmatter is the source of truth for a skill's identity: `Skill::publishTo()` derives
+  the published directory name from the validated `name:` (fixing a malformed value), so
   name/dir can never disagree — works for third-party skills too, closing the silent-load-failure
   hole. `MakeSkill` validates the same rule at authoring time as an early guard.
 - Discovery reuses `Manifest`'s existing participation mechanism verbatim
@@ -466,15 +470,17 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
   (`name`, `description`, `body`, `allowed-tools` / `tools`, `model`), each with descriptions
   that guide the LLM on what to collect. The tool assembles frontmatter+body deterministically
   from those fields and owns location/naming/serialization/`extra.tooling.ai` wiring.
-- Authoring is a **three-way division of labor**: the **agent** drives the conversation and
+- Authoring is a **two-way division of labor**: the **agent** drives the conversation and
   gathers requirements (better than any hand-coded step list, so we don't script a walkthrough);
-  the **make-tool schemas** shape *what* to gather via per-field descriptions/instructions and
-  the tool assembles the file from a blade stub; the `authoring-ai-artifacts` **skill** supplies
-  project-specific knowledge the agent can't infer, crucially **where** files go (no path
-  hallucination) plus naming/Blade/wiring rules and least-privilege framing. `tools`/`allowed-tools`
-  ARE structured schema fields (reversing an earlier "keep them in the freeform blob" idea) so the
-  schema itself elicits them and the tool assembles correct frontmatter; this also front-loads the
-  structured tool data that native Copilot agent projection (deferred) will later need. No MCP
+  the **make-tool schemas** shape *what* to gather via per-field descriptions/instructions, the
+  tool assembles the file from a blade stub and owns location/naming/wiring, and each tool's
+  *description* carries the anti-footgun steer ("author via this tool; don't hand-create files
+  under `.claude/`"). There is **no shipped authoring skill** — the tools already are the path of
+  least resistance and enforce placement, so a separate knowledge artifact would be redundant;
+  conventions for humans live in `docs/ai-artifacts.md`. `tools`/`allowed-tools` ARE structured
+  schema fields (reversing an earlier "keep them in the freeform blob" idea) so the schema itself
+  elicits them and the tool assembles correct frontmatter; this also front-loads the structured
+  tool data that native Copilot agent projection (deferred) will later need. No MCP
   `ResourceTemplate` — a blade assembly stub per tool (internal) replaces it, since structured
   fields + the `body` field description cover what a skeleton resource would have.
 - Plugins (bundling/composition) are out of scope for this project; the seam is preserved so
@@ -504,9 +510,10 @@ Plugins — a distributable bundle composing selected artifacts — are deferred
    `tooling/ai/skills/<name>/SKILL.blade.php` — frontmatter assembled from the fields, `body`
    verbatim (line breaks intact) — and adds the path to `extra.tooling.ai.skills` in
    composer.json; same for `MakeAgent` (`tools`/`model`) → single file + `extra.tooling.ai.agents`.
-7. Confirm tooling-laravel's own `authoring-ai-artifacts` skill is discovered and published
-   (end-to-end dogfood) — this exercises root/self-package discovery via the `Manifest`
-   participation mechanism, not just vendor packages.
+7. **Self-package discovery**: with a throwaway test fixture declaring `extra.tooling.ai` on the
+   *root* package (not a vendor dep), confirm its artifact is discovered and published —
+   exercising the `Manifest` participation mechanism's `currentAsPackage` path, which the
+   shared/team authoring story depends on.
 8. **name/dir derivation**: publish a skill whose `name:` frontmatter differs from its source
    folder name and assert the *output* directory is named from `name:` (so it loads), and that a
    malformed `name:` is normalized rather than published broken.
@@ -534,7 +541,7 @@ Plugins (a distributable bundle composing selected skills/agents) are cut from t
 because they are the least-settled, highest-risk piece and nothing else depends on them. Every
 plugin question spawned an unresolved sub-problem — distribution scope, archive-vs-local
 rendering, and how a bundle references its providing packages — none of which affect the
-artifact layer. The provider/writer/catalog work here is a strict prerequisite for plugins, so
+artifact layer. The provider/artifact/catalog work here is a strict prerequisite for plugins, so
 building it first loses nothing. Claude Code plugins and marketplaces are also young and
 shifting, so waiting avoids reinventing a format the providers may standardize.
 
