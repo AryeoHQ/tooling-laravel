@@ -4,6 +4,7 @@
     "type": "composer-plugin",
     "require": {
         "php": "^8.4",
+        "aryeo/mcp": "0.0.1",
         "composer-plugin-api": "^2.0",
         "canvural/larastan-strict-rules": "^3.0",
         "composer/class-map-generator": "^1.4",
@@ -11,6 +12,7 @@
         "ergebnis/phpstan-rules": "^2.12",
         "larastan/larastan": "^3.8",
         "laravel/framework": "^12.36",
+        "laravel/mcp": "^0.9.0",
         "laravel/pint": "^1.25",
         "laravel/prompts": "^0.3.13",
         "nesbot/carbon": "^3.11",
@@ -48,6 +50,12 @@
             "email": "justinsel@zillowgroup.com"
         }
     ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/AryeoHQ/mcp.git"
+        }
+    ],
     "minimum-stability": "stable",
     "config": {
         "preferred-install": {
@@ -56,7 +64,7 @@
         "sort-packages": true
     },
     "extra": {
-        "class": "Tooling\\Composer\\Plugins\\PublishConfigurations",
+        "class": "Tooling\\Composer\\Plugins\\CacheConfigurations",
         "laravel": {
             "providers": [
                 "Tooling\\Provider"

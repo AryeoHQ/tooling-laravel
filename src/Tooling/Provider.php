@@ -42,6 +42,7 @@ class Provider extends ServiceProvider
     {
         $this->bootCommands();
         $this->bootViews();
+        $this->bootMcp();
         $this->bootClassMapCacheListener();
     }
 
@@ -236,5 +237,20 @@ class Provider extends ServiceProvider
         }
 
         Event::listen(CommandFinished::class, RebuildClassMapCache::class);
+    }
+
+    private function bootMcp(): void
+    {
+        Mcp\Servers\Development::local();
+
+        Mcp\Servers\Development::add(Mcp\Resources\Readme::class);
+        Mcp\Servers\Development::add(PHPStan\Mcp\Prompts\Analyze::class);
+
+        $this->app->booted(function (): void {
+            collect(\Illuminate\Support\Facades\Artisan::all())
+                ->filter(fn ($command, string $name) => $command instanceof \Illuminate\Console\Command && ! $command->isHidden() && $command->getDescription() !== '')
+                ->unique()
+                ->each(fn (\Illuminate\Console\Command $command) => Mcp\Servers\Development::add(Mcp\Tools\ArtisanToolFactory::make($command)));
+        });
     }
 }
