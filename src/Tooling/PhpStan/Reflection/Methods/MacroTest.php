@@ -22,6 +22,8 @@ final class MacroTest extends PHPStanTestCase
 
     protected function setUp(): void
     {
+        parent::setUp();
+
         $reflectionProvider = self::createReflectionProvider();
 
         $this->classReflection = $reflectionProvider->getClass(\stdClass::class);
