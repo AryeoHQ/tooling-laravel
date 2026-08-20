@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tooling\Pint\Console\Commands\Fixtures;
 
 use App\Actions\ElaborateSummary;
+use App\Actions\EnsurePrettierIsConfigured;
 use App\Actions\FixCode;
 use App\Factories\ConfigurationFactory;
 use Illuminate\Console\Command;
@@ -41,6 +42,7 @@ class DefaultCommand extends Command
             ->setDefinition(
                 [
                     new InputArgument('path', InputArgument::IS_ARRAY, 'The path to fix', [(string) getcwd()]),
+                    new InputOption('blade', '', InputOption::VALUE_NONE, 'Enable the [Pint/laravel_blade] rule to format Blade files'),
                     new InputOption('config', '', InputOption::VALUE_REQUIRED, 'The configuration that should be used'),
                     new InputOption('no-config', '', InputOption::VALUE_NONE, 'Disable loading any configuration file'),
                     new InputOption('preset', '', InputOption::VALUE_REQUIRED, 'The preset that should be used'),
@@ -65,10 +67,13 @@ class DefaultCommand extends Command
      *
      * @param  FixCode  $fixCode
      * @param  ElaborateSummary  $elaborateSummary
+     * @param  EnsurePrettierIsConfigured  $ensurePrettierIsConfigured
      * @return int
      */
-    public function handle($fixCode, $elaborateSummary)
+    public function handle($fixCode, $elaborateSummary, $ensurePrettierIsConfigured)
     {
+        $ensurePrettierIsConfigured->execute();
+
         if ($this->hasStdinInput()) {
             return $this->fixStdinInput($fixCode);
         }
@@ -95,7 +100,17 @@ class DefaultCommand extends Command
             return self::SUCCESS;
         }
 
-        $tempFile = sys_get_temp_dir().DIRECTORY_SEPARATOR.'pint_stdin_'.uniqid().'.php';
+        $directory = sys_get_temp_dir().DIRECTORY_SEPARATOR.'pint_stdin_'.uniqid();
+
+        if (! @mkdir($directory, 0700, true)) {
+            abort(1, sprintf('Unable to create a temporary directory for [%s].', $contextPath));
+        }
+
+        // Editors may hand over a Windows path on any platform, where basename() only
+        // treats "\" as a separator when PHP itself runs on Windows.
+        $fileName = basename(str_replace('\\', '/', $contextPath)) ?: 'stdin.php';
+
+        $tempFile = $directory.DIRECTORY_SEPARATOR.$fileName;
 
         $this->input->setArgument('path', [$tempFile]);
         $this->input->setOption('format', 'json');
@@ -107,12 +122,14 @@ class DefaultCommand extends Command
 
             return self::SUCCESS;
         } catch (Throwable $e) {
-            fwrite(STDERR, "pint: error processing {$contextPath}: {$e->getMessage()}\n");
-
-            return self::FAILURE;
+            abort(1, sprintf('Error processing [%s]: %s', $contextPath, $e->getMessage()));
         } finally {
             if (file_exists($tempFile)) {
                 @unlink($tempFile);
+            }
+
+            if (is_dir($directory)) {
+                @rmdir($directory);
             }
         }
     }

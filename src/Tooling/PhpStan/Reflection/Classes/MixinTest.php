@@ -17,6 +17,8 @@ final class MixinTest extends PHPStanTestCase
 
     protected function setUp(): void
     {
+        parent::setUp();
+
         $reflectionProvider = self::createReflectionProvider();
 
         $this->mixin = new Mixin($reflectionProvider, MixesIn::class);

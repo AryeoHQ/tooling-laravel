@@ -44,7 +44,7 @@ class CacheTest extends TestCase
 
         $this->assertFalse(File::exists($cache->cachePath));
 
-        $cache->get(Untested::class);
+        $this->assertIsArray($cache->get(Untested::class));
 
         $this->assertTrue(File::exists($cache->cachePath));
     }
