@@ -31,7 +31,7 @@ trait HandledByVendorBinary
         get => $this->arguments ??= collect($this->arguments());
     }
 
-    /** @var Collection<array-key, string> */
+    /** @var Collection<string, non-falsy-string> */
     protected Collection $options {
         get => collect($this->options())->filter()->reject(
             fn ($value, $name): bool => $this->notForwardable->contains($name)
