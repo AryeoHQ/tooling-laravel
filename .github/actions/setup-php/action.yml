@@ -20,7 +20,7 @@ inputs:
     required: false
   php_version:
     description: 'The PHP version to setup'
-    default: '8.4'
+    default: '8.5'
     required: false
 
 runs:
