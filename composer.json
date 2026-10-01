@@ -3,7 +3,7 @@
     "description": "Development tooling for Laravel",
     "type": "composer-plugin",
     "require": {
-        "php": "^8.4",
+        "php": "^8.5",
         "composer-plugin-api": "^2.0",
         "canvural/larastan-strict-rules": "^3.0",
         "composer/class-map-generator": "^1.4",

@@ -6,6 +6,7 @@ namespace Tests\Fixtures\Tooling\PhpStan\GeneratorCommands;
 
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Stringable;
+use RuntimeException;
 use Tooling\GeneratorCommands\Concerns\GeneratorCommandCompatibility;
 use Tooling\GeneratorCommands\Contracts\GeneratesFile;
 use Tooling\GeneratorCommands\References\Contracts\Reference;
@@ -21,6 +22,6 @@ class ValidGeneratesFileWithCompatibility extends GeneratorCommand implements Ge
     }
 
     public Reference $reference {
-        get => throw new \RuntimeException('Not implemented');
+        get => throw new RuntimeException('Not implemented');
     }
 }

@@ -39,7 +39,7 @@ class GeneratesFileMustUseGeneratorCommandCompatibilityTest extends RuleTestCase
         $this->analyse([$this->getFixturePath('PhpStan/GeneratorCommands/InvalidGeneratesFileWithoutCompatibility.php')], [
             [
                 'GeneratesFile must use GeneratorCommandCompatibility.',
-                12,
+                13,
             ],
         ]);
     }

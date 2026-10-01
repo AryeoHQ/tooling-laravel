@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Tooling\Composer\ClassMap\Collectors\Contracts;
 
-use Illuminate\Support\Collection;
+use ReflectionClass;
 
 interface Collector
 {
     /**
-     * @param  \Illuminate\Support\Collection<int, class-string>  $classes
-     * @return \Illuminate\Support\Collection<int, class-string>
+     * @param  \ReflectionClass<*>  $class
+     * @param  array<class-string, \ReflectionClass<*>>  $reflections  every class in the scan that loaded, keyed by name
      */
-    public function collect(Collection $classes): Collection;
+    public function collects(ReflectionClass $class, array $reflections): bool;
 
     /**
      * @param  array<array-key, string>  $classes

@@ -39,7 +39,7 @@ class GeneratesFileMustExtendGeneratorCommandTest extends RuleTestCase
         $this->analyse([$this->getFixturePath('PhpStan/GeneratorCommands/InvalidGeneratesFileWithoutGeneratorCommand.php')], [
             [
                 'GeneratesFile must extend GeneratorCommand.',
-                11,
+                12,
             ],
         ]);
     }
