@@ -40,7 +40,7 @@ trait ManagesTraits
         $expected = ltrim($trait, '\\');
 
         $node->stmts = collect($node->stmts)
-            ->map(function (Node\Stmt $stmt) use ($expected): ?Node\Stmt {
+            ->map(function (Node\Stmt $stmt) use ($expected): null|Node\Stmt {
                 if (! $stmt instanceof TraitUse) {
                     return $stmt;
                 }

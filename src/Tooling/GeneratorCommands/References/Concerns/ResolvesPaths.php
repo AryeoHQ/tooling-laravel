@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tooling\GeneratorCommands\References\Concerns;
 
 use Illuminate\Support\Stringable;
+use RuntimeException;
 use Tooling\Composer\Composer;
 use Tooling\Composer\Packages\Psr4Mapping;
 
@@ -25,7 +26,7 @@ trait ResolvesPaths
         }
 
         if ($matched === null) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 "Namespace \"{$namespaceForMatching}\" does not match any PSR-4 prefix in composer.json."
             );
         }

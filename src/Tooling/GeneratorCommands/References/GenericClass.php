@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tooling\GeneratorCommands\References;
 
 use Illuminate\Support\Stringable;
+use InvalidArgumentException;
 
 class GenericClass extends Reference
 {
@@ -36,7 +37,7 @@ class GenericClass extends Reference
 
             $instance->baseNamespace = match ($namespace->endsWith($suffix)) {
                 true => $namespace->beforeLast($suffix),
-                false => throw new \InvalidArgumentException(
+                false => throw new InvalidArgumentException(
                     "[{$fqcn}] does not end with the expected sub-namespace [{$instance->subNamespace}].",
                 ),
             };

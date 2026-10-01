@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Tooling\Composer\ClassMap;
 
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Collection;
+use ReflectionClass;
+use Tooling\Composer\ClassMap\Autoloaders\ThrowsOnMissing;
 use Tooling\Composer\Composer;
 use Tooling\Composer\Testing\CacheFake;
 
@@ -43,16 +46,42 @@ class Cache
 
     public function build(): true
     {
-        $classes = $this->composer->sourcePsr4ClassMap->keys();
+        return $this->write(
+            $this->classify(
+                $this->reflect($this->composer->sourcePsr4ClassMap->keys())
+            )
+        );
+    }
 
-        $data = collect(iterator_to_array(app()->tagged('tooling.classmap.collectors')))->mapWithKeys(
+    /**
+     * @param  \Illuminate\Support\Collection<int, class-string>  $classes
+     * @return \Illuminate\Support\Collection<class-string, \ReflectionClass<object>>
+     */
+    private function reflect(Collection $classes): Collection
+    {
+        spl_autoload_register($autoloader = new ThrowsOnMissing);
+
+        try {
+            return $classes
+                ->mapWithKeys(fn (string $class) => [$class => rescue(fn () => new ReflectionClass($class), report: false)])
+                ->filter();
+        } finally {
+            spl_autoload_unregister($autoloader);
+        }
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<class-string, \ReflectionClass<object>>  $reflections
+     * @return \Illuminate\Support\Collection<class-string<\Tooling\Composer\ClassMap\Collectors\Contracts\Collector>, array<int, class-string>>
+     */
+    private function classify(Collection $reflections): Collection
+    {
+        return collect(app()->tagged('tooling.classmap.collectors'))->mapWithKeys(
             fn (Collectors\Contracts\Collector $collector) => [
-                $collector::class => $collector->collect($classes)->all(),
-            ])->all();
-
-        $this->write($data);
-
-        return true;
+                $collector::class => $reflections->filter(
+                    fn (ReflectionClass $class) => $collector->collects($class, $reflections->all())
+                )->keys()->all(),
+            ]);
     }
 
     /** @return null|array<int, string> */
@@ -67,16 +96,18 @@ class Cache
     }
 
     /**
-     * @param  array<string, array<int, string>>  $data
+     * @param  \Illuminate\Support\Collection<class-string<\Tooling\Composer\ClassMap\Collectors\Contracts\Collector>, array<int, class-string>>  $data
      */
-    private function write(array $data): void
+    private function write(Collection $data): true
     {
         $this->files->ensureDirectoryExists(dirname($this->cachePath));
-        $this->files->put($this->cachePath, '<?php return '.var_export($data, true).';');
+        $this->files->put($this->cachePath, '<?php return '.var_export($data->all(), true).';');
 
         if (function_exists('opcache_invalidate')) {
             opcache_invalidate($this->cachePath, true);
         }
+
+        return true;
     }
 
     protected function hasCache(string $key): bool

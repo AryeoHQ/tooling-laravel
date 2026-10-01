@@ -2,18 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Tooling\Composer\ClassMap\Collectors;
+namespace Tests\Fixtures\Tooling;
 
 use ReflectionClass;
+use RuntimeException;
 use Tooling\Composer\ClassMap\Collectors\Contracts\Collector;
 use Tooling\Composer\ClassMap\Collectors\Provides\Fakeable;
 
-class All implements Collector
+class FailingCollector implements Collector
 {
     use Fakeable;
 
     public function collects(ReflectionClass $class, array $reflections): bool
     {
-        return true;
+        throw new RuntimeException('failure');
     }
 }

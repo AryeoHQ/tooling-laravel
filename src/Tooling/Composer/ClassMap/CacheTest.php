@@ -7,7 +7,15 @@ namespace Tooling\Composer\ClassMap;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
+use Tests\Fixtures\Tooling\ClassWithExtends;
+use Tests\Fixtures\Tooling\Concern;
+use Tests\Fixtures\Tooling\Contract;
+use Tests\Fixtures\Tooling\FailingCollector;
+use Tests\Fixtures\Tooling\ParentClass;
+use Tests\Fixtures\Tooling\Unloadable;
 use Tests\TestCase;
+use Tooling\Composer\ClassMap\Collectors\All;
 use Tooling\Composer\ClassMap\Collectors\Untested;
 use Tooling\Composer\ClassMapSource;
 use Tooling\Composer\Composer;
@@ -62,12 +70,11 @@ class CacheTest extends TestCase
     #[Test]
     public function it_returns_cached_data_after_build(): void
     {
+        ClassMapSource::fake()->merge([ParentClass::class => '/fake/src/ParentClass.php']);
         $cache = Cache::fake();
         $cache->build();
-        $classes = $cache->get(Untested::class);
 
-        $this->assertIsArray($classes);
-        $this->assertNotEmpty($classes);
+        $this->assertContains(ParentClass::class, $cache->get(Untested::class));
     }
 
     #[Test]
@@ -86,12 +93,12 @@ class CacheTest extends TestCase
         $cache = Cache::fake();
 
         $cache->build();
-        $this->assertNotContains('App\\NewClass', $cache->get(Untested::class));
+        $this->assertNotContains(Contract::class, $cache->get(Untested::class));
 
         Date::setTestNow(now()->addSecond());
-        $classMapSource->merge(['App\\NewClass' => '/fake/src/NewClass.php']);
+        $classMapSource->merge([Contract::class => '/fake/src/Contract.php']);
 
-        $this->assertContains('App\\NewClass', $cache->get(Untested::class));
+        $this->assertContains(Contract::class, $cache->get(Untested::class));
     }
 
     #[Test]
@@ -101,12 +108,62 @@ class CacheTest extends TestCase
         $cache = Cache::fake();
 
         $cache->build();
-        $this->assertNotContains('App\\RebuildTemp', $cache->get(Untested::class));
+        $this->assertNotContains(Concern::class, $cache->get(Untested::class));
 
-        $classMapSource->merge(['App\\RebuildTemp' => '/fake/src/RebuildTemp.php']);
+        $classMapSource->merge([Concern::class => '/fake/src/Concern.php']);
         $cache->build();
 
-        $this->assertContains('App\\RebuildTemp', $cache->get(Untested::class));
+        $this->assertContains(Concern::class, $cache->get(Untested::class));
+    }
+
+    #[Test]
+    public function it_leaves_out_classes_that_cannot_load(): void
+    {
+        $unloadable = collect([
+            Unloadable\MissingTrait::class,
+            Unloadable\MissingParent::class,
+            Unloadable\MissingInterface::class,
+            Unloadable\ParentWithMissingTrait::class,
+            Unloadable\ChildOfUnloadableParent::class,
+            Unloadable\EnumWithMissingInterface::class,
+        ]);
+
+        ClassMapSource::fake()->merge([
+            ClassWithExtends::class => '/fake/src/ClassWithExtends.php',
+            ...$unloadable->mapWithKeys(fn (string $class) => [$class => '/fake/src/'.class_basename($class).'.php'])->all(),
+        ]);
+        $cache = Cache::fake();
+
+        $cache->build();
+
+        $this->assertContains(ClassWithExtends::class, $cache->get(All::class));
+        $this->assertContains(ClassWithExtends::class, $cache->get(Untested::class));
+
+        $this->assertEmpty($unloadable->intersect($cache->get(All::class))->all());
+        $this->assertEmpty($unloadable->intersect($cache->get(Untested::class))->all());
+    }
+
+    #[Test]
+    public function it_removes_the_fallback_autoloader_after_building(): void
+    {
+        $autoloaders = spl_autoload_functions();
+
+        Cache::fake()->build();
+
+        $this->assertSame($autoloaders, spl_autoload_functions());
+    }
+
+    #[Test]
+    public function it_removes_the_fallback_autoloader_when_the_build_fails(): void
+    {
+        ClassMapSource::fake()->merge([ParentClass::class => '/fake/src/ParentClass.php']);
+        $cache = Cache::fake();
+        app()->tag(FailingCollector::class, 'tooling.classmap.collectors');
+        $autoloaders = spl_autoload_functions();
+
+        $this->assertThrows(fn () => $cache->build(), RuntimeException::class, 'failure');
+
+        $this->assertSame($autoloaders, spl_autoload_functions());
     }
 
     #[Test]

@@ -10,7 +10,7 @@ Each tool ships with an opinionated configuration out of the box. All native CLI
 composer require aryeo/tooling-laravel
 ```
 
-> Requires PHP 8.4+
+> Requires PHP 8.5+
 
 ## Configuration
 
