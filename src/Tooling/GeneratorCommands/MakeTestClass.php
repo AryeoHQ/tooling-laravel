@@ -27,6 +27,12 @@ class MakeTestClass extends TestMakeCommand implements GeneratesFile
 
     protected $type = 'Test';
 
+    /**
+     * Laravel 13 defines a signature on TestMakeCommand, and a signature replaces getArguments().
+     * Leave this unset so the class argument is registered on Laravel 12 and 13.
+     */
+    protected $signature = null;
+
     protected function collector(): string
     {
         return Untested::class;
