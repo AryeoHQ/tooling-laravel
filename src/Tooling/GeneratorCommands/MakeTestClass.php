@@ -7,9 +7,7 @@ namespace Tooling\GeneratorCommands;
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Foundation\Console\TestMakeCommand;
 use Illuminate\Support\Stringable;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Tooling\Composer\ClassMap\Collectors\Untested;
 use Tooling\GeneratorCommands\Concerns\GeneratorCommandCompatibility;
@@ -28,10 +26,13 @@ class MakeTestClass extends TestMakeCommand implements GeneratesFile
     protected $type = 'Test';
 
     /**
-     * Laravel 13 defines a signature on TestMakeCommand, and a signature replaces getArguments().
-     * Leave this unset so the class argument is registered on Laravel 12 and 13.
+     * Laravel 13's TestMakeCommand signature names this argument "name" and is the only
+     * place that version sets the command name. Declare the signature here so Laravel 12
+     * and 13 both register make:test with a class argument.
      */
-    protected $signature = null;
+    protected $signature = 'make:test
+        {class : The FQCN of the class to test.}
+        {--f|force : Create the class even if it already exists}';
 
     protected function collector(): string
     {
@@ -85,22 +86,6 @@ class MakeTestClass extends TestMakeCommand implements GeneratesFile
                 required: true,
                 scroll: 5,
             ),
-        ];
-    }
-
-    /** @return array<int, InputArgument> */
-    protected function getArguments(): array
-    {
-        return [
-            new InputArgument('class', InputArgument::REQUIRED, 'The FQCN of the class to test.'),
-        ];
-    }
-
-    /** @return array<int, InputOption> */
-    protected function getOptions(): array
-    {
-        return [
-            new InputOption('force', 'f', InputOption::VALUE_NONE, 'Create the class even if it already exists'),
         ];
     }
 
