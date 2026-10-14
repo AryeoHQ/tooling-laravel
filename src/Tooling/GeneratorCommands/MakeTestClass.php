@@ -27,6 +27,15 @@ class MakeTestClass extends TestMakeCommand implements GeneratesFile
 
     protected $type = 'Test';
 
+    /**
+     * Laravel 13's parent signature would skip getArguments() and getOptions(), and that
+     * version has no $name. Clear the signature and set the name so both versions register
+     * make:test from these methods.
+     */
+    protected $name = 'make:test';
+
+    protected $signature;
+
     protected function collector(): string
     {
         return Untested::class;
@@ -82,7 +91,6 @@ class MakeTestClass extends TestMakeCommand implements GeneratesFile
         ];
     }
 
-    /** @return array<int, InputArgument> */
     protected function getArguments(): array
     {
         return [
