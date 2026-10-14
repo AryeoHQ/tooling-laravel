@@ -31,10 +31,8 @@ class DefaultCommand extends Command
 
     /**
      * The configuration of the command.
-     *
-     * @return void
      */
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
 
