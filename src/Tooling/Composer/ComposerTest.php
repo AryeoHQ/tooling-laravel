@@ -30,6 +30,18 @@ class ComposerTest extends TestCase
     }
 
     #[Test]
+    public function it_resolves_base_directory_when_a_parent_path_contains_vendor(): void
+    {
+        $composer = new Composer(new \Illuminate\Filesystem\Filesystem, new ClassMapSource);
+
+        $cache = new \ReflectionProperty(Composer::class, 'cache');
+        $cache->setValue($composer, ['vendorDirectory' => str('/builds/vendor-platform/tooling-laravel/vendor')]);
+
+        $this->assertSame('/builds/vendor-platform/tooling-laravel', $composer->baseDirectory->toString());
+        $this->assertSame('/builds/vendor-platform/tooling-laravel/composer.json', $composer->composerJsonPath);
+    }
+
+    #[Test]
     public function it_returns_composer_json_path(): void
     {
         $composer = Composer::fake();
