@@ -31,7 +31,7 @@ class Composer
     }
 
     public Stringable $baseDirectory {
-        get => $this->cache[__PROPERTY__] ??= $this->vendorDirectory->replace('/vendor', '');
+        get => $this->cache[__PROPERTY__] ??= $this->vendorDirectory->beforeLast('/vendor');
     }
 
     public string $composerJsonPath {
