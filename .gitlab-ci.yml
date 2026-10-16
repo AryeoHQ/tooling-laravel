@@ -1,11 +1,7 @@
 # Tests aryeo/tooling-laravel and publishes it to the Artifactory Composer repository.
 #
-# A semver tag push (e.g. 0.0.41) will run the tests, package the tagged source and publish
-# it; those jobs are commented out until the test publish is verified. Branches and merge
-# requests run the tests, package the source and offer a manual publish:test that uploads
-# 0.0.0-alpha.<pipeline iid>. Composer skips alpha versions under
-# the default "stable" minimum-stability, and 0.0.0 sits below every real release, so no
-# consumer resolves it. Artifactory keeps every upload, so use publish:test sparingly.
+# Branches run the tests. A semver tag push (e.g. 0.0.41) runs the tests, packages the
+# tagged source and publishes it.
 #
 # The job scripts come from the shared template.
 include:
@@ -39,37 +35,16 @@ tests:
       - COMPOSER_REQUIRE: "laravel/framework:12.* orchestra/testbench:10.*"
       - COMPOSER_REQUIRE: "laravel/framework:13.* orchestra/testbench:11.*"
 
-# Tag releases stay off until publish:test has verified the Artifactory path.
-# package:
-#   stage: package
-#   extends: .package
-#   needs: [tests]
-#   rules:
-#     - if: $CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/
-#
-# publish:
-#   stage: publish
-#   extends: .publish
-#   needs: [package]
-#   rules:
-#     - if: $CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/
-
-package:test:
+package:
   stage: package
   extends: .package
-  variables:
-    PUBLISH_VERSION: 0.0.0-alpha.$CI_PIPELINE_IID
+  needs: [tests]
   rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - when: on_success
+    - if: $CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/
 
-publish:test:
+publish:
   stage: publish
   extends: .publish
-  needs: ["package:test"]
+  needs: [package]
   rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - when: manual
-      allow_failure: true
+    - if: $CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/
