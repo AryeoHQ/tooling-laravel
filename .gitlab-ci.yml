@@ -1,7 +1,8 @@
 # Tests aryeo/tooling-laravel and publishes it to the Artifactory Composer repository.
 #
-# Branches run the tests. A semver tag push (e.g. 0.0.41) runs the tests, packages the
-# tagged source and publishes it.
+# Branches run the tests and the code style, static analysis and dependency checks. A
+# semver tag push (e.g. 0.0.41) runs the same checks, then packages the tagged source and
+# publishes it.
 #
 # The job scripts come from the shared template.
 include:
@@ -35,10 +36,22 @@ tests:
       - COMPOSER_REQUIRE: "laravel/framework:12.* orchestra/testbench:10.*"
       - COMPOSER_REQUIRE: "laravel/framework:13.* orchestra/testbench:11.*"
 
+code-style:
+  stage: test
+  extends: .php-code-style
+
+static-analysis:
+  stage: test
+  extends: .php-static-analysis
+
+dependency-analysis:
+  stage: test
+  extends: .php-dependency-analysis
+
 package:
   stage: package
   extends: .package
-  needs: [tests]
+  needs: [tests, code-style, static-analysis, dependency-analysis]
   rules:
     - if: $CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/
 
@@ -48,3 +61,19 @@ publish:
   needs: [package]
   rules:
     - if: $CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/
+
+# Publishes existing tags that predate the GitLab pipeline. Run a pipeline on main with
+# BACKFILL_TAGS set, e.g. "0.0.37 0.0.39". Versions already in Artifactory are skipped.
+backfill:package:
+  stage: package
+  extends: .backfill-package
+  needs: []
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $BACKFILL_TAGS
+
+backfill:publish:
+  stage: publish
+  extends: .backfill-publish
+  needs: ["backfill:package"]
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $BACKFILL_TAGS
