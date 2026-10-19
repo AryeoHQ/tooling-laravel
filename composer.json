@@ -1,6 +1,7 @@
 {
     "name": "aryeo/tooling-laravel",
     "description": "Development tooling for Laravel",
+    "license": "MIT",
     "type": "composer-plugin",
     "require": {
         "php": "^8.4",
