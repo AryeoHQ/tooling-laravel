@@ -72,11 +72,28 @@ class Cache
     private function write(array $data): void
     {
         $this->files->ensureDirectoryExists(dirname($this->cachePath));
-        $this->files->put($this->cachePath, '<?php return '.var_export($data, true).';');
+        $this->files->put($this->cachePath, $this->export($data));
 
         if (function_exists('opcache_invalidate')) {
             opcache_invalidate($this->cachePath, true);
         }
+    }
+
+    /**
+     * @param  array<string, array<int, string>>  $data
+     */
+    private function export(array $data): string
+    {
+        $collectors = collect($data)->map(fn (array $classes, string $collector): string => sprintf(
+            '    %s => %s,',
+            var_export($collector, true),
+            match ($classes) {
+                [] => '[]',
+                default => "[\n".collect($classes)->map(fn (string $class): string => '        '.var_export($class, true).',')->implode("\n")."\n    ]",
+            },
+        ));
+
+        return "<?php\n\nreturn [\n".$collectors->implode("\n")."\n];\n";
     }
 
     protected function hasCache(string $key): bool

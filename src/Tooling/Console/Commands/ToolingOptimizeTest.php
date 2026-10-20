@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tooling\Console\Commands;
 
+use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Tooling\Composer\ClassMap\Cache;
@@ -31,6 +32,21 @@ class ToolingOptimizeTest extends TestCase
         $this->artisan(ToolingOptimize::class)
             ->assertSuccessful()
             ->expectsOutputToContain(Untested::class);
+    }
+
+    #[Test]
+    public function it_writes_the_cache_as_unkeyed_short_arrays(): void
+    {
+        $cache = Cache::fake();
+
+        $this->artisan(ToolingOptimize::class)->assertSuccessful();
+
+        $contents = File::get($cache->cachePath);
+
+        $this->assertStringStartsWith("<?php\n\nreturn [\n", $contents);
+        $this->assertStringContainsString("    '".addslashes(Untested::class)."' => [\n        'App\\\\Example',\n    ],\n", $contents);
+        $this->assertStringEndsWith("];\n", $contents);
+        $this->assertDoesNotMatchRegularExpression('/^\s*\d+ =>/m', $contents);
     }
 
     #[Test]
