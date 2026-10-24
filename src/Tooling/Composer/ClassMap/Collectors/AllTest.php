@@ -6,9 +6,14 @@ namespace Tooling\Composer\ClassMap\Collectors;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Fixtures\Tooling\Concern;
+use Tests\Fixtures\Tooling\Contract;
+use Tests\Fixtures\Tooling\EnumWithInterface;
+use Tests\Fixtures\Tooling\ParentClass;
 use Tests\TestCase;
+use Tooling\Composer\ClassMap\Cache;
 use Tooling\Composer\ClassMap\Collectors\Provides\FakeableTestCases;
-use Tooling\Composer\Composer;
+use Tooling\Composer\ClassMapSource;
 
 #[CoversClass(All::class)]
 class AllTest extends TestCase
@@ -16,26 +21,14 @@ class AllTest extends TestCase
     use FakeableTestCases;
 
     #[Test]
-    public function it_collects_all_classes_from_source_psr4_class_map(): void
+    public function it_collects_every_class_that_loads(): void
     {
-        $classes = Composer::fake()->sourcePsr4ClassMap->keys();
-        $collector = new All;
+        $classes = collect([ParentClass::class, Contract::class, Concern::class, EnumWithInterface::class, self::class]);
+        ClassMapSource::fake()->merge($classes->mapWithKeys(fn (string $class) => [$class => '/fake/src/'.class_basename($class).'.php'])->all());
+        $cache = Cache::fake();
 
-        $result = $collector->collect($classes);
+        $cache->build();
 
-        $this->assertInstanceOf(\Illuminate\Support\Collection::class, $result);
-        $this->assertNotEmpty($result);
-        $this->assertCount($classes->count(), $result);
-    }
-
-    #[Test]
-    public function it_returns_all_classes_without_filtering(): void
-    {
-        $classes = Composer::fake()->sourcePsr4ClassMap->keys();
-        $collector = new All;
-
-        $result = $collector->collect($classes);
-
-        $this->assertEquals($classes->all(), $result->all());
+        $this->assertEmpty($classes->diff($cache->get(All::class))->all());
     }
 }

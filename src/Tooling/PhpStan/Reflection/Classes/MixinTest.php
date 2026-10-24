@@ -7,6 +7,7 @@ namespace Tooling\PhpStan\Reflection\Classes;
 use PHPStan\Testing\PHPStanTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use stdClass;
 use Tests\Fixtures\Tooling\PhpStan\Reflection\MixesIn;
 use Tooling\PhpStan\Reflection\Methods\Macro;
 
@@ -28,7 +29,7 @@ final class MixinTest extends PHPStanTestCase
     public function it_resolves_a_method_that_returns_a_closure(): void
     {
         $reflectionProvider = self::createReflectionProvider();
-        $classReflection = $reflectionProvider->getClass(\stdClass::class);
+        $classReflection = $reflectionProvider->getClass(stdClass::class);
 
         $this->assertTrue($this->mixin->hasMethod($classReflection, 'greet'));
     }
@@ -37,7 +38,7 @@ final class MixinTest extends PHPStanTestCase
     public function it_returns_a_macro_for_a_valid_method(): void
     {
         $reflectionProvider = self::createReflectionProvider();
-        $classReflection = $reflectionProvider->getClass(\stdClass::class);
+        $classReflection = $reflectionProvider->getClass(stdClass::class);
 
         $macro = $this->mixin->getMethod($classReflection, 'greet');
 
@@ -50,7 +51,7 @@ final class MixinTest extends PHPStanTestCase
     public function it_returns_null_for_a_method_that_does_not_return_a_closure(): void
     {
         $reflectionProvider = self::createReflectionProvider();
-        $classReflection = $reflectionProvider->getClass(\stdClass::class);
+        $classReflection = $reflectionProvider->getClass(stdClass::class);
 
         $this->assertFalse($this->mixin->hasMethod($classReflection, 'notAClosure'));
         $this->assertNull($this->mixin->getMethod($classReflection, 'notAClosure'));
@@ -60,7 +61,7 @@ final class MixinTest extends PHPStanTestCase
     public function it_returns_null_for_a_method_that_does_not_exist(): void
     {
         $reflectionProvider = self::createReflectionProvider();
-        $classReflection = $reflectionProvider->getClass(\stdClass::class);
+        $classReflection = $reflectionProvider->getClass(stdClass::class);
 
         $this->assertFalse($this->mixin->hasMethod($classReflection, 'nonExistentMethod'));
         $this->assertNull($this->mixin->getMethod($classReflection, 'nonExistentMethod'));
@@ -70,7 +71,7 @@ final class MixinTest extends PHPStanTestCase
     public function it_returns_null_when_mixin_class_does_not_exist(): void
     {
         $reflectionProvider = self::createReflectionProvider();
-        $classReflection = $reflectionProvider->getClass(\stdClass::class);
+        $classReflection = $reflectionProvider->getClass(stdClass::class);
 
         $mixin = new Mixin($reflectionProvider, 'NonExistent\\MixinClass'); // @phpstan-ignore argument.type
 
@@ -82,7 +83,7 @@ final class MixinTest extends PHPStanTestCase
     public function it_caches_resolved_macros(): void
     {
         $reflectionProvider = self::createReflectionProvider();
-        $classReflection = $reflectionProvider->getClass(\stdClass::class);
+        $classReflection = $reflectionProvider->getClass(stdClass::class);
 
         $first = $this->mixin->getMethod($classReflection, 'greet');
         $second = $this->mixin->getMethod($classReflection, 'greet');
@@ -94,7 +95,7 @@ final class MixinTest extends PHPStanTestCase
     public function it_supports_static_methods(): void
     {
         $reflectionProvider = self::createReflectionProvider();
-        $classReflection = $reflectionProvider->getClass(\stdClass::class);
+        $classReflection = $reflectionProvider->getClass(stdClass::class);
 
         $macro = $this->mixin->getMethod($classReflection, 'count', static: true);
 
@@ -106,7 +107,7 @@ final class MixinTest extends PHPStanTestCase
     public function it_caches_static_and_non_static_separately(): void
     {
         $reflectionProvider = self::createReflectionProvider();
-        $classReflection = $reflectionProvider->getClass(\stdClass::class);
+        $classReflection = $reflectionProvider->getClass(stdClass::class);
 
         $nonStatic = $this->mixin->getMethod($classReflection, 'greet');
         $static = $this->mixin->getMethod($classReflection, 'greet', static: true);

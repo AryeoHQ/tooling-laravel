@@ -8,12 +8,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use ReflectionClass;
 use Tooling\Composer\ClassMap\Collectors\Contracts\Collector;
 
 trait FakeableTestCases
 {
     protected Collector $collector {
-        get => new ((new \ReflectionClass($this))->getAttributes(CoversClass::class)[0]->newInstance()->className());
+        get => new ((new ReflectionClass($this))->getAttributes(CoversClass::class)[0]->newInstance()->className());
     }
 
     #[Test]

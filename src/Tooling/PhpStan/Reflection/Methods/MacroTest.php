@@ -12,6 +12,7 @@ use PHPStan\Type\IntegerType;
 use PHPStan\Type\StringType;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use stdClass;
 
 #[CoversClass(Macro::class)]
 final class MacroTest extends PHPStanTestCase
@@ -26,7 +27,7 @@ final class MacroTest extends PHPStanTestCase
 
         $reflectionProvider = self::createReflectionProvider();
 
-        $this->classReflection = $reflectionProvider->getClass(\stdClass::class);
+        $this->classReflection = $reflectionProvider->getClass(stdClass::class);
 
         $closureType = new ClosureType([], new StringType, false);
 
