@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tooling\Composer\ClassMap\Collectors;
 
-use Illuminate\Support\Collection;
+use ReflectionClass;
 use Tooling\Composer\ClassMap\Collectors\Contracts\Collector;
 use Tooling\Composer\ClassMap\Collectors\Provides\Fakeable;
 
@@ -12,9 +12,8 @@ class All implements Collector
 {
     use Fakeable;
 
-    /** @return \Illuminate\Support\Collection<int, class-string> */
-    public function collect(Collection $classes): Collection
+    public function collects(ReflectionClass $class, array $reflections): bool
     {
-        return $classes->values();
+        return true;
     }
 }

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tooling\GeneratorCommands\References;
 
 use Illuminate\Support\Stringable;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Tests\TestCase;
 use Tooling\Composer\Composer;
 use Tooling\GeneratorCommands\References\Concerns\ManagesNamespaceTestCases;
@@ -69,7 +71,7 @@ class GenericClassTest extends TestCase implements TestsReference
     {
         $reference = new GenericClass(name: 'Invoice', baseNamespace: 'Unknown\\Namespace');
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
 
         $reference->directory; // @phpstan-ignore expr.resultUnused
     }
@@ -102,7 +104,7 @@ class GenericClassTest extends TestCase implements TestsReference
             }
         };
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $class::fromFqcn('\\Workbench\\App\\Models\\Invoice');
     }
@@ -117,7 +119,7 @@ class GenericClassTest extends TestCase implements TestsReference
             }
         };
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $class::fromFqcn('\\Workbench\\App\\Services\\Billing\\Extra\\Invoice');
     }

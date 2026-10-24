@@ -6,6 +6,7 @@ namespace Tooling\Filesystem\Testing;
 
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Filesystem\Filesystem;
+use RuntimeException;
 use Symfony\Component\Finder\SplFileInfo;
 
 class FilesystemFake extends Filesystem
@@ -455,7 +456,7 @@ class FilesystemFake extends Filesystem
         if (str_starts_with($code, '<?php')) {
             $code = substr($code, 5);
         } else {
-            throw new \RuntimeException("FilesystemFake::getRequire() only supports files starting with '<?php'. Got: ".substr($contents, 0, 50));
+            throw new RuntimeException("FilesystemFake::getRequire() only supports files starting with '<?php'. Got: ".substr($contents, 0, 50));
         }
 
         extract($data, EXTR_SKIP);

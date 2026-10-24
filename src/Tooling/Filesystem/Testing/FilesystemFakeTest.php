@@ -8,6 +8,7 @@ use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\Date;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Symfony\Component\Finder\SplFileInfo;
 use Tests\TestCase;
 
@@ -524,7 +525,7 @@ class FilesystemFakeTest extends TestCase
         $fake = $this->fake();
         $fake->put(self::BASE.'/file.txt', 'not php');
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('only supports files starting with');
 
         $fake->getRequire(self::BASE.'/file.txt');
