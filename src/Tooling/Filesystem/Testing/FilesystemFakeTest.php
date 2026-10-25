@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tooling\Filesystem\Testing;
 
+use ErrorException;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\Date;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -118,6 +119,83 @@ class FilesystemFakeTest extends TestCase
     }
 
     #[Test]
+    public function it_refuses_to_create_a_file_in_a_read_only_directory(): void
+    {
+        $fake = $this->fake();
+        $fake->makeDirectory(self::BASE.'/dir');
+        $fake->chmod(self::BASE.'/dir', 0555);
+
+        $this->assertThrows(fn () => $fake->put(self::BASE.'/dir/file.txt', 'new'), ErrorException::class);
+        $this->assertFalse($fake->exists(self::BASE.'/dir/file.txt'));
+    }
+
+    #[Test]
+    public function it_overwrites_a_writable_file_in_a_read_only_directory(): void
+    {
+        $fake = $this->fake();
+        $fake->put(self::BASE.'/dir/file.txt', 'old');
+        $fake->chmod(self::BASE.'/dir', 0555);
+
+        $fake->put(self::BASE.'/dir/file.txt', 'new');
+
+        $this->assertSame('new', $fake->get(self::BASE.'/dir/file.txt'));
+    }
+
+    #[Test]
+    public function it_refuses_to_overwrite_a_read_only_file(): void
+    {
+        $fake = $this->fake();
+        $fake->put(self::BASE.'/file.txt', 'old');
+        $fake->chmod(self::BASE.'/file.txt', 0444);
+
+        $this->assertThrows(fn () => $fake->put(self::BASE.'/file.txt', 'new'), ErrorException::class);
+        $this->assertSame('old', $fake->get(self::BASE.'/file.txt'));
+    }
+
+    #[Test]
+    public function it_forgets_a_files_mode_when_it_is_deleted(): void
+    {
+        $fake = $this->fake();
+        $fake->put(self::BASE.'/file.txt', 'old');
+        $fake->chmod(self::BASE.'/file.txt', 0444);
+        $fake->delete(self::BASE.'/file.txt');
+
+        $fake->put(self::BASE.'/file.txt', 'new');
+        $fake->put(self::BASE.'/file.txt', 'newer');
+
+        $this->assertSame('newer', $fake->get(self::BASE.'/file.txt'));
+    }
+
+    #[Test]
+    public function it_forgets_a_directorys_mode_when_it_is_deleted(): void
+    {
+        $fake = $this->fake();
+        $fake->makeDirectory(self::BASE.'/dir');
+        $fake->chmod(self::BASE.'/dir', 0555);
+        $fake->deleteDirectory(self::BASE.'/dir');
+        $fake->makeDirectory(self::BASE.'/dir');
+
+        $fake->put(self::BASE.'/dir/file.txt', 'new');
+
+        $this->assertSame('new', $fake->get(self::BASE.'/dir/file.txt'));
+    }
+
+    #[Test]
+    public function it_moves_a_files_mode_with_it(): void
+    {
+        $fake = $this->fake();
+        $fake->put(self::BASE.'/source.txt', 'old');
+        $fake->chmod(self::BASE.'/source.txt', 0444);
+
+        $fake->move(self::BASE.'/source.txt', self::BASE.'/target.txt');
+        $fake->put(self::BASE.'/source.txt', 'new');
+        $fake->put(self::BASE.'/source.txt', 'newer');
+
+        $this->assertThrows(fn () => $fake->put(self::BASE.'/target.txt', 'new'), ErrorException::class);
+        $this->assertSame('newer', $fake->get(self::BASE.'/source.txt'));
+    }
+
+    #[Test]
     public function it_reads_json_files(): void
     {
         $fake = $this->fake();
@@ -218,7 +296,7 @@ class FilesystemFakeTest extends TestCase
     }
 
     #[Test]
-    public function it_is_a_noop_for_chmod_on_faked_path(): void
+    public function it_returns_the_mode_from_chmod_on_faked_path(): void
     {
         $fake = $this->fake();
         $fake->put(self::BASE.'/file.txt', 'data');

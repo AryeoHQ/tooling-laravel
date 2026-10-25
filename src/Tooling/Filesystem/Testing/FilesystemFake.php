@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tooling\Filesystem\Testing;
 
+use ErrorException;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
@@ -19,6 +20,9 @@ class FilesystemFake extends Filesystem
 
     /** @var array<string, int> */
     private array $timestamps = [];
+
+    /** @var array<string, int> */
+    private array $modes = [];
 
     /** @var array<int, string> */
     private array $fakedPaths = [];
@@ -98,6 +102,13 @@ class FilesystemFake extends Filesystem
             return parent::put($path, $contents, $lock);
         }
 
+        $mode = match (array_key_exists($path, $this->files)) {
+            true => $this->modes[$path] ?? 0644,
+            false => $this->modes[dirname($path)] ?? 0755,
+        };
+
+        throw_unless($mode & 0200, ErrorException::class, sprintf('file_put_contents(%s): Failed to open stream: Permission denied', $path));
+
         $this->files[$path] = $contents;
         $this->timestamps[$path] = now()->timestamp;
         $this->ensureParentDirectoriesExist($path);
@@ -128,7 +139,7 @@ class FilesystemFake extends Filesystem
 
         foreach ($paths as $path) {
             if ($this->isFaked($path)) {
-                unset($this->files[$path], $this->timestamps[$path]);
+                unset($this->files[$path], $this->timestamps[$path], $this->modes[$path]);
             } else {
                 $real[] = $path;
             }
@@ -190,12 +201,18 @@ class FilesystemFake extends Filesystem
             $this->files[$target] = $contents;
             $this->timestamps[$target] = now()->timestamp;
             $this->ensureParentDirectoriesExist($target);
+
+            if (array_key_exists($path, $this->modes)) {
+                $this->modes[$target] = $this->modes[$path];
+            } else {
+                unset($this->modes[$target]);
+            }
         } else {
             parent::put($target, $contents);
         }
 
         if ($sourceFaked) {
-            unset($this->files[$path]);
+            unset($this->files[$path], $this->modes[$path]);
         } else {
             parent::delete($path);
         }
@@ -209,7 +226,11 @@ class FilesystemFake extends Filesystem
             return parent::chmod($path, $mode);
         }
 
-        return $mode ?? ''; // no-op for in-memory fake
+        if ($mode !== null) {
+            $this->modes[rtrim($path, '/')] = $mode;
+        }
+
+        return $mode ?? '';
     }
 
     public function isFile($file)
@@ -336,20 +357,20 @@ class FilesystemFake extends Filesystem
 
         foreach (array_keys($this->files) as $path) {
             if (str_starts_with($path, $prefix)) {
-                unset($this->files[$path], $this->timestamps[$path]);
+                unset($this->files[$path], $this->timestamps[$path], $this->modes[$path]);
             }
         }
 
         foreach (array_keys($this->directories) as $dir) {
             if ($dir === $normalized || str_starts_with($dir, $prefix)) {
                 if (! $preserve || $dir !== $normalized) {
-                    unset($this->directories[$dir], $this->timestamps[$dir]);
+                    unset($this->directories[$dir], $this->timestamps[$dir], $this->modes[$dir]);
                 }
             }
         }
 
         if (! $preserve) {
-            unset($this->directories[$normalized], $this->timestamps[$normalized]);
+            unset($this->directories[$normalized], $this->timestamps[$normalized], $this->modes[$normalized]);
         }
 
         return true;

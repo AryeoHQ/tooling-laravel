@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Tooling\Composer;
 
 use Composer\ClassMapGenerator\ClassMapGenerator;
+use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Support\Collection;
 use Tooling\Composer\Testing\ClassMapSourceFake;
 
+#[Singleton]
 class ClassMapSource
 {
     /**

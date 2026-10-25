@@ -13,6 +13,12 @@ use Tooling\Composer\Packages\Package;
 class ManifestTest extends TestCase
 {
     #[Test]
+    public function it_is_registered_as_a_singleton(): void
+    {
+        $this->assertSame(resolve(Manifest::class), resolve(Manifest::class));
+    }
+
+    #[Test]
     public function it_returns_packages_collection_with_current_package(): void
     {
         $manifest = Manifest::fake();

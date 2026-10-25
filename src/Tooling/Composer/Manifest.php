@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tooling\Composer;
 
+use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
 use Tooling\Composer\Packages\Package;
@@ -15,6 +16,7 @@ use function Illuminate\Filesystem\join_paths;
  * @property-read null|\stdClass $phpstan
  * @property-read null|\stdClass $rector
  */
+#[Singleton]
 class Manifest
 {
     /** @var array<string, mixed> */
