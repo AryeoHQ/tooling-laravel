@@ -141,6 +141,41 @@ class ComposerTest extends TestCase
     }
 
     #[Test]
+    public function it_detects_a_source_file_edited_in_place(): void
+    {
+        $composer = Composer::fake();
+        $file = $composer->sourcePsr4Directories()->first().'/Edited.php';
+        File::put($file, '<?php');
+
+        $this->travel(1)->seconds();
+        $since = now()->timestamp;
+
+        $this->assertFalse($composer->hasSourcePsr4ChangedSince($since));
+
+        File::put($file, '<?php');
+
+        $this->assertTrue($composer->hasSourcePsr4ChangedSince($since));
+    }
+
+    #[Test]
+    public function it_detects_a_source_file_deleted_from_a_nested_directory(): void
+    {
+        $composer = Composer::fake();
+        $directory = $composer->sourcePsr4Directories()->first().'/Nested';
+        File::put($directory.'/Deleted.php', '<?php');
+        File::put($directory.'/Kept.php', '<?php');
+
+        $this->travel(1)->seconds();
+        $since = now()->timestamp;
+
+        $this->assertFalse($composer->hasSourcePsr4ChangedSince($since));
+
+        File::delete($directory.'/Deleted.php');
+
+        $this->assertTrue($composer->hasSourcePsr4ChangedSince($since));
+    }
+
+    #[Test]
     public function it_automatically_detects_new_files_in_source_psr4_class_map(): void
     {
         $composer = Composer::fake();

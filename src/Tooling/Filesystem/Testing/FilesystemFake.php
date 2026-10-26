@@ -102,7 +102,9 @@ class FilesystemFake extends Filesystem
             return parent::put($path, $contents, $lock);
         }
 
-        $mode = match (array_key_exists($path, $this->files)) {
+        $exists = array_key_exists($path, $this->files);
+
+        $mode = match ($exists) {
             true => $this->modes[$path] ?? 0644,
             false => $this->modes[dirname($path)] ?? 0755,
         };
@@ -112,7 +114,11 @@ class FilesystemFake extends Filesystem
         $this->files[$path] = $contents;
         $this->timestamps[$path] = now()->timestamp;
         $this->ensureParentDirectoriesExist($path);
-        $this->timestamps[dirname($path)] = now()->timestamp;
+
+        // Like a real filesystem, only adding an entry changes the directory's modified time.
+        if (! $exists) {
+            $this->timestamps[dirname($path)] = now()->timestamp;
+        }
 
         return strlen($contents);
     }
@@ -139,6 +145,10 @@ class FilesystemFake extends Filesystem
 
         foreach ($paths as $path) {
             if ($this->isFaked($path)) {
+                if (array_key_exists($path, $this->files)) {
+                    $this->timestamps[dirname($path)] = now()->timestamp;
+                }
+
                 unset($this->files[$path], $this->timestamps[$path], $this->modes[$path]);
             } else {
                 $real[] = $path;
