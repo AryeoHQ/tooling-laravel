@@ -73,6 +73,8 @@ php artisan tooling:discover
 php artisan tooling:optimize
 ```
 
+Laravel's `php artisan optimize` runs `tooling:optimize` too. `php artisan optimize:clear` leaves the classmap cache alone, because the cache already rebuilds itself whenever a source file changes.
+
 #### How Discovery Works
 
 1. A Composer plugin fires on `post-autoload-dump`

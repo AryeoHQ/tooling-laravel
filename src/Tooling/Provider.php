@@ -40,5 +40,10 @@ class Provider extends ServiceProvider
             ToolingOptimize::class,
             MakeTestClass::class,
         );
+
+        $this->optimizes(
+            optimize: 'tooling:optimize',
+            key: 'tooling',
+        );
     }
 }
