@@ -11,7 +11,7 @@
         "composer/composer": "^2.0",
         "ergebnis/phpstan-rules": "^2.12",
         "larastan/larastan": "3.9.*",
-        "laravel/framework": "^12.36 || ^13",
+        "laravel/framework": "^12.36.1 || ^13",
         "laravel/pint": "^1.25",
         "laravel/prompts": "^0.3.13",
         "nesbot/carbon": "^3.11",

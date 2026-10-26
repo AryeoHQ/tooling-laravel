@@ -432,6 +432,36 @@ class FilesystemFakeTest extends TestCase
     }
 
     #[Test]
+    public function it_keeps_parent_directory_timestamp_on_overwrite(): void
+    {
+        $fake = $this->fake();
+
+        Date::setTestNow(now());
+        $fake->put(self::BASE.'/dir/file.txt', 'original');
+        $originalTimestamp = $fake->lastModified(self::BASE.'/dir');
+
+        Date::setTestNow(now()->addMinute());
+        $fake->put(self::BASE.'/dir/file.txt', 'updated');
+
+        $this->assertSame($originalTimestamp, $fake->lastModified(self::BASE.'/dir'));
+    }
+
+    #[Test]
+    public function it_updates_parent_directory_timestamp_on_delete(): void
+    {
+        $fake = $this->fake();
+
+        Date::setTestNow(now());
+        $fake->put(self::BASE.'/dir/file.txt', 'content');
+        $originalTimestamp = $fake->lastModified(self::BASE.'/dir');
+
+        Date::setTestNow(now()->addMinute());
+        $fake->delete(self::BASE.'/dir/file.txt');
+
+        $this->assertGreaterThan($originalTimestamp, $fake->lastModified(self::BASE.'/dir'));
+    }
+
+    #[Test]
     public function it_globs_faked_files(): void
     {
         $fake = $this->fake();

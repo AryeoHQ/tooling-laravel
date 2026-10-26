@@ -8,6 +8,7 @@ use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Stringable;
+use Symfony\Component\Finder\SplFileInfo;
 use Tooling\Composer\Packages\Package;
 use Tooling\Composer\Packages\Packages;
 use Tooling\Composer\Testing\ComposerFake;
@@ -79,13 +80,15 @@ class Composer
 
     public function hasSourcePsr4ChangedSince(int $timestamp): bool
     {
-        return $this->sourcePsr4Directories()->contains(
-            fn (string $path) => collect($this->files->allFiles($path))->map(
-                fn (\Symfony\Component\Finder\SplFileInfo $file): string => $this->files->dirname($file->getPathname())
-            )->unique()->push($path)->contains(
+        return $this->sourcePsr4Directories()->contains(fn (string $path): bool => when(
+            collect([$path, ...$this->files->allDirectories($path)])->contains(
                 fn (string $dir): bool => $this->files->lastModified($dir) >= $timestamp
-            )
-        );
+            ),
+            true,
+            fn () => collect($this->files->allFiles($path))->contains(
+                fn (SplFileInfo $file): bool => $this->files->lastModified($file->getPathname()) >= $timestamp
+            ),
+        ));
     }
 
     public function vendorPath(string ...$path): string
