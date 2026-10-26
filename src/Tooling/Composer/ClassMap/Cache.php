@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace Tooling\Composer\ClassMap;
 
+use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use ReflectionClass;
+use RuntimeException;
 use Tooling\Composer\ClassMap\Autoloaders\ThrowsOnMissing;
 use Tooling\Composer\Composer;
 use Tooling\Composer\Testing\CacheFake;
 
 use function Illuminate\Filesystem\join_paths;
 
+#[Singleton]
 class Cache
 {
     /** @var array<string, mixed> */
@@ -30,11 +34,10 @@ class Cache
     public array $loaded {
         get => match ($this->hasCache(__PROPERTY__) && ! $this->isStale(__PROPERTY__)) {
             true => $this->cache(__PROPERTY__),
-            false => with(__PROPERTY__, function (string $key) {
-                when($this->isStale($key), fn () => $this->clearCache()->build());
-
-                return $this->cache($key, (array) $this->files->getRequire($this->cachePath), $this->files->lastModified($this->cachePath));
-            }),
+            false => match ($this->clearCache()->isStale(__PROPERTY__)) {
+                true => $this->build(),
+                false => $this->cache(__PROPERTY__, (array) $this->files->getRequire($this->cachePath), $this->files->lastModified($this->cachePath)),
+            },
         };
     }
 
@@ -44,13 +47,12 @@ class Cache
         $this->composer = $composer ?? resolve(Composer::class);
     }
 
-    public function build(): true
+    /** @return array<string, array<int, string>> */
+    public function build(): array
     {
-        return $this->write(
-            $this->classify(
-                $this->reflect($this->composer->sourcePsr4ClassMap->keys())
-            )
-        );
+        return $this->classify($this->reflect($this->composer->sourcePsr4ClassMap->keys()))
+            ->tap(fn (Collection $data) => rescue(fn () => $this->write($data)))
+            ->pipe(fn (Collection $data) => $this->clearCache()->cache('loaded', $data->all()));
     }
 
     /**
@@ -100,8 +102,19 @@ class Cache
      */
     private function write(Collection $data): true
     {
+        // Same folder keeps both files on one filesystem; across filesystems, rename() falls back to a non-atomic copy.
+        $temporaryPath = $this->cachePath.'.'.Str::random(16).'.tmp';
+
         $this->files->ensureDirectoryExists(dirname($this->cachePath));
-        $this->files->put($this->cachePath, $this->export($data));
+
+        try {
+            $successful = $this->files->put($temporaryPath, $this->export($data)) !== false
+                && $this->files->move($temporaryPath, $this->cachePath);
+        } finally {
+            $this->files->delete($temporaryPath);
+        }
+
+        throw_unless($successful, RuntimeException::class, sprintf('Could not write the class map cache to [%s].', $this->cachePath));
 
         if (function_exists('opcache_invalidate')) {
             opcache_invalidate($this->cachePath, true);
@@ -162,17 +175,17 @@ class Cache
 
     protected function isStale(string $key): bool
     {
-        if (! $this->files->exists($this->cachePath)) {
-            return true;
-        }
+        return match (true) {
+            $this->hasCache($key) && $this->cacheFileIsNewer($key) => true,
+            $this->hasCache($key) => $this->composer->hasSourcePsr4ChangedSince($this->cacheTime($key)),
+            ! $this->files->exists($this->cachePath) => true,
+            default => $this->composer->hasSourcePsr4ChangedSince($this->files->lastModified($this->cachePath)),
+        };
+    }
 
-        if ($this->hasCache($key.'::time') && $this->files->lastModified($this->cachePath) !== $this->cacheTime($key)) {
-            return true;
-        }
-
-        return $this->composer->hasSourcePsr4ChangedSince(
-            $this->files->lastModified($this->cachePath)
-        );
+    private function cacheFileIsNewer(string $key): bool
+    {
+        return $this->files->exists($this->cachePath) && $this->files->lastModified($this->cachePath) > $this->cacheTime($key);
     }
 
     public static function fake(): CacheFake

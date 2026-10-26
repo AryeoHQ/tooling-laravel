@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tooling\Composer;
 
+use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Stringable;
@@ -13,6 +14,7 @@ use Tooling\Composer\Testing\ComposerFake;
 
 use function Illuminate\Filesystem\join_paths;
 
+#[Singleton]
 class Composer
 {
     /** @var array<string, mixed> */

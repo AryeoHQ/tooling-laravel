@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tooling\Composer\ClassMap;
 
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Fixtures\Tooling\ChildCollector;
@@ -61,7 +62,7 @@ class CacheTest extends TestCase
     {
         $cache = Cache::fake();
 
-        $this->assertTrue($cache->build());
+        $this->assertArrayHasKey(Untested::class, $cache->build());
         $this->assertTrue(File::exists($cache->cachePath));
         $this->assertArrayHasKey(Untested::class, $cache->loaded);
     }
@@ -113,6 +114,51 @@ class CacheTest extends TestCase
         $cache->build();
 
         $this->assertContains(Concern::class, $cache->get(Untested::class));
+    }
+
+    #[Test]
+    public function it_keeps_built_data_in_memory_when_the_cache_cannot_be_written(): void
+    {
+        Exceptions::fake();
+        ClassMapSource::fake()->merge([ParentClass::class => '/fake/src/ParentClass.php']);
+        Date::setTestNow(now()->addSecond());
+        $cache = Cache::fake();
+        File::chmod(dirname($cache->cachePath), 0555);
+
+        $this->assertContains(ParentClass::class, $cache->get(Untested::class));
+        $this->assertContains(ParentClass::class, $cache->get(Untested::class));
+
+        $this->assertFalse(File::exists($cache->cachePath));
+        Exceptions::assertReportedCount(1);
+    }
+
+    #[Test]
+    public function it_rebuilds_unwritten_data_when_a_source_directory_changes(): void
+    {
+        Exceptions::fake();
+        $classMapSource = ClassMapSource::fake();
+        $cache = Cache::fake();
+        File::chmod(dirname($cache->cachePath), 0555);
+
+        $this->assertNotContains(Contract::class, $cache->get(Untested::class));
+
+        Date::setTestNow(now()->addSecond());
+        $classMapSource->merge([Contract::class => '/fake/src/Contract.php']);
+
+        $this->assertContains(Contract::class, $cache->get(Untested::class));
+    }
+
+    #[Test]
+    public function it_reloads_the_cache_file_when_another_process_rewrites_it(): void
+    {
+        ClassMapSource::fake()->merge([ParentClass::class => '/fake/src/ParentClass.php']);
+        Date::setTestNow(now()->addSecond());
+        $cache = Cache::fake();
+        $cache->build();
+
+        $cache->provide([Untested::class => [Contract::class]]);
+
+        $this->assertSame([Contract::class], $cache->get(Untested::class));
     }
 
     #[Test]
