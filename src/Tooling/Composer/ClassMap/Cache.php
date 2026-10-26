@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tooling\Composer\ClassMap;
 
+use Brick\VarExporter\VarExporter;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
@@ -128,16 +129,7 @@ class Cache
      */
     private function export(Collection $data): string
     {
-        $collectors = $data->map(fn (array $classes, string $collector): string => sprintf(
-            '    %s => %s,',
-            var_export($collector, true),
-            match ($classes) {
-                [] => '[]',
-                default => "[\n".collect($classes)->map(fn (string $class): string => '        '.var_export($class, true).',')->implode("\n")."\n    ]",
-            },
-        ));
-
-        return "<?php\n\nreturn [\n".$collectors->implode("\n")."\n];\n";
+        return "<?php\n\n".VarExporter::export($data->all(), VarExporter::ADD_RETURN | VarExporter::TRAILING_COMMA_IN_ARRAY);
     }
 
     protected function hasCache(string $key): bool
