@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tooling;
 
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\ServiceProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -49,5 +50,20 @@ class ProviderTest extends TestCase
             $commands->contains(fn ($command) => $command instanceof $class),
             "{$class} was not registered.",
         ));
+    }
+
+    #[Test]
+    public function it_hooks_into_laravels_optimize_command(): void
+    {
+        $this->assertSame(
+            resolve(Console\Commands\ToolingOptimize::class)->getName(),
+            ServiceProvider::$optimizeCommands['tooling']
+        );
+    }
+
+    #[Test]
+    public function it_does_not_hook_into_laravels_optimize_clear_command(): void
+    {
+        $this->assertArrayNotHasKey('tooling', ServiceProvider::$optimizeClearCommands);
     }
 }
