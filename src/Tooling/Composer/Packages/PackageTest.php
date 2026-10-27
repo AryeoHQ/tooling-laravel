@@ -229,4 +229,29 @@ class PackageTest extends TestCase
         $this->assertSame('\\Tests\\', $package->psr4Mappings->get(1)->prefix->toString());
         $this->assertSame('tests/', $package->psr4Mappings->get(1)->path->toString());
     }
+
+    #[Test]
+    public function it_merges_autoload_and_autoload_dev_classmap_exclusions(): void
+    {
+        $data = json_decode(json_encode([
+            'autoload' => [
+                'exclude-from-classmap' => ['src/Excluded/'],
+            ],
+            'autoload-dev' => [
+                'exclude-from-classmap' => ['tests/Fixtures/'],
+            ],
+        ]));
+
+        $package = new Package($data);
+
+        $this->assertSame(['src/Excluded/', 'tests/Fixtures/'], $package->excludeFromClassMap->all());
+    }
+
+    #[Test]
+    public function it_returns_no_classmap_exclusions_when_none_are_declared(): void
+    {
+        $package = new Package((object) ['name' => 'vendor/package']);
+
+        $this->assertCount(0, $package->excludeFromClassMap);
+    }
 }

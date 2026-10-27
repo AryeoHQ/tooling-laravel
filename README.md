@@ -87,6 +87,8 @@ Laravel's `php artisan optimize` runs `tooling:optimize` too. `php artisan optim
 
 The classmap cache automatically detects staleness via mtime checks and rebuilds on demand. After any `make:` command, a background process refreshes the cache to pick up newly generated files.
 
+The classmap cache skips any file your `composer.json` lists under `exclude-from-classmap`, in `autoload` or `autoload-dev`, using the same path and wildcard rules as Composer.
+
 ## Extending Tooling
 
 Packages can register their own PHPStan and Rector configurations via `composer.json`. When the package is installed as a dependency, its rules are automatically discovered and loaded.
