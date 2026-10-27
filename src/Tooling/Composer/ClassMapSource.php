@@ -5,19 +5,45 @@ declare(strict_types=1);
 namespace Tooling\Composer;
 
 use Composer\ClassMapGenerator\ClassMapGenerator;
+use Composer\Util\Filesystem;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Tooling\Composer\Testing\ClassMapSourceFake;
 
 #[Singleton]
 class ClassMapSource
 {
     /**
+     * @param  \Illuminate\Support\Collection<int, string>  $excluded
      * @return Collection<class-string, non-empty-string>
      */
-    public function createMap(string $directory): Collection
+    public function createMap(string $directory, Collection $excluded = new Collection, string $basePath = ''): Collection
     {
-        return collect(ClassMapGenerator::createMap($directory));
+        return collect(
+            tap(new ClassMapGenerator)->scanPaths(
+                $directory,
+                $this->exclusionPattern($excluded, $basePath)
+            )->getClassMap()->getMap()
+        );
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, string>  $excluded
+     * @return null|non-empty-string
+     */
+    protected function exclusionPattern(Collection $excluded, string $basePath): null|string
+    {
+        // Same path and wildcard rules as Composer's AutoloadGenerator.
+        $patterns = $excluded->map(fn (string $path): string => str(preg_quote(new Filesystem()->normalizePath($basePath.'/'.$path)))
+            ->swap(['\\*\\*' => '.+?', '\\*' => '[^/]+?'])
+            ->append('($|/)')
+            ->toString());
+
+        return match ($patterns->isEmpty()) {
+            true => null,
+            false => Str::wrap($patterns->implode('|'), '{(', ')}'),
+        };
     }
 
     /**

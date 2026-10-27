@@ -40,10 +40,14 @@ final class ClassMapSourceFake extends ClassMapSource
     }
 
     /**
+     * @param  \Illuminate\Support\Collection<int, string>  $excluded
      * @return Collection<class-string, non-empty-string>
      */
-    public function createMap(string $directory): Collection
+    public function createMap(string $directory, Collection $excluded = new Collection, string $basePath = ''): Collection
     {
-        return collect($this->maps[$directory] ?? []);
+        return collect($this->maps[$directory] ?? [])->when(
+            $this->exclusionPattern($excluded, $basePath),
+            fn (Collection $map, string $pattern) => $map->reject(fn (string $path): bool => str($path)->isMatch($pattern))
+        );
     }
 }

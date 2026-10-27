@@ -34,6 +34,12 @@ final class Package
             );
     }
 
+    /** @var Collection<int, string> */
+    public Collection $excludeFromClassMap {
+        get => $this->excludeFromClassMap ??= collect((array) data_get($this->autoload, 'exclude-from-classmap', []))
+            ->merge((array) data_get($this->autoloadDev, 'exclude-from-classmap', []));
+    }
+
     public function __construct(object $data)
     {
         $this->data = $data;

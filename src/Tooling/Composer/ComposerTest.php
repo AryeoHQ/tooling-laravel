@@ -188,4 +188,24 @@ class ComposerTest extends TestCase
 
         $this->assertTrue($composer->sourcePsr4ClassMap->has('App\NewClass'));
     }
+
+    #[Test]
+    public function it_leaves_excluded_files_out_of_the_source_psr4_class_map(): void
+    {
+        $composer = Composer::fake([
+            'autoload' => ['exclude-from-classmap' => ['src/Excluded/']],
+            'autoload-dev' => ['psr-4' => ['Tests\\' => 'tests/'], 'exclude-from-classmap' => ['tests/Fixtures/']],
+        ]);
+
+        ClassMapSource::fake([
+            'App\Excluded\Example' => '/fake/src/Excluded/Example.php',
+            'Tests\Kept' => '/fake/tests/Kept.php',
+            'Tests\Fixtures\Example' => '/fake/tests/Fixtures/Example.php',
+        ]);
+
+        $this->assertTrue($composer->sourcePsr4ClassMap->has('App\Example'));
+        $this->assertTrue($composer->sourcePsr4ClassMap->has('Tests\Kept'));
+        $this->assertFalse($composer->sourcePsr4ClassMap->has('App\Excluded\Example'));
+        $this->assertFalse($composer->sourcePsr4ClassMap->has('Tests\Fixtures\Example'));
+    }
 }

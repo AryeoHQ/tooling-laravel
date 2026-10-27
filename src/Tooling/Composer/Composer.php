@@ -67,7 +67,11 @@ class Composer
             true => $this->cache(__PROPERTY__),
             false => with(__PROPERTY__, function (string $key) {
                 return $this->cache($key, $this->sourcePsr4Directories()
-                    ->flatMap(fn (string $dir): Collection => $this->classMapSource->createMap($dir)));
+                    ->flatMap(fn (string $directory): Collection => $this->classMapSource->createMap(
+                        $directory,
+                        $this->currentAsPackage->excludeFromClassMap,
+                        $this->baseDirectory->toString(),
+                    )));
             }),
         };
     }
