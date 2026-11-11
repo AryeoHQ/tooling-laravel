@@ -67,7 +67,7 @@ jobs:
       fail-fast: true
       matrix:
         os: [ubuntu-latest]
-        php: [8.5]
+        php: [8.5, 8.6]
         laravel: [12.*, 13.*]
         include:
           - laravel: 12.*
@@ -90,6 +90,11 @@ jobs:
 
       - name: Install Composer dependencies
         run: |
+          # ParaTest releases that allow PHP 8.6 require PHPUnit 13.3+, and Testbench 10
+          # conflicts with PHPUnit >= 13.2, so Laravel 12 on PHP 8.6 runs without ParaTest.
+          if [ "${{ matrix.php }}" = "8.6" ] && [ "${{ matrix.laravel }}" = "12.*" ]; then
+            composer remove brianium/paratest --dev --no-interaction --no-update
+          fi
           composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
           composer update --no-interaction
 
@@ -100,7 +105,12 @@ jobs:
         env:
           DB_HOST: localhost
         shell: sh
-        run: ./vendor/bin/testbench package:test --parallel --coverage-cobertura coverage.xml
+        run: |
+          parallel=""
+          if [ -f ./vendor/bin/paratest ]; then
+            parallel="--parallel"
+          fi
+          ./vendor/bin/testbench package:test $parallel --coverage-cobertura coverage.xml
 
       - name: Code Coverage Report
         uses: irongut/CodeCoverageSummary@v1.3.0
